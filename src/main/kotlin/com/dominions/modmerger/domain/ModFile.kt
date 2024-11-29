@@ -1,17 +1,40 @@
 package com.dominions.modmerger.domain
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
+import kotlin.properties.Delegates
 
 /**
  * Represents a Dominions 6 mod file with validation and lazy-loaded content.
  */
-data class ModFile(
+class ModFile(
     val file: File? = null,
     val name: String,
     private val contentProvider: () -> String
 ) {
     private val logger = mu.KotlinLogging.logger {}
+    private var metadata: ModMetadata? by Delegates.observable(null) { _, _, newValue ->
+        logger.debug { "Metadata loaded for mod: $name" }
+    }
+
+    // Only load the header portion of the file (first few KB) to extract metadata
+    private fun loadMetadata(): ModMetadata {
+        if (metadata != null) return metadata!!
+
+        val headerContent = file?.let { loadFileHeader(it, 4096) } ?: contentProvider()
+        return parseMetadata(headerContent).also { metadata = it }
+    }
+
+    private fun loadFileHeader(file: File, maxBytes: Int): String {
+        RandomAccessFile(file, "r").use { raf ->
+            val bytes = ByteArray(maxBytes.coerceAtMost(file.length().toInt()))
+            raf.read(bytes)
+            return String(bytes)
+        }
+    }
 
     /**
      * The content of the mod file as a string.
@@ -24,6 +47,26 @@ data class ModFile(
             throw InvalidModFileException("Failed to read content from file: $name", e)
         }
     }
+
+    private fun parseMetadata(content: String): ModMetadata {
+        val lines = content.lines()
+        return ModMetadata(
+            modName = lines.firstOrNull { it.trim().startsWith("#modname") }
+                ?.substringAfter("\"")?.removeSuffix("\""),
+            description = lines.firstOrNull { it.trim().startsWith("#description") }
+                ?.substringAfter("\"")?.removeSuffix("\""),
+            version = lines.firstOrNull { it.trim().startsWith("#version") }
+                ?.substringAfter("\"")?.removeSuffix("\""),
+            iconPath = lines.firstOrNull { it.trim().startsWith("#icon") }
+                ?.substringAfter("\"")?.removeSuffix("\"")
+        )
+    }
+
+    // Provide metadata properties without loading full content
+    val modName: String get() = loadMetadata().modName ?: name
+    val description: String get() = loadMetadata().description ?: ""
+    val version: String get() = loadMetadata().version ?: ""
+    val iconPath: String? get() = loadMetadata().iconPath
 
     init {
         file?.let { validateFile(it) }
@@ -53,6 +96,16 @@ data class ModFile(
             name = name,
             contentProvider = { content }
         )
+
+        // Load mods in chunks for large directories
+        fun loadModsFromDirectory(directory: File, chunkSize: Int = 10): Flow<List<ModFile>> = flow {
+            directory.walkTopDown()
+                .filter { it.isFile && it.extension == "dm" }
+                .chunked(chunkSize)
+                .forEach { chunk ->
+                    emit(chunk.map { fromFile(it) })
+                }
+        }
     }
 }
 

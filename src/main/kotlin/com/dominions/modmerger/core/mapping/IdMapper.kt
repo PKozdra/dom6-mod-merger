@@ -1,8 +1,10 @@
 // src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt
 package com.dominions.modmerger.core.mapping
 
-import com.dominions.modmerger.config.ModRanges
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.constants.ModRanges
+import com.dominions.modmerger.domain.EntityType
+import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.ModDefinition
 import mu.KLogger
 import mu.KotlinLogging
 
@@ -32,8 +34,15 @@ class IdMapper(private val modDefinitions: Map<String, ModDefinition>) {
 
     fun createMappings(modDefinitions: Map<String, ModDefinition>): Map<String, MappedModDefinition> {
         logger.info { "Starting ID mapping for ${modDefinitions.size} mod(s)" }
-        validateAllIds()
-        val conflicts = findAllConflicts()
+        validateAllIds(modDefinitions)
+        val conflicts = findAllConflicts(modDefinitions)
+
+        conflicts.forEach { (modName, typeConflicts) ->
+            typeConflicts.forEach { (type, ids) ->
+                logger.info { "Found conflicts in mod $modName for $type: $ids" }
+            }
+        }
+
         return modDefinitions.mapValues { (modName, modDef) ->
             logger.debug { "Creating mapped definition for mod: $modName" }
             val mappedDef = createMappedDefinition(modDef, conflicts[modName] ?: emptyMap())
@@ -70,7 +79,7 @@ class IdMapper(private val modDefinitions: Map<String, ModDefinition>) {
         return mappedDef
     }
 
-    private fun validateAllIds() {
+    private fun validateAllIds(modDefinitions: Map<String, ModDefinition>) {
         modDefinitions.forEach { (modName, modDef) ->
             logger.debug { "Validating IDs for mod: $modName" }
             EntityType.entries.forEach { type ->
@@ -89,8 +98,11 @@ class IdMapper(private val modDefinitions: Map<String, ModDefinition>) {
         }
     }
 
-    private fun findAllConflicts(): Map<String, Map<EntityType, Set<Long>>> {
+    private fun findAllConflicts(modDefinitions: Map<String, ModDefinition>): Map<String, Map<EntityType, Set<Long>>> {
         val conflictsByMod = mutableMapOf<String, MutableMap<EntityType, MutableSet<Long>>>()
+
+        // Add more detailed logging
+        logger.debug { "Starting conflict detection for mods: ${modDefinitions.keys}" }
 
         val mods = modDefinitions.values.toList()
 
@@ -98,7 +110,14 @@ class IdMapper(private val modDefinitions: Map<String, ModDefinition>) {
             val modA = mods[i]
             for (j in i + 1 until mods.size) {
                 val modB = mods[j]
+                logger.debug { "Checking conflicts between ${modA.modFile.name} and ${modB.modFile.name}" }
+
                 val modConflicts = modA.findConflicts(modB)
+
+                // Add more detailed logging for conflicts found
+                if (modConflicts.isNotEmpty()) {
+                    logger.debug { "Found ${modConflicts.size} conflicts between ${modA.modFile.name} and ${modB.modFile.name}" }
+                }
 
                 modConflicts.forEach { conflict ->
                     val type = conflict.type
@@ -117,7 +136,7 @@ class IdMapper(private val modDefinitions: Map<String, ModDefinition>) {
             }
         }
 
-        logger.debug { "Conflicts detected: $conflictsByMod" }
+        logger.info { "Total conflicts detected by mod: ${conflictsByMod.mapValues { it.value.mapValues { it.value.size } }}" }
         return conflictsByMod
     }
 

@@ -11,7 +11,7 @@ enum class EntityType {
     NATION,
     NAME_TYPE,
     ENCHANTMENT,
-    EVENT,
+    EVENT_CODE,
     POPTYPE,
     MONTAG,
     RESTRICTED_ITEM;

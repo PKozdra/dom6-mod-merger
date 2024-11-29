@@ -1,5 +1,5 @@
 // src/main/kotlin/com/dominions/modmerger/config/ModRanges.kt
-package com.dominions.modmerger.config
+package com.dominions.modmerger.constants
 
 import com.dominions.modmerger.domain.EntityType
 
@@ -18,6 +18,8 @@ object ModRanges {
     }
 
     object Modding {
+        const val EVENTCODE_START: Long = 1L
+
         // Weapons
         const val WEAPON_START: Long = Vanilla.WEAPON_END + 1  // 1000
         const val WEAPON_END: Long = 3999L
@@ -65,7 +67,7 @@ object ModRanges {
 
     // Utility functions to check ranges
     object Validator {
-        fun isVanillaId(type: EntityType, id: Long): Boolean = when(type) {
+        fun isVanillaId(type: EntityType, id: Long): Boolean = when (type) {
             EntityType.WEAPON -> id <= Vanilla.WEAPON_END
             EntityType.ARMOR -> id <= Vanilla.ARMOR_END
             EntityType.MONSTER -> id <= Vanilla.MONSTER_END
@@ -79,7 +81,7 @@ object ModRanges {
             else -> false
         }
 
-        fun isValidModdingId(type: EntityType, id: Long): Boolean = when(type) {
+        fun isValidModdingId(type: EntityType, id: Long): Boolean = when (type) {
             EntityType.WEAPON -> id in Modding.WEAPON_START..Modding.WEAPON_END
             EntityType.ARMOR -> id in Modding.ARMOR_START..Modding.ARMOR_END
             EntityType.MONSTER -> id in Modding.MONSTER_START..Modding.MONSTER_END
@@ -89,7 +91,7 @@ object ModRanges {
             EntityType.NATION -> id in Modding.NATION_START..Modding.NATION_END
             EntityType.NAME_TYPE -> id in Modding.NAMETYPE_START..Modding.NAMETYPE_END
             EntityType.ENCHANTMENT -> id in Modding.ENCHANTMENT_START..Modding.ENCHANTMENT_END
-            EntityType.MONTAG -> false // Assuming no vanilla MONTAG IDs
+            EntityType.MONTAG -> id in Modding.MONTAG_START..Modding.MONTAG_END
             else -> false
         }
     }

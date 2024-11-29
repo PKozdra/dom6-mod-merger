@@ -1,8 +1,9 @@
 // src/main/kotlin/com/dominions/modmerger/core/scanning/DefaultModScanner.kt
 package com.dominions.modmerger.core.scanning
 
-import com.dominions.modmerger.domain.*
 import com.dominions.modmerger.core.parsing.ModParser
+import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.domain.ModFile
 import kotlinx.coroutines.*
 import mu.KLogger
 import mu.KotlinLogging

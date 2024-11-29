@@ -1,11 +1,14 @@
 // src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt
 package com.dominions.modmerger.core.writing
 
+
 import com.dominions.modmerger.MergeWarning
-import com.dominions.modmerger.config.GameConstants.SpellEffects.ENCHANTMENT_EFFECTS
-import com.dominions.modmerger.config.GameConstants.SpellEffects.SUMMONING_EFFECTS
-import com.dominions.modmerger.domain.*
-import com.dominions.modmerger.utils.ModPatterns
+import com.dominions.modmerger.constants.GameConstants.SpellEffects.ENCHANTMENT_EFFECTS
+import com.dominions.modmerger.constants.GameConstants.SpellEffects.SUMMONING_EFFECTS
+import com.dominions.modmerger.constants.ModPatterns
+import com.dominions.modmerger.domain.EntityType
+import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.utils.ModUtils
 import mu.KLogger
 import mu.KotlinLogging
@@ -15,12 +18,19 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 
 
-class ModWriter {
+class ModWriter(
+    private val fileSystem: FileSystem // Inject FileSystem for output management
+) {
     private val logger: KLogger = KotlinLogging.logger {}
     private val warnings = mutableListOf<MergeWarning>()
 
+    /**
+     * Writes the merged mod to the configured file.
+     */
     fun writeMergedMod(mappedDefinitions: Map<String, MappedModDefinition>): List<MergeWarning> {
-        val outputFile = File("modmerger.dm")
+        val outputFile = fileSystem.getOutputFile()
+        logger.info { "Writing merged mod to: ${outputFile.absolutePath}" }
+
         outputFile.bufferedWriter().use { writer ->
             writeHeader(writer, mappedDefinitions.keys)
 
@@ -35,15 +45,17 @@ class ModWriter {
 
     private fun writeHeader(writer: java.io.Writer, modNames: Collection<String>) {
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        writer.write("""
+        writer.write(
+            """
             #modname "Mod Merger Output"
             #description "Merged mod containing:${modNames.joinToString("\n- ", prefix = "\n- ")}
-            
+
             Generated on: $timestamp"
-            
+
             -- Begin merged content
-            
-        """.trimIndent())
+
+            """.trimIndent()
+        )
         writer.write("\n\n")
     }
 
@@ -132,10 +144,12 @@ class ModWriter {
                 ModPatterns.SPELL_SELECT_ID.matches(line) -> {
                     remapSpellSelectLine(line, mappedDef)
                 }
+
                 ModPatterns.SPELL_DAMAGE.matches(line) && effect != null -> {
                     // Special handling for damage lines in enchantment and summoning effects
                     remapSpellDamageLine(line, effect!!, mappedDef)
                 }
+
                 else -> line
             }
             writer.write(processedLine)
@@ -147,10 +161,13 @@ class ModWriter {
         val processedLine = when {
             ModPatterns.NEW_NUMBERED_MONSTER.matches(line) ->
                 remapEntityLine(line, EntityType.MONSTER, mappedDef)
+
             ModPatterns.NEW_NUMBERED_WEAPON.matches(line) ->
                 remapEntityLine(line, EntityType.WEAPON, mappedDef)
+
             ModPatterns.NEW_NUMBERED_ARMOR.matches(line) ->
                 remapEntityLine(line, EntityType.ARMOR, mappedDef)
+
             else -> line
         }
 
@@ -159,7 +176,7 @@ class ModWriter {
     }
 
     private fun remapEntityLine(line: String, type: EntityType, mappedDef: MappedModDefinition): String {
-        val pattern = when(type) {
+        val pattern = when (type) {
             EntityType.MONSTER -> ModPatterns.NEW_NUMBERED_MONSTER
             EntityType.WEAPON -> ModPatterns.NEW_NUMBERED_WEAPON
             EntityType.ARMOR -> ModPatterns.NEW_NUMBERED_ARMOR
@@ -198,10 +215,12 @@ class ModWriter {
                 } ?: damage
                 ModUtils.replaceId(line, damage, newId)
             }
+
             effect in ENCHANTMENT_EFFECTS -> {
                 val newId = mappedDef.getMapping(EntityType.ENCHANTMENT, damage) ?: damage
                 ModUtils.replaceId(line, damage, newId)
             }
+
             else -> line
         }
     }

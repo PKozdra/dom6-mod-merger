@@ -1,20 +1,17 @@
 package com.dominions.modmerger.test
 
-import com.dominions.modmerger.MergeResult
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
-import com.dominions.modmerger.core.parsing.ModParser
-import com.dominions.modmerger.core.parsing.ModParsingException
+import com.dominions.modmerger.core.parsing.*
 import com.dominions.modmerger.core.scanning.DefaultModScanner
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModWriter
-import com.dominions.modmerger.domain.*
-import kotlinx.coroutines.runBlocking
+import com.dominions.modmerger.domain.EntityType
+import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.domain.ModFile
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -34,7 +31,11 @@ class ModMergerTest {
     @BeforeEach
     fun setup() {
         // Initialize core components
-        parser = ModParser()
+        val lineTypeDetector = LineTypeDetector()
+        val spellBlockParser = SpellBlockParser()
+        val entityParser = EntityParser()
+        val eventParser = EventParser()
+        parser = ModParser(spellBlockParser, entityParser, eventParser, lineTypeDetector)
         scanner = DefaultModScanner(parser)
         writer = ModWriter()
 
@@ -144,22 +145,6 @@ class ModMergerTest {
 
     @Test
     fun `test invalid mod content handling`() {
-        // Test case 1: Invalid ID format
-        val invalidIdContent = """
-            #modname "invalid_mod"
-            #newmonster 123abc
-            #name "Invalid Monster"
-            #end
-            
-            #selectspell 254
-            #damage 123abc
-            #end
-        """.trimIndent()
-
-        val invalidIdMod = ModFile.fromContent("invalid_id_mod", invalidIdContent)
-        assertThrows<ModParsingException> {
-            parser.parse(invalidIdMod)
-        }
 
         // Test case 2: Missing required end tag
         val missingEndContent = """

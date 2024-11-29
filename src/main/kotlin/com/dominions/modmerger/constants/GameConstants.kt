@@ -1,5 +1,5 @@
 // src/main/kotlin/com/dominions/modmerger/config/GameConstants.kt
-package com.dominions.modmerger.config
+package com.dominions.modmerger.constants
 
 object GameConstants {
     object SpellEffects {
