@@ -2,9 +2,11 @@
 package com.dominions.modmerger.ui
 
 import com.dominions.modmerger.MergeResult
+import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.domain.*
 import com.dominions.modmerger.infrastructure.FileSystem
+import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.ui.model.ModListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +18,7 @@ import javax.swing.SwingUtilities
 class ModMergerController(
     private val modMergerService: ModMergerService,
     private val fileSystem: FileSystem,
+    private val gamePathsManager: GamePathsManager,
     private val logDispatcher: LogDispatcher
 ) {
     private val logger = KotlinLogging.logger {}
@@ -27,17 +30,24 @@ class ModMergerController(
     }
 
     fun loadMods(customPathText: String) {
-        val steamPath = getSteamModPath()
-        val customPath = customPathText.takeIf { it.isNotBlank() }?.let { File(it) }
-
         val paths = buildList {
-            if (steamPath != null) {
-                add(steamPath)
-                logDispatcher.log(LogLevel.INFO, "Found Steam workshop path: $steamPath")
+            // Add Steam workshop path if available
+            gamePathsManager.findSteamModPath()?.let {
+                add(it)
+                logDispatcher.log(LogLevel.INFO, "Found Steam workshop path: $it")
             }
-            if (customPath != null) {
-                add(customPath)
-                logDispatcher.log(LogLevel.INFO, "Using custom path: $customPath")
+
+            // Add local mods directory
+            add(gamePathsManager.getLocalModPath().also {
+                logDispatcher.log(LogLevel.INFO, "Using local mods path: $it")
+            })
+
+            // Add custom path if provided
+            customPathText.takeIf { it.isNotBlank() }?.let {
+                File(it).also { file ->
+                    add(file)
+                    logDispatcher.log(LogLevel.INFO, "Using custom path: $file")
+                }
             }
         }
 
@@ -86,6 +96,7 @@ class ModMergerController(
                                 }
                             }
                         }
+
                         is MergeResult.Failure -> {
                             logDispatcher.log(LogLevel.ERROR, "Merge failed: ${result.error}")
                         }
@@ -102,25 +113,9 @@ class ModMergerController(
         }
     }
 
-    private fun getSteamModPath(): File? {
-        val osName = System.getProperty("os.name")
-        val steamPath = when {
-            osName.contains("Windows") ->
-                File("""C:\Program Files (x86)\Steam\steamapps\workshop\content\2511500""")
-            osName.contains("Mac") ->
-                File(
-                    System.getProperty("user.home"),
-                    "Library/Application Support/Steam/steamapps/workshop/content/2511500"
-                )
-            else ->
-                File(System.getProperty("user.home"), ".steam/steam/steamapps/workshop/content/2511500")
-        }
-        return if (steamPath.exists()) steamPath else null
-    }
-
     private fun findModFiles(path: File): List<ModFile> {
         return path.walkTopDown()
-            .filter { it.isFile && it.extension == "dm" }
+            .filter { it.isFile && it.extension == GameConstants.MOD_FILE_EXTENSION }
             .map { ModFile.fromFile(it) }
             .toList()
     }

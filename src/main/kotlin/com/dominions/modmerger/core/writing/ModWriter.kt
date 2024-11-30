@@ -12,7 +12,6 @@ import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.utils.ModUtils
 import mu.KLogger
 import mu.KotlinLogging
-import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs

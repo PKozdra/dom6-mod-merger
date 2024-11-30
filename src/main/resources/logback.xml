@@ -2,11 +2,15 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{35} (%F:%L\) - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- Set logging levels -->
+    <!-- Set specific package logging levels -->
+    <logger name="com.dominions.modmerger.ui" level="INFO"/>
+    <logger name="com.dominions.modmerger.domain.ModFile" level="INFO"/>
+
+    <!-- Default level for all other packages -->
     <logger name="com.dominions.modmerger" level="DEBUG"/>
 
     <root level="INFO">

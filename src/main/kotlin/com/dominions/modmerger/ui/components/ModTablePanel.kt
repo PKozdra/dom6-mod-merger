@@ -1,8 +1,14 @@
 package com.dominions.modmerger.ui.components
 
 import com.dominions.modmerger.ui.model.ModListItem
+import mu.KotlinLogging
 import java.awt.*
-import java.awt.event.*
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.util.*
+import java.util.Timer
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
@@ -10,8 +16,6 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableRowSorter
-import java.util.Timer
-import java.util.TimerTask
 
 /**
  * Panel that displays and manages a table of mods with search and selection capabilities.
@@ -25,9 +29,10 @@ class ModTablePanel : JPanel() {
     private val searchTimer = Timer()
     private var searchTask: TimerTask? = null
 
+    private val logger = KotlinLogging.logger {}
+
     private val modCountLabel = JLabel()
-    private val selectionCountLabel = JLabel()
-    private val statusPanel = createStatusPanel()
+    private lateinit var statusPanel: StatusPanel
 
     private val contextMenu = ModContextMenu(table) { message -> updateStatusMessage(message) }
 
@@ -58,7 +63,11 @@ class ModTablePanel : JPanel() {
         add(JScrollPane(table).apply {
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
         }, BorderLayout.CENTER)
-        add(createStatusPanel(), BorderLayout.SOUTH)
+
+        statusPanel = StatusPanel { mod ->
+            focusOnMod(mod)
+        }
+        add(statusPanel, BorderLayout.SOUTH)
 
         table.rowSorter = rowSorter
     }
@@ -122,99 +131,19 @@ class ModTablePanel : JPanel() {
         updateStatusLabels()
     }
 
-    private object ColorUtils {
-        private val colorCache = mutableMapOf<String, Color>()
-
-        fun getColorForModName(modName: String): Color {
-            // Get base name (remove numbers and special characters)
-            val baseName = modName.lowercase().replace(Regex("[^a-z]"), "")
-
-            return colorCache.getOrPut(baseName) {
-                // Generate consistent color based on the mod name
-                val hash = baseName.hashCode()
-                // Use HSB color model for better control over color generation
-                Color.getHSBColor(
-                    (hash and 0xFF) / 255f, // Hue
-                    0.4f + (hash shr 8 and 0xFF) / 512f, // Saturation (0.4-0.6)
-                    0.8f + (hash shr 16 and 0xFF) / 512f  // Brightness (0.8-1.0)
-                )
-            }
-        }
-
-        fun getHexColor(color: Color): String {
-            return String.format("#%02x%02x%02x", color.red, color.green, color.blue)
-        }
-    }
-
     private fun updateStatusLabels() {
         val totalMods = model.rowCount
         val visibleMods = table.rowCount
-        val selectedMods = model.getSelectedMods()
-        val selectedModsSize = selectedMods.size
 
+        // Update mod count label
         modCountLabel.text = when {
             totalMods == 0 -> "No mods found"
             visibleMods < totalMods -> "Showing $visibleMods of $totalMods mods"
             else -> "Showing all $totalMods mods"
         }
 
-        selectionCountLabel.apply {
-            maximumSize = Dimension(parent?.width ?: 600, Short.MAX_VALUE.toInt())
-            text = when (selectedModsSize) {
-                0 -> " "
-                1 -> buildWrappingText("Selected 1 mod", selectedMods)
-                else -> buildWrappingText("Selected $selectedModsSize mods", selectedMods)
-            }
-        }
-
-        // Force the panel to recalculate its size and layout
-        selectionCountLabel.parent?.invalidate()
-        selectionCountLabel.parent?.revalidate()
-        selectionCountLabel.parent?.repaint()
-    }
-
-    private fun buildWrappingText(prefix: String, selectedMods: List<ModListItem>): String {
-        // Force a fixed width that will cause wrapping regardless of how mods are selected
-        val forcedWidth = (selectionCountLabel.parent?.width ?: 600).coerceAtMost(600)
-
-        return """<html>
-        <body>
-            <div style='width: ${forcedWidth}px; white-space: normal; display: block;'>
-                $prefix: ${
-            selectedMods.joinToString(" | ") { mod ->
-                val color = ColorUtils.getColorForModName(mod.modName)
-                val hexColor = ColorUtils.getHexColor(color)
-                "<span style='color: $hexColor; text-decoration: underline; cursor: pointer'>${mod.modName}</span>"
-            }
-        }
-            </div>
-        </body>
-    </html>"""
-    }
-
-    private fun createStatusPanel() = JPanel(BorderLayout()).apply {
-        val textPanel = JPanel().apply {
-            layout = FlowLayout(FlowLayout.LEFT, 5, 5)
-            add(selectionCountLabel)
-        }
-
-        val scrollPane = JScrollPane(textPanel).apply {
-            border = BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY)
-            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
-            minimumSize = Dimension(100, 40)
-            preferredSize = Dimension(100, 40)
-        }
-
-        add(scrollPane, BorderLayout.CENTER)
-
-        // Add a component listener to handle resize events
-        addComponentListener(object : ComponentAdapter() {
-            override fun componentResized(e: ComponentEvent) {
-                // Force update of the label when panel is resized
-                updateStatusLabels()
-            }
-        })
+        // Update status panel with only selected mods
+        statusPanel.updateStatus(model.getSelectedMods())
     }
 
     private fun createSearchField() = JTextField(20).apply {
@@ -231,6 +160,7 @@ class ModTablePanel : JPanel() {
                     KeyEvent.VK_ENTER -> performSearch()
                 }
             }
+
             override fun keyTyped(e: KeyEvent) {}
             override fun keyReleased(e: KeyEvent) {}
         })
@@ -289,6 +219,36 @@ class ModTablePanel : JPanel() {
 
     private fun createDefaultRenderer() = DefaultTableCellRenderer().apply {
         border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
+    }
+
+    private fun focusOnMod(mod: ModListItem) {
+        logger.debug { "Focusing on mod: ${mod.modName}" }
+        logger.debug { "Clearing the search bar" }
+        clearSearch()
+
+        logger.debug { "Searching for mod in model with ${model.rowCount} total rows" }
+        val modelRow = (0 until model.rowCount).find { row ->
+            val currentMod = model.getModAt(row)
+            logger.trace { "Checking row $row: ${currentMod.modName}" }
+            currentMod == mod
+        }
+
+        if (modelRow == null) {
+            logger.warn { "Could not find mod ${mod.modName} in the model" }
+            return
+        }
+
+        logger.debug { "Found mod at model row: $modelRow" }
+        val viewRow = table.convertRowIndexToView(modelRow)
+        logger.debug { "Converted to view row: $viewRow" }
+
+        logger.debug { "Clearing selection and setting new selection interval" }
+        table.clearSelection()
+        table.setRowSelectionInterval(viewRow, viewRow)
+
+        logger.debug { "Scrolling table to make selected row visible" }
+        val cellRect = table.getCellRect(viewRow, 0, true)
+        table.scrollRectToVisible(cellRect)
     }
 
     private fun setupTableListeners() {
@@ -359,13 +319,13 @@ class ModTablePanel : JPanel() {
     }
 
     private fun createSearchFilter(searchText: String): RowFilter<ModTableModel, Int> {
-        val searchTerms = searchText.toLowerCase().split(" ").filter { it.isNotEmpty() }
+        val searchTerms = searchText.lowercase(Locale.getDefault()).split(" ").filter { it.isNotEmpty() }
 
         return object : RowFilter<ModTableModel, Int>() {
             override fun include(entry: Entry<out ModTableModel, out Int>): Boolean {
                 return searchTerms.all { term ->
                     SEARCH_COLUMNS.any { column ->
-                        entry.getValue(column).toString().toLowerCase().contains(term)
+                        entry.getValue(column).toString().lowercase(Locale.getDefault()).contains(term)
                     }
                 }
             }

@@ -3,7 +3,6 @@ package com.dominions.modmerger.ui.components
 
 import com.dominions.modmerger.ui.model.ModListItem
 import javax.swing.Icon
-import javax.swing.ImageIcon
 import javax.swing.table.AbstractTableModel
 
 class ModTableModel : AbstractTableModel() {

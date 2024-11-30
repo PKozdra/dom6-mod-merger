@@ -3,18 +3,14 @@ package com.dominions.modmerger.ui.components
 
 import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.ui.util.NoWrapEditorKit
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.Font
+import java.awt.*
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 /**
  * A panel that displays log output with configurable log levels and text display options.
@@ -150,9 +146,11 @@ class OutputPanel : JPanel(BorderLayout()) {
                 val fileChooser = JFileChooser().apply {
                     dialogTitle = "Save Log File"
                     fileSelectionMode = JFileChooser.FILES_ONLY
-                    selectedFile = File("mod_merger_log_${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-                    }.log")
+                    selectedFile = File(
+                        "mod_merger_log_${
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                        }.log"
+                    )
                 }
 
                 if (fileChooser.showSaveDialog(this@OutputPanel) == JFileChooser.APPROVE_OPTION) {
@@ -195,7 +193,7 @@ class OutputPanel : JPanel(BorderLayout()) {
         }
 
         private fun createLogLevelButton(level: LogLevel) = JToggleButton().apply {
-            val enabledColor = when(level) {
+            val enabledColor = when (level) {
                 LogLevel.INFO -> Color(200, 255, 200)  // Light green
                 LogLevel.WARN -> Color(255, 240, 200)  // Light orange
                 LogLevel.ERROR -> Color(255, 200, 200) // Light red
@@ -223,7 +221,7 @@ class OutputPanel : JPanel(BorderLayout()) {
                 logLevelButtons.forEach { (level, button) ->
                     button.isSelected = true
                     activeLogLevels.add(level)
-                    button.background = when(level) {
+                    button.background = when (level) {
                         LogLevel.INFO -> Color(200, 255, 200)
                         LogLevel.WARN -> Color(255, 240, 200)
                         LogLevel.ERROR -> Color(255, 200, 200)

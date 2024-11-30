@@ -6,7 +6,6 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import javax.swing.ImageIcon
 
 /**
  * UI model representing a mod file with optimized resource loading and caching.
@@ -34,12 +33,13 @@ data class ModListItem(
     private var cachedFormattedSize: String? = null
 
     // Icon path property needed by the table model
-    val iconPath: String? get() = modFile.iconPath?.let { path ->
-        modFile.file?.parentFile?.let { dir ->
-            val iconFile = File(dir, path)
-            if (iconFile.exists()) iconFile.absolutePath else null
+    val iconPath: String?
+        get() = modFile.iconPath?.let { path ->
+            modFile.file?.parentFile?.let { dir ->
+                val iconFile = File(dir, path)
+                if (iconFile.exists()) iconFile.absolutePath else null
+            }
         }
-    }
 
     // Lazy properties with caching
     val modName: String

@@ -122,7 +122,10 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
                 val conflictingIds = conflict.conflictingIds.map { it.value }.toSet()
 
                 // Record conflicts for both mods
-                arrayOf(modA.modFile.name to modB.modFile.name, modB.modFile.name to modA.modFile.name).forEach { (mod1, mod2) ->
+                arrayOf(
+                    modA.modFile.name to modB.modFile.name,
+                    modB.modFile.name to modA.modFile.name
+                ).forEach { (mod1, mod2) ->
                     conflictsByMod.getOrPut(mod1) { mutableMapOf() }
                         .getOrPut(type) { mutableSetOf() }
                         .addAll(conflictingIds)
@@ -205,7 +208,12 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
         log(LogLevel.DEBUG, "Remapped $type ID $originalId → $newId")
     }
 
-    private fun keepOriginalId(type: EntityType, originalId: Long, mappedDef: MappedModDefinition, stats: MappingStats) {
+    private fun keepOriginalId(
+        type: EntityType,
+        originalId: Long,
+        mappedDef: MappedModDefinition,
+        stats: MappingStats
+    ) {
         mappedDef.addMapping(type, originalId, originalId)
         stats.kept++
         logger.debug { "Kept original $type ID $originalId" }

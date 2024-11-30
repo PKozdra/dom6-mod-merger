@@ -2,6 +2,11 @@
 package com.dominions.modmerger.constants
 
 object GameConstants {
+
+    const val GAME_NAME = "Dominions6"
+    const val GAME_ID = "2511500"
+    const val MOD_FILE_EXTENSION = "dm"
+
     object SpellEffects {
         val SUMMONING_EFFECTS: Set<Long> = setOf(
             1, 21, 31, 37, 38, 43, 50, 54, 62, 89, 93, 119, 126, 130, 137,

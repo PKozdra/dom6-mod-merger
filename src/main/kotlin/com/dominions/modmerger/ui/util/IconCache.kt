@@ -1,15 +1,15 @@
 // src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt
 package com.dominions.modmerger.ui.util
 
+import mu.KotlinLogging
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
 import java.lang.ref.SoftReference
+import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 import javax.swing.Icon
 import javax.swing.ImageIcon
-import java.util.concurrent.ConcurrentHashMap
-import mu.KotlinLogging
 
 object IconCache {
     private val logger = KotlinLogging.logger {}

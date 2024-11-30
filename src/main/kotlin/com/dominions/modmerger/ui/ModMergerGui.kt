@@ -6,10 +6,13 @@ import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.LogListener
 import com.dominions.modmerger.infrastructure.FileSystem
+import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.ui.components.ModTablePanel
 import com.dominions.modmerger.ui.components.OutputPanel
 import mu.KotlinLogging
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.FlowLayout
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.prefs.Preferences
@@ -23,6 +26,7 @@ import javax.swing.border.EmptyBorder
 class ModMergerGui(
     modMergerService: ModMergerService,
     fileSystem: FileSystem,
+    gamePathsManager: GamePathsManager,
     private val logDispatcher: LogDispatcher
 ) : LogListener {
     private val logger = KotlinLogging.logger {}
@@ -35,7 +39,7 @@ class ModMergerGui(
 
     private val modTable = ModTablePanel()
     private val outputPanel = OutputPanel()
-    private val controller = ModMergerController(modMergerService, fileSystem, logDispatcher)
+    private val controller = ModMergerController(modMergerService, fileSystem, gamePathsManager, logDispatcher)
 
     // UI Components
     private val mergeButton = JButton("Merge Selected Mods")

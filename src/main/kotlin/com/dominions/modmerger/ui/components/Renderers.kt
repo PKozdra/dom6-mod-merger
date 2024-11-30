@@ -1,11 +1,6 @@
 package com.dominions.modmerger.ui.components
 
-import mu.KotlinLogging
-import java.awt.*
-import java.awt.image.BufferedImage
-import java.io.File
-import java.util.*
-import javax.imageio.ImageIO
+import java.awt.Component
 import javax.swing.*
 import javax.swing.table.TableCellRenderer
 

@@ -8,6 +8,7 @@ import com.dominions.modmerger.core.scanning.DefaultModScanner
 import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.infrastructure.FileSystem
+import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.formdev.flatlaf.FlatLightLaf
 import javax.swing.UIManager
 
@@ -45,9 +46,11 @@ fun main(args: Array<String>) {
 
     val modMergerService = ModMergerService(modParser, scanner, mapper, writer, fileSystem, logDispatcher)
 
+    val GamePathsManager = GamePathsManager()
+
     val application = if (useGui) {
         FlatLightLaf.setup()
-        GuiApplication(modMergerService, fileSystem, logDispatcher)
+        GuiApplication(modMergerService, fileSystem, GamePathsManager, logDispatcher)
     } else {
         ConsoleApplication(modMergerService, fileSystem)
     }

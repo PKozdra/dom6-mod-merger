@@ -1,7 +1,7 @@
 package com.dominions.modmerger
 
-import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.core.ModMergerService
+import com.dominions.modmerger.infrastructure.FileSystem
 import mu.KLogger
 import mu.KotlinLogging
 

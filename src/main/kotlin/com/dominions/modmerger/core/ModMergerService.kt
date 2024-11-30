@@ -11,8 +11,6 @@ import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.FileSystem
-import mu.KLogger
-import mu.KotlinLogging
 
 class ModMergerService(
     private val parser: ModParser,

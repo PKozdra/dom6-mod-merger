@@ -3,16 +3,14 @@ package com.dominions.modmerger.ui.components
 import com.dominions.modmerger.ui.model.ModListItem
 import mu.KotlinLogging
 import java.awt.Desktop
-import java.awt.Point
-import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.io.File
 import java.net.URI
 import java.util.regex.Pattern
-import javax.swing.*
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
+import javax.swing.JTable
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
-import javax.swing.SwingUtilities
 
 class ModContextMenu(
     private val table: JTable,
