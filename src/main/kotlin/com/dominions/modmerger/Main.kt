@@ -39,9 +39,9 @@ fun main(args: Array<String>) {
         lineTypeDetector = lineTypeDetector
     )
     val scanner = DefaultModScanner(modParser)
-    val mapper = IdMapper(emptyMap())
     val writer = ModWriter(fileSystem)
     val logDispatcher = LogDispatcher()
+    val mapper = IdMapper(logDispatcher)
 
     val modMergerService = ModMergerService(modParser, scanner, mapper, writer, fileSystem, logDispatcher)
 

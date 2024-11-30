@@ -41,13 +41,13 @@ class ModMergerService(
 
             log(LogLevel.INFO, "Mapping IDs...")
             val mappedDefinitions = mapper.createMappings(modDefinitions)
-            log(LogLevel.INFO, "Finished mapping IDs. Total mapped definitions: ${mappedDefinitions.size}")
+            log(LogLevel.INFO, "Finished mapping IDs.")
 
             log(LogLevel.INFO, "Generating merged mod...")
             val warnings = writer.writeMergedMod(mappedDefinitions)
 
             val outputPath = fileSystem.getOutputFile().absolutePath
-            log(LogLevel.INFO, "Merged mod generated at: $outputPath")
+            log(LogLevel.INFO, "Merged mod saved to: $outputPath")
 
             MergeResult.Success(warnings)
         } catch (e: Exception) {

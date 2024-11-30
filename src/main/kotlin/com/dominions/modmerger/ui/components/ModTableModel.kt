@@ -44,17 +44,29 @@ class ModTableModel : AbstractTableModel() {
         }
     }
 
+    fun setSelectedRows(rows: List<Int>, selected: Boolean) {
+        rows.forEach { row ->
+            if (row >= 0 && row < mods.size) {
+                mods[row] = mods[row].copy(isSelected = selected)
+                fireTableCellUpdated(row, TableColumn.SELECTED.ordinal)
+            }
+        }
+    }
+
+    fun getSelectedCount(): Int = mods.count { it.isSelected }
+
+
     override fun getRowCount(): Int = mods.size
     override fun getColumnCount(): Int = columns.size
     override fun getColumnName(column: Int): String = TableColumn.fromIndex(column).displayName
     override fun getColumnClass(column: Int): Class<*> = TableColumn.fromIndex(column).type
     override fun isCellEditable(row: Int, column: Int): Boolean = column == TableColumn.SELECTED.ordinal
 
-    override fun getValueAt(row: Int, column: Int): Any {
+    override fun getValueAt(row: Int, column: Int): Comparable<*>? {
         val mod = mods[row]
         return when (TableColumn.fromIndex(column)) {
             TableColumn.SELECTED -> mod.isSelected
-            TableColumn.ICON -> mod.icon ?: ImageIcon()
+            TableColumn.ICON -> mod.iconPath
             TableColumn.NAME -> mod.modName
             TableColumn.FILENAME -> mod.fileName
             TableColumn.SIZE -> mod.size
@@ -62,10 +74,12 @@ class ModTableModel : AbstractTableModel() {
         }
     }
 
-    override fun setValueAt(value: Any, row: Int, column: Int) {
+    override fun setValueAt(value: Any?, row: Int, column: Int) {
         if (column == TableColumn.SELECTED.ordinal && value is Boolean) {
             mods[row] = mods[row].copy(isSelected = value)
             fireTableCellUpdated(row, column)
         }
     }
+
+    fun getModAt(row: Int): ModListItem = mods[row]
 }

@@ -16,6 +16,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
     implementation("com.formdev:flatlaf:3.4")
+    implementation ("com.twelvemonkeys.imageio:imageio-tga:3.12.0")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.12")

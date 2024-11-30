@@ -1,6 +1,7 @@
 package com.dominions.modmerger.ui.model
 
 import com.dominions.modmerger.domain.ModFile
+import mu.KotlinLogging
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -8,14 +9,15 @@ import java.time.format.DateTimeFormatter
 import javax.swing.ImageIcon
 
 /**
- * UI model representing a mod file with its metadata and display properties.
- * Leverages lazy loading from ModFile for efficient resource usage.
+ * UI model representing a mod file with optimized resource loading and caching.
  */
 data class ModListItem(
     val modFile: ModFile,
     var isSelected: Boolean = false
 ) {
-    // File system properties - eagerly loaded as they're lightweight
+    private val logger = KotlinLogging.logger {}
+
+    // Eagerly loaded properties
     val fileName: String = modFile.file?.name ?: "Unknown"
     val absolutePath: String = modFile.file?.absolutePath ?: "Unknown"
     val size: Long = modFile.file?.length() ?: 0L
@@ -26,43 +28,40 @@ data class ModListItem(
         )
     } ?: LocalDateTime.now()
 
-    // Metadata properties - delegated to ModFile's lazy loading implementation
-    val modName: String get() = modFile.modName
-    val description: String get() = modFile.description
-    val version: String get() = modFile.version
+    // Cached properties
+    private var cachedModName: String? = null
+    private var cachedFormattedDate: String? = null
+    private var cachedFormattedSize: String? = null
 
-    // Icon is lazy loaded only when needed
-    val icon: ImageIcon? by lazy {
-        modFile.iconPath?.let { path ->
-            modFile.file?.parentFile?.let { dir ->
-                val iconFile = File(dir, path)
-                if (iconFile.exists()) ImageIcon(iconFile.absolutePath) else null
-            }
+    // Icon path property needed by the table model
+    val iconPath: String? get() = modFile.iconPath?.let { path ->
+        modFile.file?.parentFile?.let { dir ->
+            val iconFile = File(dir, path)
+            if (iconFile.exists()) iconFile.absolutePath else null
         }
     }
 
-    /**
-     * Returns a human-readable formatted file size.
-     */
-    fun getFormattedSize(): String = when {
+    // Lazy properties with caching
+    val modName: String
+        get() = cachedModName ?: modFile.modName.also { cachedModName = it }
+
+    fun getFormattedDate(): String = cachedFormattedDate ?: lastModified
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        .also { cachedFormattedDate = it }
+
+    fun getFormattedSize(): String = cachedFormattedSize ?: when {
         size < 1024 -> "$size B"
         size < 1024 * 1024 -> "${size / 1024} KB"
         else -> String.format("%.2f MB", size / (1024.0 * 1024.0))
-    }
+    }.also { cachedFormattedSize = it }
 
-    /**
-     * Returns a formatted date string for the last modified timestamp.
-     */
-    fun getFormattedDate(): String = lastModified.format(
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    // This is needed for copying with new selection state
+    fun copy(isSelected: Boolean = this.isSelected) = ModListItem(
+        modFile = this.modFile,
+        isSelected = isSelected
     )
 
     companion object {
-        /**
-         * Creates a ModListItem from a File, handling the ModFile creation internally.
-         */
-        fun fromFile(file: File): ModListItem = ModListItem(
-            modFile = ModFile.fromFile(file)
-        )
+        fun fromFile(file: File): ModListItem = ModListItem(ModFile.fromFile(file))
     }
 }

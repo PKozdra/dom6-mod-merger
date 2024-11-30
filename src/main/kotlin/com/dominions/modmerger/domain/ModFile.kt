@@ -1,7 +1,9 @@
+// src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt
 package com.dominions.modmerger.domain
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import mu.KotlinLogging
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -15,7 +17,8 @@ class ModFile(
     val name: String,
     private val contentProvider: () -> String
 ) {
-    private val logger = mu.KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
+
     private var metadata: ModMetadata? by Delegates.observable(null) { _, _, newValue ->
         logger.debug { "Metadata loaded for mod: $name" }
     }
@@ -50,15 +53,22 @@ class ModFile(
 
     private fun parseMetadata(content: String): ModMetadata {
         val lines = content.lines()
+        val modNameLine = lines.firstOrNull { it.trim().startsWith("#modname") }
+        val descriptionLine = lines.firstOrNull { it.trim().startsWith("#description") }
+        val versionLine = lines.firstOrNull { it.trim().startsWith("#version") }
+        val iconPathLine = lines.firstOrNull { it.trim().startsWith("#icon") }
+
+        logger.debug { "Parsing metadata for mod: $name" }
+        logger.debug { "Found modName line: $modNameLine" }
+        logger.debug { "Found description line: $descriptionLine" }
+        logger.debug { "Found version line: $versionLine" }
+        logger.debug { "Found iconPath line: $iconPathLine" }
+
         return ModMetadata(
-            modName = lines.firstOrNull { it.trim().startsWith("#modname") }
-                ?.substringAfter("\"")?.removeSuffix("\""),
-            description = lines.firstOrNull { it.trim().startsWith("#description") }
-                ?.substringAfter("\"")?.removeSuffix("\""),
-            version = lines.firstOrNull { it.trim().startsWith("#version") }
-                ?.substringAfter("\"")?.removeSuffix("\""),
-            iconPath = lines.firstOrNull { it.trim().startsWith("#icon") }
-                ?.substringAfter("\"")?.removeSuffix("\"")
+            modName = modNameLine?.substringAfter("\"")?.removeSuffix("\""),
+            description = descriptionLine?.substringAfter("\"")?.removeSuffix("\""),
+            version = versionLine?.substringAfter("\"")?.removeSuffix("\""),
+            iconPath = iconPathLine?.substringAfter("\"")?.removeSuffix("\"")
         )
     }
 
