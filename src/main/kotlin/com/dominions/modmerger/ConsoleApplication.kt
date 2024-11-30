@@ -167,6 +167,12 @@ class ConsoleApplication(
 
                     is MergeWarning.ImplicitId ->
                         "Implicit ID used in ${warning.modFile.name} for ${warning.entityType}"
+
+                    is MergeWarning.ConflictWarning -> TODO()
+                    is MergeWarning.ContentWarning -> TODO()
+                    is MergeWarning.GeneralWarning -> TODO()
+                    is MergeWarning.ResourceWarning -> TODO()
+                    is MergeWarning.ValidationWarning -> TODO()
                 }
                 logger.warn("Warning during merge: $warningMessage")
                 println(warningMessage)

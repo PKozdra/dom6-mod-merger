@@ -1,4 +1,4 @@
-package com.dominions.modmerger.test
+package com.dominions.modmerger
 
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
@@ -6,27 +6,36 @@ import com.dominions.modmerger.core.parsing.*
 import com.dominions.modmerger.core.scanning.DefaultModScanner
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModWriter
-import com.dominions.modmerger.domain.EntityType
-import com.dominions.modmerger.domain.ModDefinition
-import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.infrastructure.FileSystem
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ModMergerTest {
+    @TempDir
+    lateinit var tempDir: File
+
     private lateinit var parser: ModParser
     private lateinit var scanner: ModScanner
     private lateinit var mapper: IdMapper
     private lateinit var writer: ModWriter
+    private lateinit var fileSystem: FileSystem
+    private lateinit var logDispatcher: LogDispatcher
     private lateinit var service: ModMergerService
 
     private lateinit var mod1: ModFile
     private lateinit var mod2: ModFile
     private lateinit var modDefinitions: Map<String, ModDefinition>
+
+    // Capture log messages for testing
+    private val logMessages = mutableListOf<Pair<LogLevel, String>>()
 
     @BeforeEach
     fun setup() {
@@ -37,7 +46,23 @@ class ModMergerTest {
         val eventParser = EventParser()
         parser = ModParser(spellBlockParser, entityParser, eventParser, lineTypeDetector)
         scanner = DefaultModScanner(parser)
-        writer = ModWriter()
+
+        // Initialize FileSystem with temp directory
+        fileSystem = FileSystem(
+            outputDir = tempDir.absolutePath,
+            outputFileName = "test_output"
+        )
+
+        writer = ModWriter(fileSystem)
+
+        // Initialize LogDispatcher with test listener
+        logDispatcher = LogDispatcher().apply {
+            addListener(object : LogListener {
+                override fun onLogMessage(level: LogLevel, message: String) {
+                    logMessages.add(level to message)
+                }
+            })
+        }
 
         // Create test mod files
         val mod1Content = """
@@ -74,6 +99,10 @@ class ModMergerTest {
             #end
         """.trimIndent()
 
+        // Create actual files in temp directory for testing
+        File(tempDir, "test_mod_1.dm").writeText(mod1Content)
+        File(tempDir, "test_mod_2.dm").writeText(mod2Content)
+
         mod1 = ModFile.fromContent("test_mod_1", mod1Content)
         mod2 = ModFile.fromContent("test_mod_2", mod2Content)
 
@@ -86,10 +115,10 @@ class ModMergerTest {
         )
 
         // Initialize mapper with definitions
-        mapper = IdMapper(modDefinitions)
+        mapper = IdMapper(logDispatcher)
 
         // Initialize service with all components
-        service = ModMergerService(parser, scanner, mapper, writer)
+        service = ModMergerService(parser, scanner, mapper, writer, fileSystem, logDispatcher)
     }
 
     @Test
@@ -105,6 +134,24 @@ class ModMergerTest {
         assertEquals("test_mod_2", modDef2.name)
         assertTrue(modDef2.getDefinition(EntityType.MONSTER).definedIds.contains(5000))
         assertTrue(modDef2.getDefinition(EntityType.MONSTER).definedIds.contains(5001))
+    }
+
+    @Test
+    fun `test file system operations`() {
+        val testContent = "Test content"
+        val testFile = File(tempDir, "test.dm")
+
+        fileSystem.writeFile(testFile.absolutePath, testContent)
+        assertTrue(testFile.exists())
+        assertEquals(testContent, testFile.readText())
+    }
+
+    @Test
+    fun `test logging system`() {
+        logDispatcher.log(LogLevel.INFO, "Test message")
+
+        assertTrue(logMessages.isNotEmpty())
+        assertEquals(LogLevel.INFO to "Test message", logMessages.last())
     }
 
     @Test

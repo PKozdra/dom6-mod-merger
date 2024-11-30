@@ -6,17 +6,14 @@ import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModWriter
-import com.dominions.modmerger.domain.EntityType
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
-import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.domain.*
 import com.dominions.modmerger.infrastructure.FileSystem
 
 class ModMergerService(
-    private val parser: ModParser,
     private val scanner: ModScanner,
     private val mapper: IdMapper,
     private val writer: ModWriter,
+    private val config: ModOutputConfig,
     private val fileSystem: FileSystem,
     private val logDispatcher: LogDispatcher
 ) {
@@ -42,9 +39,9 @@ class ModMergerService(
             log(LogLevel.INFO, "Finished mapping IDs.")
 
             log(LogLevel.INFO, "Generating merged mod...")
-            val warnings = writer.writeMergedMod(mappedDefinitions)
+            val warnings = writer.writeMergedMod(mappedDefinitions, config)
 
-            val outputPath = fileSystem.getOutputFile().absolutePath
+            val outputPath = fileSystem.getOutputFile(config.modName).absolutePath
             log(LogLevel.INFO, "Merged mod saved to: $outputPath")
 
             MergeResult.Success(warnings)

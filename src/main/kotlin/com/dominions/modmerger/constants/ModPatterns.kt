@@ -2,17 +2,16 @@
 package com.dominions.modmerger.constants
 
 object ModPatterns {
-    // Core patterns
-    val MOD_NAME = Regex("""#modname\s+"([^"]+)"""")
-    val END = Regex("""#end""")
+    // Core patterns with precise whitespace handling
+    val MOD_NAME = Regex("""^[ \t]*#modname[ \t]+"([^"]+)".*$""")
+    val END = Regex("""^[ \t]*#end""")
 
-    // Mod info patterns
-    val MOD_DESCRIPTION_LINE = Regex("""#description\s+"[^"]*"""")
-    val MOD_DESCRIPTION_START = Regex("""#description""")
-    val MOD_DESCRIPTION_STOP = Regex(""""""")
-    val MOD_ICON_LINE = Regex("""#icon""")
-    val MOD_VERSION_LINE = Regex("""#version""")
-    val MOD_DOMVERSION_LINE = Regex("""#domversion""")
+    // Mod info patterns with precise whitespace handling
+    val MOD_DESCRIPTION_LINE = Regex("""^[ \t]*#description[ \t]+"[^"]*".*$""")  // Complete description with quotes
+    val MOD_DESCRIPTION_START = Regex("""^[ \t]*#description.*$""")              // Any description line
+    val MOD_ICON_LINE = Regex("""^[ \t]*#icon[ \t]+.*$""")
+    val MOD_VERSION_LINE = Regex("""^[ \t]*#version[ \t]+.*$""")
+    val MOD_DOMVERSION_LINE = Regex("""^[ \t]*#domversion[ \t]+.*$""")
 
     // Spell patterns
     val SPELL_BLOCK_START = Regex("""#(newspell|selectspell)""")

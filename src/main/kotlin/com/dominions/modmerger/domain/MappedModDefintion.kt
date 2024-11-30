@@ -1,4 +1,4 @@
-// src/main/kotlin/com/dominions/modmerger/domain/ModMapping.kt
+// src/main/kotlin/com/dominions/modmerger/domain/MappedModDefintion.kt
 package com.dominions.modmerger.domain
 
 data class ModMapping(

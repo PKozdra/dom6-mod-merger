@@ -4,9 +4,14 @@ package com.dominions.modmerger
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.*
+import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.scanning.DefaultModScanner
+import com.dominions.modmerger.core.writing.ModContentWriter
+import com.dominions.modmerger.core.writing.ModHeaderWriter
+import com.dominions.modmerger.core.writing.ModResourceCopier
 import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.domain.LogDispatcher
+import com.dominions.modmerger.domain.ModOutputConfig
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.formdev.flatlaf.FlatLightLaf
@@ -27,11 +32,15 @@ fun main(args: Array<String>) {
         }
     }
 
-    val fileSystem = FileSystem()
+    val gamePathsManager = GamePathsManager()
+    val fileSystem = FileSystem(gamePathsManager)
+
     val lineTypeDetector = LineTypeDetector()
     val spellBlockParser = SpellBlockParser()
     val entityParser = EntityParser()
     val eventParser = EventParser()
+
+    val entityProcessor = EntityProcessor()
 
     val modParser = ModParser(
         spellBlockParser = spellBlockParser,
@@ -39,18 +48,50 @@ fun main(args: Array<String>) {
         eventParser = eventParser,
         lineTypeDetector = lineTypeDetector
     )
-    val scanner = DefaultModScanner(modParser)
-    val writer = ModWriter(fileSystem)
+
     val logDispatcher = LogDispatcher()
+
     val mapper = IdMapper(logDispatcher)
+    val scanner = DefaultModScanner(modParser)
 
-    val modMergerService = ModMergerService(modParser, scanner, mapper, writer, fileSystem, logDispatcher)
+    val contentWriter = ModContentWriter(
+        entityProcessor = entityProcessor,
+        logDispatcher = logDispatcher
+    )
 
-    val GamePathsManager = GamePathsManager()
+    val resourceCopier = ModResourceCopier(
+        logDispatcher = logDispatcher
+    )
+
+    val headerWriter = ModHeaderWriter(
+        logDispatcher = logDispatcher
+    )
+
+    val writer = ModWriter(
+        fileSystem = fileSystem,
+        logDispatcher = logDispatcher,
+        contentWriter = contentWriter,
+        resourceCopier = resourceCopier,
+        headerWriter = headerWriter
+    )
+
+    val modOutputConfig = ModOutputConfig(
+        modName = "merged_mod",
+        gamePathsManager = gamePathsManager
+    )
+
+    val modMergerService = ModMergerService(
+        scanner = scanner,
+        mapper = mapper,
+        writer = writer,
+        config = modOutputConfig,
+        fileSystem = fileSystem,
+        logDispatcher = logDispatcher
+    )
 
     val application = if (useGui) {
         FlatLightLaf.setup()
-        GuiApplication(modMergerService, fileSystem, GamePathsManager, logDispatcher)
+        GuiApplication(modMergerService, fileSystem, gamePathsManager, logDispatcher)
     } else {
         ConsoleApplication(modMergerService, fileSystem)
     }
