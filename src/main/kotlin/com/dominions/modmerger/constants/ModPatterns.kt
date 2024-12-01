@@ -13,6 +13,10 @@ object ModPatterns {
     val MOD_VERSION_LINE = Regex("""^[ \t]*#version[ \t]+.*$""")
     val MOD_DOMVERSION_LINE = Regex("""^[ \t]*#domversion[ \t]+.*$""")
 
+    val USE_NUMBERED_SPELL = Regex(
+        """#(?:selectspell|copyspell|nextspell)\s+(\d+)(.*)$"""
+    )
+
     // Spell patterns
     val SPELL_BLOCK_START = Regex("""#(newspell|selectspell)""")
     val SPELL_EFFECT = Regex("""#effect\s+([-]?\d+)(.*)$""")

@@ -3,7 +3,7 @@ package com.dominions.modmerger.ui
 
 import com.dominions.modmerger.MergeResult
 import com.dominions.modmerger.constants.GameConstants
-import com.dominions.modmerger.core.ModMergerService
+import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.domain.*
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
@@ -16,7 +16,7 @@ import java.io.File
 import javax.swing.SwingUtilities
 
 class ModMergerController(
-    private val modMergerService: ModMergerService,
+    private val modMergerService: ModMerger,
     private val fileSystem: FileSystem,
     private val gamePathsManager: GamePathsManager,
     private val logDispatcher: LogDispatcher
@@ -77,7 +77,7 @@ class ModMergerController(
         coroutineScope.launch {
             try {
                 logDispatcher.log(LogLevel.INFO, "Processing mods: ${mods.joinToString { it.name }}")
-                val result = modMergerService.processMods(mods)
+                val result = modMergerService.mergeMods(mods)
                 SwingUtilities.invokeLater {
                     when (result) {
                         is MergeResult.Success -> {

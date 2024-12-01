@@ -3,7 +3,6 @@ package com.dominions.modmerger.core
 
 import com.dominions.modmerger.MergeResult
 import com.dominions.modmerger.core.mapping.IdMapper
-import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.domain.*
@@ -16,9 +15,8 @@ class ModMergerService(
     private val config: ModOutputConfig,
     private val fileSystem: FileSystem,
     private val logDispatcher: LogDispatcher
-) {
-
-    suspend fun processMods(modFiles: List<ModFile>): MergeResult {
+) : ModMerger {
+    override suspend fun mergeMods(modFiles: List<ModFile>): MergeResult {
         return try {
             log(LogLevel.INFO, "Scanning mod files...")
             val modDefinitions = scanner.scanMods(modFiles)

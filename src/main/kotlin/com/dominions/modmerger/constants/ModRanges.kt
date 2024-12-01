@@ -15,10 +15,14 @@ object ModRanges {
         const val SITE_END: Long = 1699L
         const val NATION_END: Long = 149L
         const val POPTYPE_END: Long = 124L
+        const val RESTRICTED_ITEM_END: Long = 0L  // No vanilla restricted items
+        const val EVENTCODE_END: Long = 0L  // 0 is default/reset code
     }
 
     object Modding {
-        const val EVENTCODE_START: Long = 1L
+        // Event codes are negative and from -300 to -5000
+        const val EVENTCODE_START: Long = -5000L
+        const val EVENTCODE_END: Long = -300L
 
         // Weapons
         const val WEAPON_START: Long = Vanilla.WEAPON_END + 1  // 1000
@@ -63,6 +67,10 @@ object ModRanges {
         // MONTAG
         const val MONTAG_START: Long = 1000L
         const val MONTAG_END: Long = 100000L
+
+        // Restricted items from 1 to 10000
+        const val RESTRICTED_ITEM_START: Long = 1L
+        const val RESTRICTED_ITEM_END: Long = 10000L
     }
 
     // Utility functions to check ranges
@@ -78,6 +86,9 @@ object ModRanges {
             EntityType.NAME_TYPE -> id <= Vanilla.NAMETYPE_END
             EntityType.ENCHANTMENT -> id <= Vanilla.ENCHANTMENT_END
             EntityType.MONTAG -> id in Modding.MONTAG_START..Modding.MONTAG_END
+            EntityType.EVENT_CODE -> id == 0L  // Only 0 is vanilla
+            EntityType.POPTYPE -> id <= Vanilla.POPTYPE_END
+            EntityType.RESTRICTED_ITEM -> false  // No vanilla restricted items
             else -> false
         }
 
@@ -92,6 +103,9 @@ object ModRanges {
             EntityType.NAME_TYPE -> id in Modding.NAMETYPE_START..Modding.NAMETYPE_END
             EntityType.ENCHANTMENT -> id in Modding.ENCHANTMENT_START..Modding.ENCHANTMENT_END
             EntityType.MONTAG -> id in Modding.MONTAG_START..Modding.MONTAG_END
+            EntityType.EVENT_CODE -> id in Modding.EVENTCODE_START..Modding.EVENTCODE_END
+            EntityType.POPTYPE -> id in Modding.POPTYPE_START..Modding.POPTYPE_END
+            EntityType.RESTRICTED_ITEM -> id in Modding.RESTRICTED_ITEM_START..Modding.RESTRICTED_ITEM_END
             else -> false
         }
     }

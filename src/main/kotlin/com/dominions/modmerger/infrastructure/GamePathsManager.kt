@@ -7,10 +7,10 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class GamePathsManager {
+open class GamePathsManager {
     private val logger = KotlinLogging.logger {}
 
-    fun findSteamModPath(): File? {
+    open fun findSteamModPath(): File? {
         logger.debug { "Searching for Steam workshop path" }
         return findSteamInstallation()?.let { steamPath ->
             File(steamPath, "steamapps/workshop/content/${GameConstants.GAME_ID}")
@@ -21,7 +21,7 @@ class GamePathsManager {
         }
     }
 
-    fun getLocalModPath(): File {
+    open fun getLocalModPath(): File {
         val path = when {
             System.getProperty("os.name").contains("Windows") -> {
                 val appData = System.getenv("APPDATA")

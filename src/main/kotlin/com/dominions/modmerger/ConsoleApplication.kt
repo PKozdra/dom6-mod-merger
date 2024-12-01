@@ -100,7 +100,7 @@ class ConsoleApplication(
                     }
 
                     processMergeResult(
-                        modMergerService.processMods(modFiles)
+                        modMergerService.mergeMods(modFiles)
                     )
                 }
             }

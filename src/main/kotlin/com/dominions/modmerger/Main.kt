@@ -5,7 +5,7 @@ import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.*
 import com.dominions.modmerger.core.processing.EntityProcessor
-import com.dominions.modmerger.core.scanning.DefaultModScanner
+import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModContentWriter
 import com.dominions.modmerger.core.writing.ModHeaderWriter
 import com.dominions.modmerger.core.writing.ModResourceCopier
@@ -35,12 +35,14 @@ fun main(args: Array<String>) {
     val gamePathsManager = GamePathsManager()
     val fileSystem = FileSystem(gamePathsManager)
 
-    val lineTypeDetector = LineTypeDetector()
+    val entityProcessor = EntityProcessor()
+
+    val lineTypeDetector = LineTypeDetector(entityProcessor)
     val spellBlockParser = SpellBlockParser()
     val entityParser = EntityParser()
     val eventParser = EventParser()
 
-    val entityProcessor = EntityProcessor()
+
 
     val modParser = ModParser(
         spellBlockParser = spellBlockParser,
@@ -52,7 +54,7 @@ fun main(args: Array<String>) {
     val logDispatcher = LogDispatcher()
 
     val mapper = IdMapper(logDispatcher)
-    val scanner = DefaultModScanner(modParser)
+    val scanner = ModScanner(modParser)
 
     val contentWriter = ModContentWriter(
         entityProcessor = entityProcessor,

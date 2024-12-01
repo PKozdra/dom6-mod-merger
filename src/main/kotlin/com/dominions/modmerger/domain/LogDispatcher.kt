@@ -1,6 +1,6 @@
 package com.dominions.modmerger.domain
 
-class LogDispatcher {
+open class LogDispatcher {
     private val listeners = mutableListOf<LogListener>()
 
     fun addListener(listener: LogListener) {
@@ -11,7 +11,7 @@ class LogDispatcher {
         listeners.remove(listener)
     }
 
-    fun log(level: LogLevel, message: String) {
+    open fun log(level: LogLevel, message: String) {
         listeners.forEach { it.onLogMessage(level, message) }
     }
 }

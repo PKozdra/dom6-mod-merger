@@ -5,7 +5,7 @@ import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.domain.EntityType
 
 class LineTypeDetector(
-    private val entityProcessor: EntityProcessor = EntityProcessor()
+    private val entityProcessor: EntityProcessor
 ) {
     fun detectLineType(line: String, context: ParsingContext): LineType = when {
         line.matches(ModPatterns.MOD_NAME) -> LineType.MOD_NAME

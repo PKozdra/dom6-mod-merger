@@ -29,7 +29,11 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
             idGenerators[EntityType.NATION] = IdGenerator(NATION_START..NATION_END, "Nation")
             idGenerators[EntityType.NAME_TYPE] = IdGenerator(NAMETYPE_START..NAMETYPE_END, "Name Type")
             idGenerators[EntityType.ENCHANTMENT] = IdGenerator(ENCHANTMENT_START..ENCHANTMENT_END, "Enchantment")
-            idGenerators[EntityType.MONTAG] = IdGenerator(MONTAG_START..MONTAG_END, "MonTag")
+            idGenerators[EntityType.MONTAG] = IdGenerator(MONTAG_START..MONTAG_END, "Montag")
+            // Add these missing generators
+            idGenerators[EntityType.EVENT_CODE] = IdGenerator(EVENTCODE_START..EVENTCODE_END, "Event Code")
+            idGenerators[EntityType.POPTYPE] = IdGenerator(POPTYPE_START..POPTYPE_END, "Pop Type")
+            idGenerators[EntityType.RESTRICTED_ITEM] = IdGenerator(RESTRICTED_ITEM_START..RESTRICTED_ITEM_END, "Restricted Item")
         }
         log(LogLevel.DEBUG, "Initialized ID generators for: ${idGenerators.keys.joinToString()}")
     }

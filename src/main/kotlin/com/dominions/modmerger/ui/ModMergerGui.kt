@@ -1,7 +1,7 @@
 // src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt
 package com.dominions.modmerger.ui
 
-import com.dominions.modmerger.core.ModMergerService
+import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.LogListener
@@ -24,7 +24,7 @@ import javax.swing.border.EmptyBorder
  * Provides interface for mod selection, merging, and output monitoring.
  */
 class ModMergerGui(
-    modMergerService: ModMergerService,
+    modMerger: ModMerger,
     fileSystem: FileSystem,
     gamePathsManager: GamePathsManager,
     private val logDispatcher: LogDispatcher
@@ -39,7 +39,7 @@ class ModMergerGui(
 
     private val modTable = ModTablePanel()
     private val outputPanel = OutputPanel()
-    private val controller = ModMergerController(modMergerService, fileSystem, gamePathsManager, logDispatcher)
+    private val controller = ModMergerController(modMerger, fileSystem, gamePathsManager, logDispatcher)
 
     // UI Components
     private val mergeButton = JButton("Merge Selected Mods")
