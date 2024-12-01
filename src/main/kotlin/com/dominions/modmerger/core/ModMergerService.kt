@@ -23,17 +23,32 @@ class ModMergerService(
             log(LogLevel.INFO, "Finished scanning mods. Total mods scanned: ${modDefinitions.size}")
 
             modDefinitions.forEach { (name, def) ->
-                EntityType.entries.forEach { type ->
-                    val ids = def.getDefinition(type).definedIds
+                val allDefs = def.getAllDefinitions()
+                allDefs.forEach { (type, ids) ->
                     if (ids.isNotEmpty()) {
                         log(LogLevel.INFO, "Mod $name contains ${ids.size} $type definitions.")
-                        log(LogLevel.DEBUG, "$type definitions in $name: $ids")
+                        log(LogLevel.DEBUG, "$type definitions in $name: ${ids.joinToString()}")
                     }
                 }
             }
 
             log(LogLevel.INFO, "Mapping IDs...")
             val mappedDefinitions = mapper.createMappings(modDefinitions)
+
+            // In ModMergerService
+            mappedDefinitions.forEach { (name, mapped) ->
+                val mappingsByType = mapped.getMappingsByType()
+                mappingsByType.forEach { (type, typeMapping) ->
+                    val changedMappings = typeMapping.entries
+                        .filter { (original, new) -> original != new }
+                        .joinToString { (original, new) -> "$original→$new" }
+
+                    if (changedMappings.isNotEmpty()) {
+                        log(LogLevel.DEBUG, "Mappings for $type in $name: $changedMappings")
+                    }
+                }
+            }
+
             log(LogLevel.INFO, "Finished mapping IDs.")
 
             log(LogLevel.INFO, "Generating merged mod...")

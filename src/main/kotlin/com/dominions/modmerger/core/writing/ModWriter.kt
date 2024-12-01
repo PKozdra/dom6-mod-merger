@@ -42,7 +42,7 @@ class ModWriter(
 
             // Get properly structured output file
             val outputFile = fileSystem.getOutputFile(config.modName)
-            log(LogLevel.INFO, "Writing merged mod to: ${outputFile.absolutePath}")
+            //log(LogLevel.INFO, "Writing merged mod to: ${outputFile.absolutePath}")
 
             outputFile.bufferedWriter().use { writer ->
                 // Write header
@@ -59,7 +59,7 @@ class ModWriter(
             val resourceWarnings = resourceCopier.copyModResources(config, mappedDefinitions)
             warnings.addAll(resourceWarnings)
 
-            log(LogLevel.INFO, "Successfully wrote merged mod")
+            //log(LogLevel.INFO, "Successfully wrote merged mod")
             return warnings
 
         } catch (e: Exception) {

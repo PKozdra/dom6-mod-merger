@@ -44,7 +44,7 @@ class ModContentWriter(
             }
 
             writer.write("\n-- End merged content\n")
-            log(LogLevel.INFO, "Successfully processed mod content")
+            log(LogLevel.DEBUG, "Successfully wrote mod content")
 
         } catch (e: Exception) {
             val errorMsg = "Failed to process mod content: ${e.message}"

@@ -37,18 +37,8 @@ fun main(args: Array<String>) {
 
     val entityProcessor = EntityProcessor()
 
-    val lineTypeDetector = LineTypeDetector(entityProcessor)
-    val spellBlockParser = SpellBlockParser()
-    val entityParser = EntityParser()
-    val eventParser = EventParser()
-
-
-
     val modParser = ModParser(
-        spellBlockParser = spellBlockParser,
-        entityParser = entityParser,
-        eventParser = eventParser,
-        lineTypeDetector = lineTypeDetector
+        entityProcessor = entityProcessor,
     )
 
     val logDispatcher = LogDispatcher()

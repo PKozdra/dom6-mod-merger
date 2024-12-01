@@ -19,10 +19,7 @@ object TestUtils {
     fun createModParser(): ModParser {
         val entityProcessor = EntityProcessor()
         return ModParser(
-            spellBlockParser = SpellBlockParser(),
-            entityParser = EntityParser(),
-            eventParser = EventParser(),
-            lineTypeDetector = LineTypeDetector(entityProcessor)
+            entityProcessor = entityProcessor
         )
     }
 

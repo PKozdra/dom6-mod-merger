@@ -1,6 +1,12 @@
 // src/main/kotlin/com/dominions/modmerger/domain/ModDefinition.kt
 package com.dominions.modmerger.domain
 
+/**
+ * Represents a mod's definition, including all its entity IDs and definitions.
+ * ID uniqueness is handled by IdMapper using a first-come-first-served strategy:
+ * - First mod to use an ID keeps it
+ * - Subsequent mods that try to use the same ID get remapped
+ */
 data class ModDefinition(
     val modFile: ModFile,
     var name: String = "",
@@ -8,10 +14,12 @@ data class ModDefinition(
     private val definitions: MutableMap<EntityType, EntityDefinition> = mutableMapOf()
 ) {
     init {
-        // Initialize all entity types with empty definitions
-        EntityType.entries.forEach { type ->
-            definitions[type] = type.createDefinition()
-        }
+        // Initialize with sorted EntityTypes
+        EntityType.entries
+            .sortedBy { it.name }
+            .forEach { type ->
+                definitions[type] = type.createDefinition()
+            }
     }
 
     fun getDefinition(type: EntityType): EntityDefinition =
@@ -29,21 +37,10 @@ data class ModDefinition(
         getDefinition(type).incrementImplicitDefinitions()
     }
 
-    fun findConflicts(other: ModDefinition): List<ModConflict> {
-        return EntityType.entries.mapNotNull { type ->
-            val thisDefinition = getDefinition(type)
-            val otherDefinition = other.getDefinition(type)
-
-            val conflictingIdsLong = thisDefinition.definedIds.intersect(otherDefinition.definedIds)
-            if (conflictingIdsLong.isNotEmpty()) {
-                val conflictingIds = conflictingIdsLong.map { id -> ModIdentifier(id) }.toSet()
-                ModConflict(
-                    type = type,
-                    conflictingIds = conflictingIds,
-                    firstMod = this.modFile.name,
-                    secondMod = other.modFile.name
-                )
-            } else null
-        }
-    }
+    fun getAllDefinitions(): Map<EntityType, Set<Long>> =
+        definitions.entries
+            .sortedBy { it.key.name }
+            .associate { (type, def) ->
+                type to def.definedIds
+            }
 }

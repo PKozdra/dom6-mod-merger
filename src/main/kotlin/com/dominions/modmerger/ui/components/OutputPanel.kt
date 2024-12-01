@@ -117,6 +117,7 @@ class OutputPanel : JPanel(BorderLayout()) {
         LogLevel.WARN -> Color(255, 140, 0)  // Darker orange for better visibility
         LogLevel.ERROR -> Color(180, 0, 0)   // Darker red for better visibility
         LogLevel.DEBUG -> Color(100, 100, 100)
+        LogLevel.TRACE -> Color(50, 50, 50)  // Darker gray for better visibility
     }
 
     private inner class ControlPanel : JPanel(FlowLayout(FlowLayout.LEFT, 5, 5)) {
@@ -198,6 +199,7 @@ class OutputPanel : JPanel(BorderLayout()) {
                 LogLevel.WARN -> Color(255, 240, 200)  // Light orange
                 LogLevel.ERROR -> Color(255, 200, 200) // Light red
                 LogLevel.DEBUG -> Color(200, 200, 255) // Light blue
+                LogLevel.TRACE -> Color(200, 200, 200) // Light gray
             }
 
             text = level.name
@@ -226,6 +228,7 @@ class OutputPanel : JPanel(BorderLayout()) {
                         LogLevel.WARN -> Color(255, 240, 200)
                         LogLevel.ERROR -> Color(255, 200, 200)
                         LogLevel.DEBUG -> Color(200, 200, 255)
+                        LogLevel.TRACE -> Color(200, 200, 200)
                     }
                 }
             }

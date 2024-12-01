@@ -8,11 +8,22 @@ import java.io.File
 /**
  * Handles copying of mod resources like graphics, sounds, and other assets.
  */
-class ModResourceCopier(
-    private val logDispatcher: LogDispatcher
-) {
+class ModResourceCopier(private val logDispatcher: LogDispatcher) {
     private val logger = KotlinLogging.logger {}
     private val warnings = mutableListOf<MergeWarning>()
+
+    private data class CopyStats(
+        var totalFiles: Int = 0,
+        var processedFiles: Int = 0,
+        var skippedFiles: Int = 0,
+        var conflictFiles: Int = 0
+    ) {
+        val progressPercentage: Int
+            get() = if (totalFiles > 0) ((processedFiles + skippedFiles) * 100) / totalFiles else 0
+
+        val filesHandled: Int
+            get() = processedFiles + skippedFiles
+    }
 
     companion object {
         private val EXCLUDED_FILES = setOf(
@@ -38,100 +49,141 @@ class ModResourceCopier(
     ): List<MergeWarning> {
         warnings.clear()
         val targetModDir = File(config.directory, config.modName)
+        val stats = CopyStats()
 
+        // First count total files to copy
+        log(LogLevel.INFO, "Scanning mod resources...")
         mappedDefinitions.values.forEach { mappedDef ->
             val sourceModDir = mappedDef.modFile.file?.parentFile ?: return@forEach
-            copyDirectoryContent(sourceModDir, targetModDir, mappedDef.modFile)
+            countFiles(sourceModDir, stats)
+        }
+        log(LogLevel.INFO, "Found ${stats.totalFiles} files to copy")
+
+        // Then copy files with progress tracking
+        mappedDefinitions.values.forEach { mappedDef ->
+            val sourceModDir = mappedDef.modFile.file?.parentFile ?: return@forEach
+            log(LogLevel.INFO, "Copying resources from: ${mappedDef.modFile.name}")
+            copyDirectoryContent(sourceModDir, targetModDir, mappedDef.modFile, stats)
         }
 
+        logFinalStats(stats)
         return warnings
     }
 
-    private fun copyDirectoryContent(sourceDir: File, targetDir: File, modFile: ModFile) {
+    private fun countFiles(dir: File, stats: CopyStats) {
+        dir.walkTopDown()
+            .filter { shouldCopyFile(it) }
+            .filter { it.isFile }
+            .forEach { stats.totalFiles++ }
+    }
+
+    private fun copyDirectoryContent(
+        sourceDir: File,
+        targetDir: File,
+        modFile: ModFile,
+        stats: CopyStats
+    ) {
         if (!sourceDir.exists() || !sourceDir.isDirectory) {
-            log(LogLevel.WARN, "Source directory does not exist or is not a directory: ${sourceDir.absolutePath}")
+            log(LogLevel.WARN, "Source directory not found: ${sourceDir.absolutePath}")
             return
         }
 
         try {
-            // Create target directory if it doesn't exist
             if (!targetDir.exists()) {
                 targetDir.mkdirs()
             }
 
-            // Walk through all files and directories
             sourceDir.walkTopDown()
-                .filter { file -> shouldCopyFile(file) }
+                .filter { shouldCopyFile(it) }
                 .forEach { source ->
                     val relativePath = source.toRelativeString(sourceDir)
                     val target = File(targetDir, relativePath)
 
                     when {
-                        source.isDirectory -> {
-                            target.mkdirs()
-                            log(LogLevel.DEBUG, "Created directory: ${target.absolutePath}")
-                        }
+                        source.isDirectory -> target.mkdirs()
                         source.isFile -> {
-                            copyFileWithConflictResolution(source, target, modFile)
+                            copyFileWithProgress(source, target, modFile, stats)
+                            logProgress(stats)
                         }
                     }
                 }
         } catch (e: Exception) {
             val warningMessage = "Failed to copy resources from ${sourceDir.absolutePath}: ${e.message}"
-            warnings.add(
-                MergeWarning.ResourceWarning(
-                    modFile = modFile,
-                    message = warningMessage,
-                    resourcePath = sourceDir.absolutePath
-                )
-            )
+            warnings.add(MergeWarning.ResourceWarning(
+                modFile = modFile,
+                message = warningMessage,
+                resourcePath = sourceDir.absolutePath
+            ))
             log(LogLevel.ERROR, warningMessage)
         }
     }
 
-    private fun shouldCopyFile(file: File): Boolean {
-        return when {
-            file.isDirectory -> true
-            file.name in EXCLUDED_FILES -> false
-            file.extension.lowercase() in EXCLUDED_EXTENSIONS -> false
-            else -> true
-        }
-    }
-
-    private fun copyFileWithConflictResolution(source: File, target: File, modFile: ModFile) {
+    private fun copyFileWithProgress(
+        source: File,
+        target: File,
+        modFile: ModFile,
+        stats: CopyStats
+    ) {
         try {
             if (target.exists()) {
-                handleFileConflict(source, target)
+                handleFileConflict(source, target, stats)
             } else {
                 target.parentFile?.mkdirs()
                 source.copyTo(target)
-                log(LogLevel.DEBUG, "Copied file: ${source.name} -> ${target.absolutePath}")
+                stats.processedFiles++
+                //log(LogLevel.DEBUG, "Copied: ${target.name}")
             }
         } catch (e: Exception) {
-            val warningMessage = "Failed to copy file ${source.name}: ${e.message}"
-            warnings.add(
-                MergeWarning.ResourceWarning(
-                    modFile = modFile,
-                    message = warningMessage,
-                    resourcePath = source.absolutePath
-                )
-            )
+            stats.skippedFiles++
+            val warningMessage = "Failed to copy ${source.name}: ${e.message}"
+            warnings.add(MergeWarning.ResourceWarning(
+                modFile = modFile,
+                message = warningMessage,
+                resourcePath = source.absolutePath
+            ))
             log(LogLevel.WARN, warningMessage)
         }
     }
 
-    private fun handleFileConflict(source: File, target: File) {
-        // Use "latest wins" strategy
+    private fun handleFileConflict(source: File, target: File, stats: CopyStats) {
+        stats.conflictFiles++
         if (source.lastModified() > target.lastModified()) {
             source.copyTo(target, overwrite = true)
-            log(LogLevel.INFO, "Overwrote existing file with newer version: ${target.absolutePath}")
+            stats.processedFiles++
+            //log(LogLevel.DEBUG, "Updated: ${target.name} (newer version)")
         } else {
-            log(LogLevel.DEBUG, "Kept existing file as it's newer: ${target.absolutePath}")
+            stats.skippedFiles++
+            //log(LogLevel.DEBUG, "Kept existing: ${target.name}")
         }
     }
 
-    private fun log(level: LogLevel, message: String) {
-        //logger.info { message }
-        //logDispatcher.log(level, message)
+    private fun logProgress(stats: CopyStats) {
+        // Only log if we've handled a new batch of files or reached the end
+        if (stats.filesHandled % 50 == 0 || stats.filesHandled == stats.totalFiles) {
+            //log(LogLevel.TRACE, buildProgressMessage(stats))
+        }
     }
+
+    private fun buildProgressMessage(stats: CopyStats): String {
+        return "Processed ${stats.filesHandled}/${stats.totalFiles} files (${stats.progressPercentage}%)"
+    }
+
+    private fun logFinalStats(stats: CopyStats) {
+        log(LogLevel.INFO, """
+            Resource copying completed! Total files processed: ${stats.filesHandled}
+        """.trimIndent())
+    }
+
+    private fun shouldCopyFile(file: File): Boolean = when {
+        file.isDirectory -> true
+        file.name in EXCLUDED_FILES -> false
+        file.extension.lowercase() in EXCLUDED_EXTENSIONS -> false
+        else -> true
+    }
+
+    private fun log(level: LogLevel, message: String) {
+        logger.info { message }
+        logDispatcher.log(level, message)
+    }
+
 }

@@ -3,23 +3,25 @@ package com.dominions.modmerger.domain
 
 data class EntityDefinition(
     val entityType: EntityType,
-    val definedIds: MutableSet<Long> = mutableSetOf(),
-    val vanillaEditedIds: MutableSet<Long> = mutableSetOf(),
+    private val _definedIds: MutableSet<Long> = mutableSetOf(),
+    private val _vanillaEditedIds: MutableSet<Long> = mutableSetOf(),
     var implicitDefinitions: Int = 0
 ) {
+    val definedIds: Set<Long>
+        get() = _definedIds.sorted().toSet()
+
+    val vanillaEditedIds: Set<Long>
+        get() = _vanillaEditedIds.sorted().toSet()
+
     fun addDefinedId(id: Long) {
-        definedIds.add(id)
+        _definedIds.add(id)
     }
 
     fun addVanillaEditedId(id: Long) {
-        vanillaEditedIds.add(id)
+        _vanillaEditedIds.add(id)
     }
 
     fun incrementImplicitDefinitions() {
         implicitDefinitions++
-    }
-
-    fun hasConflictsWith(other: EntityDefinition): Boolean {
-        return definedIds.intersect(other.definedIds).isNotEmpty()
     }
 }

@@ -5,5 +5,5 @@ interface LogListener {
 }
 
 enum class LogLevel {
-    INFO, WARN, ERROR, DEBUG
+    INFO, WARN, ERROR, DEBUG, TRACE
 }
