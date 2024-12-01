@@ -53,10 +53,6 @@ class ModTablePanel : JPanel() {
         }
     }
 
-    fun addSelectionListener(listener: () -> Unit) {
-        model.addSelectionListener(listener)
-    }
-
     private fun setupPanel() {
         layout = BorderLayout(10, 10)
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
