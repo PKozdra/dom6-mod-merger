@@ -131,7 +131,7 @@ class ModResourceCopier(
     }
 
     private fun log(level: LogLevel, message: String) {
-        logger.info { message }
-        logDispatcher.log(level, message)
+        //logger.info { message }
+        //logDispatcher.log(level, message)
     }
 }

@@ -3,10 +3,7 @@ package com.dominions.modmerger.ui.components
 import com.dominions.modmerger.ui.model.ModListItem
 import mu.KotlinLogging
 import java.awt.*
-import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
+import java.awt.event.*
 import java.util.*
 import java.util.Timer
 import javax.swing.*
@@ -40,7 +37,7 @@ class ModTablePanel : JPanel() {
         private const val ICON_WIDTH = 256
         private const val ICON_HEIGHT = 64
         private const val ROW_PADDING = 4
-        private const val SEARCH_DELAY_MS = 300L
+        private const val SEARCH_DELAY_MS = 200L
         private val SEARCH_COLUMNS = listOf(
             ModTableModel.TableColumn.NAME.ordinal,
             ModTableModel.TableColumn.FILENAME.ordinal
@@ -50,9 +47,14 @@ class ModTablePanel : JPanel() {
     init {
         setupPanel()
         setupTableListeners()
+        setupKeyBindings()
         model.addTableModelListener {
             updateStatusLabels()
         }
+    }
+
+    fun addSelectionListener(listener: () -> Unit) {
+        model.addSelectionListener(listener)
     }
 
     private fun setupPanel() {
@@ -85,10 +87,6 @@ class ModTablePanel : JPanel() {
         val searchBox = JPanel(BorderLayout()).apply {
             add(searchField, BorderLayout.CENTER)
             add(createClearButton(), BorderLayout.EAST)
-            border = CompoundBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-                EmptyBorder(2, 5, 2, 5)
-            )
         }
 
         add(searchLabel)
@@ -283,6 +281,20 @@ class ModTablePanel : JPanel() {
             val modelRow = table.convertRowIndexToModel(row)
             model.toggleSelection(modelRow)
         }
+    }
+
+    private fun setupKeyBindings() {
+        val inputMap = this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+        val actionMap = this.actionMap
+
+        // Bind CTRL+F to focus the search bar
+        val keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx)
+        inputMap.put(keyStroke, "focusSearchBar")
+        actionMap.put("focusSearchBar", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent?) {
+                searchField.requestFocusInWindow()
+            }
+        })
     }
 
     private fun createRowSorter() = TableRowSorter(model).apply {

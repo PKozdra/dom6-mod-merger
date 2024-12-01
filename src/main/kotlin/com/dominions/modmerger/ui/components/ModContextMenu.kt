@@ -3,7 +3,9 @@ package com.dominions.modmerger.ui.components
 import com.dominions.modmerger.ui.model.ModListItem
 import mu.KotlinLogging
 import java.awt.Desktop
+import java.awt.SystemColor.desktop
 import java.awt.event.MouseEvent
+import java.io.File
 import java.net.URI
 import java.util.regex.Pattern
 import javax.swing.JMenuItem
@@ -111,6 +113,45 @@ class ModContextMenu(
                 openInSteamWorkshop(workshopId)
             })
             logger.debug { "Added Steam Workshop option for mod: ${mod.fileName} (ID: $workshopId)" }
+        }
+
+        add(createMenuItem("Open mod file with default program") {
+            openDmFile(mod)
+        })
+    }
+
+    private fun openDmFile(mod: ModListItem) {
+        val file = mod.modFile.file ?: throw IllegalStateException("Mod file not found")
+        val dmFile = File(file.parentFile, mod.modFile.file.name)
+
+        if (!dmFile.exists()) {
+            throw IllegalStateException(".dm file not found: ${dmFile.absolutePath}")
+        }
+
+        logger.debug { "Opening .dm file: ${dmFile.absolutePath}" }
+
+        desktop?.let {
+            if (it.isSupported(Desktop.Action.OPEN)) {
+                try {
+                    it.open(dmFile)
+                } catch (e: Exception) {
+                    logger.warn { "Failed to open file with default program. Falling back to Notepad: ${e.message}" }
+                    openWithNotepad(dmFile)
+                }
+            } else {
+                openWithNotepad(dmFile)
+            }
+        } ?: openWithNotepad(dmFile)
+    }
+
+    private fun openWithNotepad(file: File) {
+        try {
+            val runtime = Runtime.getRuntime()
+            runtime.exec(arrayOf("notepad", file.absolutePath))
+            logger.debug { "Opened .dm file in Notepad: ${file.absolutePath}" }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to open .dm file in Notepad: ${file.absolutePath}" }
+            onError("Failed to open .dm file: ${e.message}")
         }
     }
 
