@@ -43,7 +43,6 @@ class ModMergerGui(
 
     // UI Components
     private val mergeButton = JButton("Merge Selected Mods")
-    private val customPathField = JTextField(20)
     private val refreshButton = JButton("Refresh")
     private val configButton = JButton("Config")
 
@@ -64,7 +63,6 @@ class ModMergerGui(
             setLocationRelativeTo(null)
             addWindowListener(object : WindowAdapter() {
                 override fun windowClosing(e: WindowEvent) {
-                    saveConfig()
                     dispose()
                 }
             })
@@ -91,16 +89,10 @@ class ModMergerGui(
                 add(configButton)
             }, BorderLayout.NORTH)
 
-            // Bottom row with custom path input
-            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                add(JLabel("Custom Mod Path:"))
-                add(customPathField)
-            }, BorderLayout.CENTER)
-
             // Setup button actions
             mergeButton.addActionListener { handleMergeButton() }
             refreshButton.addActionListener {
-                controller.loadMods(customPathField.text)
+                controller.loadMods()
             }
             configButton.addActionListener { handleConfigButton() }
         }
@@ -129,8 +121,7 @@ class ModMergerGui(
     }
 
     private fun loadInitialState() {
-        customPathField.text = preferences.get("customPath", "")
-        controller.loadMods(customPathField.text)
+        controller.loadMods()
     }
 
     private fun handleMergeButton() {
@@ -158,7 +149,6 @@ class ModMergerGui(
 
         if (result == JOptionPane.YES_OPTION) {
             preferences.clear()
-            customPathField.text = ""
             showInfoDialog("Configuration cleared!", "Config")
         }
     }
@@ -189,10 +179,6 @@ class ModMergerGui(
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         )
-    }
-
-    private fun saveConfig() {
-        preferences.put("customPath", customPathField.text)
     }
 
     fun show() {

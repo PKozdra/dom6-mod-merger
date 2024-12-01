@@ -29,7 +29,7 @@ class ModMergerController(
         modLoadListener = listener
     }
 
-    fun loadMods(customPathText: String) {
+    fun loadMods() {
         val paths = buildList {
             // Add Steam workshop path if available
             gamePathsManager.findSteamModPath()?.let {
@@ -42,13 +42,6 @@ class ModMergerController(
                 logDispatcher.log(LogLevel.INFO, "Using local mods path: $it")
             })
 
-            // Add custom path if provided
-            customPathText.takeIf { it.isNotBlank() }?.let {
-                File(it).also { file ->
-                    add(file)
-                    logDispatcher.log(LogLevel.INFO, "Using custom path: $file")
-                }
-            }
         }
 
         if (paths.isEmpty()) {
