@@ -68,7 +68,7 @@ fun main(args: Array<String>) {
     )
 
     val modOutputConfig = ModOutputConfig(
-        modName = "merged_mod",
+        modName = "test_mod",
         gamePathsManager = gamePathsManager
     )
 

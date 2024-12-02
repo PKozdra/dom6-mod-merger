@@ -1,4 +1,3 @@
-// src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt
 package com.dominions.modmerger.ui
 
 import com.dominions.modmerger.core.ModMerger
@@ -13,6 +12,8 @@ import mu.KotlinLogging
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.Font
+import java.awt.Color
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.prefs.Preferences
@@ -70,11 +71,11 @@ class ModMergerGui(
     }
 
     private fun setupComponents() {
-        // Main content layout
         frame.contentPane.apply {
             layout = BorderLayout(10, 10)
             add(createControlPanel(), BorderLayout.NORTH)
             add(createMainContent(), BorderLayout.CENTER)
+            add(createFooter(), BorderLayout.SOUTH)  // Add this line
         }
     }
 
@@ -114,6 +115,22 @@ class ModMergerGui(
         }
     }
 
+    companion object {
+        const val APP_VERSION = "0.0.1"  // Update this when version changes
+    }
+
+    private fun createFooter(): JPanel {
+        return JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
+            border = EmptyBorder(5, 10, 5, 10)
+
+            val attributionText = JLabel("v$APP_VERSION • Created by Druwski").apply {
+                font = Font(font.family, Font.PLAIN, 12)
+            }
+
+            add(attributionText)
+        }
+    }
+
     private fun setupController() {
         controller.setModLoadListener { modItems ->
             modTable.updateMods(modItems)
@@ -129,8 +146,16 @@ class ModMergerGui(
 
         if (selectedMods.isEmpty()) {
             showWarningDialog(
-                "Please select at least one mod to merge",
+                "Please select at least two mods to merge",
                 "No Mods Selected"
+            )
+            return
+        }
+
+        if (selectedMods.size < 2) {
+            showWarningDialog(
+                "Please select at least two mods to merge",
+                "Not Enough Mods Selected"
             )
             return
         }

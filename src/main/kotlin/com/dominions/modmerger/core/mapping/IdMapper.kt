@@ -9,117 +9,165 @@ import mu.KotlinLogging
  * Uses a first-come-first-served strategy where:
  * - First mod to use an ID keeps it
  * - Subsequent mods that try to use the same ID get remapped to the next available ID
+ *
+ * This class is stateless and thread-safe. Each operation creates its own tracking state.
  */
 class IdMapper(private val logDispatcher: LogDispatcher) {
     private val logger = KotlinLogging.logger {}
     private val ranges = initializeRanges()
-    private val usedIds = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf<Long>() }
-    private val currentIds = ranges.mapValuesTo(mutableMapOf()) { it.value.first }
+    private val preferredStarts = initializePreferredStarts()
 
     fun createMappings(modDefinitions: Map<String, ModDefinition>): Map<String, MappedModDefinition> {
         if (modDefinitions.isEmpty()) return emptyMap()
 
         log(LogLevel.INFO, "Starting ID mapping for ${modDefinitions.size} mods")
 
+        val mappingState = MappingState()
         val conflicts = findConflicts(modDefinitions)
         logConflictsIfAny(conflicts)
         logInvalidIdsIfAny(modDefinitions)
 
         return modDefinitions.map { (name, def) ->
-            name to createMappingForMod(def)
+            name to createMappingForMod(def, mappingState)
         }.toMap()
     }
 
-    private fun createMappingForMod(modDef: ModDefinition): MappedModDefinition {
-        val mappedDef = MappedModDefinition(modDef.modFile)
-        var remappedCount = 0
-        var keptCount = 0
+    private data class MappingState(
+        val usedIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf() },
+        val currentIds: MutableMap<EntityType, Long> = mutableMapOf(),
+        val remappedTargetIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf() },
+        val attemptedPreferredStart: MutableSet<EntityType> = mutableSetOf()
+    )
 
-        EntityType.entries.forEach { type ->
-            modDef.getDefinition(type).definedIds.forEach { id ->
-                when {
-                    usedIds[type]?.contains(id) == true -> {
-                        // Only create mapping when we need to remap
-                        val newId = getNextAvailableId(type)
-                        mappedDef.addMapping(type, id, newId)
-                        usedIds[type]?.add(newId)
-                        remappedCount++
-                    }
-                    else -> {
-                        // Don't create mapping when ID stays the same
-                        usedIds[type]?.add(id)
-                        keptCount++
-                    }
+    private data class MappingResult(
+        val mappedDefinition: MappedModDefinition,
+        val remappedCount: Int,
+        val keptCount: Int
+    )
+
+    private fun createMappingForMod(modDef: ModDefinition, state: MappingState): MappedModDefinition {
+        val result = EntityType.entries.fold(MappingResult(
+            mappedDefinition = MappedModDefinition(modDef.modFile),
+            remappedCount = 0,
+            keptCount = 0
+        )) { acc, type ->
+            processEntityType(type, modDef.getDefinition(type), acc, state)
+        }
+
+        if (result.remappedCount > 0) {
+            log(LogLevel.INFO, "Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs")
+        }
+
+        return result.mappedDefinition
+    }
+
+    private fun processEntityType(
+        type: EntityType,
+        definition: EntityDefinition,
+        result: MappingResult,
+        state: MappingState
+    ): MappingResult {
+        var remappedCount = result.remappedCount
+        var keptCount = result.keptCount
+
+        definition.definedIds.forEach { id ->
+            when {
+                state.usedIds[type]?.contains(id) == true -> {
+                    val newId = getNextAvailableId(type, state)
+                    result.mappedDefinition.addMapping(type, id, newId)
+                    state.usedIds[type]?.add(newId)
+                    remappedCount++
+                }
+                else -> {
+                    state.usedIds[type]?.add(id)
+                    keptCount++
                 }
             }
         }
 
-        if (remappedCount > 0) {
-            log(LogLevel.INFO, "Processed ${modDef.modFile.name}: remapped $remappedCount IDs, kept $keptCount original IDs")
+        return result.copy(
+            remappedCount = remappedCount,
+            keptCount = keptCount
+        )
+    }
+
+    private fun getNextAvailableId(type: EntityType, state: MappingState): Long {
+        val range = ranges[type] ?: throw IllegalStateException("No range defined for $type")
+        val used = state.usedIds[type] ?: throw IllegalStateException("No used IDs tracking for $type")
+        val remappedTargets = state.remappedTargetIds[type] ?: throw IllegalStateException("No remapped targets tracking for $type")
+
+        // Try preferred start first if not already attempted
+        val preferredStart = preferredStarts[type]
+        if (preferredStart != null && !state.attemptedPreferredStart.contains(type)) {
+            state.attemptedPreferredStart.add(type)
+            state.currentIds[type] = preferredStart
         }
 
-        return mappedDef
+        // Get next sequential ID that hasn't been used as source or target
+        var nextId = state.currentIds.getOrPut(type) { range.first }
+
+        // If we're past range end, loop back to start of valid modding range
+        if (nextId > range.last) {
+            nextId = range.first
+        }
+
+        // Find next available ID, wrapping around if necessary
+        val startingId = nextId
+        do {
+            if (!used.contains(nextId) && !remappedTargets.contains(nextId)) {
+                state.currentIds[type] = nextId + 1
+                remappedTargets.add(nextId)
+                return nextId
+            }
+            nextId++
+            if (nextId > range.last) {
+                nextId = range.first
+            }
+        } while (nextId != startingId)
+
+        throw IllegalStateException("ID range exhausted for $type (${range.first}..${range.last})")
     }
+
+    private data class ConflictTracking(
+        val idOwners: MutableMap<EntityType, MutableMap<Long, String>> = mutableMapOf(),
+        val conflicts: MutableMap<EntityType, MutableSet<ModConflict>> = mutableMapOf()
+    )
 
     private fun findConflicts(
         modDefinitions: Map<String, ModDefinition>
     ): Map<EntityType, Set<ModConflict>> {
-        val idOwners = mutableMapOf<EntityType, MutableMap<Long, String>>()
-        val conflicts = mutableMapOf<EntityType, MutableSet<ModConflict>>()
-
-        modDefinitions.forEach { (modName, def) ->
-            EntityType.entries.forEach { type ->
-                val owners = idOwners.getOrPut(type) { mutableMapOf() }
-                val conflictingIds = def.getDefinition(type).definedIds.filter { id ->
-                    owners[id] != null
-                }.toSet()
-
-                if (conflictingIds.isNotEmpty()) {
-                    conflicts.getOrPut(type) { mutableSetOf() }.add(
-                        ModConflict(
-                            type = type,
-                            conflictingIds = conflictingIds.map(::ModIdentifier).toSet(),
-                            firstMod = owners.getValue(conflictingIds.first()),
-                            secondMod = modName
-                        )
-                    )
-                }
-
-                def.getDefinition(type).definedIds.forEach { id ->
-                    if (owners[id] == null) owners[id] = modName
-                }
-            }
-        }
-
-        return conflicts
+        return modDefinitions.entries.fold(ConflictTracking()) { tracking, (modName, def) ->
+            processModConflicts(modName, def, tracking)
+        }.conflicts
     }
 
-    private fun getNextAvailableId(type: EntityType): Long {
-        val range = ranges[type] ?: throw IllegalStateException("No range defined for $type")
-        val used = usedIds[type] ?: throw IllegalStateException("No used IDs tracking for $type")
+    private fun processModConflicts(
+        modName: String,
+        def: ModDefinition,
+        tracking: ConflictTracking
+    ): ConflictTracking {
+        EntityType.entries.forEach { type ->
+            val owners = tracking.idOwners.getOrPut(type) { mutableMapOf() }
+            val conflictingIds = def.getDefinition(type).definedIds.filter { id ->
+                owners[id] != null
+            }.toSet()
 
-        // First try to find a gap in the already used range
-        for (id in range.first..currentIds.getValue(type)) {
-            if (!used.contains(id)) {
-                return id
+            if (conflictingIds.isNotEmpty()) {
+                tracking.conflicts.getOrPut(type) { mutableSetOf() }.add(
+                    ModConflict(
+                        type = type,
+                        conflictingIds = conflictingIds.map(::ModIdentifier).toSet(),
+                        firstMod = owners.getValue(conflictingIds.first()),
+                        secondMod = modName
+                    )
+                )
+            }
+
+            def.getDefinition(type).definedIds.forEach { id ->
+                if (owners[id] == null) owners[id] = modName
             }
         }
-
-        // If no gaps found, try to get next sequential ID
-        val nextId = currentIds.getValue(type)
-        if (nextId <= range.last) {
-            currentIds[type] = nextId + 1
-            return nextId
-        }
-
-        // If we get here, we need to do a full range scan as a last resort
-        for (id in range.first..range.last) {
-            if (!used.contains(id)) {
-                return id
-            }
-        }
-
-        throw IllegalStateException("ID range exhausted for $type (${range.first}..${range.last})")
+        return tracking
     }
 
     private fun logConflictsIfAny(conflicts: Map<EntityType, Set<ModConflict>>) {
@@ -165,6 +213,20 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
             EntityType.RESTRICTED_ITEM to (RESTRICTED_ITEM_START..RESTRICTED_ITEM_END)
         )
     }
+
+    private fun initializePreferredStarts() = mapOf(
+        EntityType.WEAPON to 2250L,
+        EntityType.ARMOR to 1250L,
+        EntityType.MONSTER to 13500L,
+        EntityType.NAME_TYPE to 250L,
+        EntityType.SPELL to 5750L,
+        EntityType.ENCHANTMENT to 7750L,
+        EntityType.ITEM to 1450L,
+        EntityType.SITE to 2150L,
+        EntityType.NATION to 330L,
+        EntityType.POPTYPE to 205L
+        // MONTAG and RESTRICTED_ITEM use default ranges
+    )
 
     private fun log(level: LogLevel, message: String) {
         logger.info { message }
