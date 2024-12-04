@@ -1,6 +1,8 @@
 // src/main/kotlin/com/dominions/modmerger/domain/ModDefinition.kt
 package com.dominions.modmerger.domain
 
+import com.dominions.modmerger.infrastructure.Logging
+
 /**
  * Represents a mod's definition, including all its entity IDs and definitions.
  * ID uniqueness is handled by IdMapper using a first-come-first-served strategy:
@@ -12,7 +14,7 @@ data class ModDefinition(
     var name: String = "",
     val version: String = "",
     private val definitions: MutableMap<EntityType, EntityDefinition> = mutableMapOf()
-) {
+) : Logging {
     init {
         // Initialize with sorted EntityTypes
         EntityType.entries
@@ -23,18 +25,27 @@ data class ModDefinition(
     }
 
     fun getDefinition(type: EntityType): EntityDefinition =
-        definitions[type] ?: error("Definition not found for type: $type")
+        // get entity defintion or throw
+        definitions[type] ?: throw IllegalArgumentException("No definition found for entity type: $type")
 
     fun addDefinedId(type: EntityType, id: Long) {
+        trace("Adding defined ID $id for entity type $type", useDispatcher = false)
         getDefinition(type).addDefinedId(id)
     }
 
     fun addVanillaEditedId(type: EntityType, id: Long) {
+        trace("Adding vanilla edited ID $id for entity type $type", useDispatcher = false)
         getDefinition(type).addVanillaEditedId(id)
     }
 
     fun addImplicitDefinition(type: EntityType) {
+        trace("Adding implicit definition for entity type $type", useDispatcher = false)
         getDefinition(type).incrementImplicitDefinitions()
+    }
+
+    fun cleanup() {
+        trace("Cleaning up definitions", useDispatcher = false)
+        definitions.clear()
     }
 
     fun getAllDefinitions(): Map<EntityType, Set<Long>> =

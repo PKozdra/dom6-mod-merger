@@ -1,3 +1,4 @@
+// File: IdMapper.kt
 package com.dominions.modmerger.core.mapping
 
 import com.dominions.modmerger.constants.ModRanges
@@ -5,84 +6,111 @@ import com.dominions.modmerger.domain.*
 import com.dominions.modmerger.infrastructure.Logging
 
 /**
- * Handles ID mapping and conflict resolution for mod entities.
- * Uses a first-come-first-served strategy where:
- * - First mod to use an ID keeps it
- * - Subsequent mods that try to use the same ID get remapped to the next available ID
- *
- * This class is stateless and thread-safe. Each operation creates its own tracking state.
+ * Handles ID mapping and conflict resolution for mod entities using a FIFO strategy.
+ * This class focuses on the core mapping logic while delegating statistics to IdMappingStatistics.
  */
-class IdMapper() : Logging {
+class IdMapper : Logging {
     private val ranges = initializeRanges()
     private val preferredStarts = initializePreferredStarts()
+    private val statistics = IdMappingStatistics()
 
     fun createMappings(modDefinitions: Map<String, ModDefinition>): Map<String, MappedModDefinition> {
         if (modDefinitions.isEmpty()) return emptyMap()
 
         info("Starting ID mapping for ${modDefinitions.size} mods", useDispatcher = true)
+        val startTime = System.currentTimeMillis()
 
-        val mappingState = MappingState()
-        val conflicts = findConflicts(modDefinitions)
-        logConflictsIfAny(conflicts)
-        logInvalidIdsIfAny(modDefinitions)
+        val state = MappingState()
+        val conflicts = findAndProcessConflicts(modDefinitions)
+        val vanillaModifications = findVanillaModifications(modDefinitions)
 
-        return modDefinitions.map { (name, def) ->
-            name to createMappingForMod(def, mappingState)
-        }.toMap()
+        logInitialAnalysis(conflicts, vanillaModifications)
+
+        return modDefinitions.entries
+            .sortedBy { it.key }
+            .associate { (name, def) ->
+                name to createMappingForMod(def, state)
+            }
+//            .also { mappedDefs ->
+//                statistics.generateAndLogStatistics(
+//                    modDefinitions,
+//                    mappedDefs,
+//                    conflicts,
+//                    vanillaModifications,
+//                    state,
+//                    System.currentTimeMillis() - startTime
+//                )
+//            }
     }
 
-    private data class MappingState(
-        val usedIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf() },
-        val currentIds: MutableMap<EntityType, Long> = mutableMapOf(),
-        val remappedTargetIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(
-            mutableMapOf()
-        ) { mutableSetOf() },
-        val attemptedPreferredStart: MutableSet<EntityType> = mutableSetOf()
-    )
-
-    private data class MappingResult(
-        val mappedDefinition: MappedModDefinition,
-        val remappedCount: Int,
-        val keptCount: Int
-    )
+    data class MappingState(
+        val usedIds: MutableMap<EntityType, MutableSet<Long>> = mutableMapOf(),
+        val currentPositions: MutableMap<EntityType, Long> = mutableMapOf(),
+        val implicitCounts: MutableMap<EntityType, Int> = mutableMapOf(),
+        val attemptedPreferredStarts: MutableSet<EntityType> = mutableSetOf()
+    ) {
+        fun initializeEntityType(type: EntityType) {
+            if (!usedIds.containsKey(type)) {
+                usedIds[type] = mutableSetOf()
+            }
+        }
+    }
 
     private fun createMappingForMod(modDef: ModDefinition, state: MappingState): MappedModDefinition {
-        val result = EntityType.entries.fold(
-            MappingResult(
-                mappedDefinition = MappedModDefinition(modDef.modFile),
-                remappedCount = 0,
-                keptCount = 0
-            )
-        ) { acc, type ->
-            processEntityType(type, modDef.getDefinition(type), acc, state)
+        val mappedDef = MappedModDefinition(modDef.modFile)
+        var totalRemapped = 0
+        var totalKept = 0
+
+        EntityType.entries.forEach { type ->
+            state.initializeEntityType(type)
+            handleImplicitDefinitions(type, modDef, state)
+            processEntityIds(type, modDef.getDefinition(type), mappedDef, state)
+                .let { (remapped, kept) ->
+                    totalRemapped += remapped
+                    totalKept += kept
+                }
         }
 
-        if (result.remappedCount > 0) {
-            info("Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs"
+        if (totalRemapped > 0) {
+            debug(
+                "Processed ${modDef.modFile.name}: remapped $totalRemapped IDs, kept $totalKept original IDs",
+                useDispatcher = false
             )
         }
 
-        return result.mappedDefinition
+        return mappedDef
     }
 
-    private fun processEntityType(
+    private fun handleImplicitDefinitions(type: EntityType, modDef: ModDefinition, state: MappingState) {
+        val implicitCount = modDef.getDefinition(type).implicitDefinitions
+        if (implicitCount > 0) {
+            state.implicitCounts.merge(type, implicitCount, Int::plus)
+        }
+    }
+
+    private data class ProcessingResult(val remappedCount: Int, val keptCount: Int)
+
+    private fun processEntityIds(
         type: EntityType,
         definition: EntityDefinition,
-        result: MappingResult,
+        mappedDef: MappedModDefinition,
         state: MappingState
-    ): MappingResult {
-        var remappedCount = result.remappedCount
-        var keptCount = result.keptCount
+    ): ProcessingResult {
+        var remappedCount = 0
+        var keptCount = 0
 
         definition.definedIds.forEach { id ->
             when {
+                ModRanges.Validator.isVanillaId(type, id) -> {
+                    keptCount++
+                    state.usedIds[type]?.add(id)
+                }
                 state.usedIds[type]?.contains(id) == true -> {
                     val newId = getNextAvailableId(type, state)
-                    result.mappedDefinition.addMapping(type, id, newId)
+                    mappedDef.addMapping(type, id, newId)
                     state.usedIds[type]?.add(newId)
                     remappedCount++
                 }
-
                 else -> {
                     state.usedIds[type]?.add(id)
                     keptCount++
@@ -90,134 +118,161 @@ class IdMapper() : Logging {
             }
         }
 
-        return result.copy(
-            remappedCount = remappedCount,
-            keptCount = keptCount
-        )
+        return ProcessingResult(remappedCount, keptCount)
     }
 
     private fun getNextAvailableId(type: EntityType, state: MappingState): Long {
         val range = ranges[type] ?: throw IllegalStateException("No range defined for $type")
         val used = state.usedIds[type] ?: throw IllegalStateException("No used IDs tracking for $type")
-        val remappedTargets =
-            state.remappedTargetIds[type] ?: throw IllegalStateException("No remapped targets tracking for $type")
 
-        // Try preferred start first if not already attempted
-        val preferredStart = preferredStarts[type]
-        if (preferredStart != null && !state.attemptedPreferredStart.contains(type)) {
-            state.attemptedPreferredStart.add(type)
-            state.currentIds[type] = preferredStart
-        }
+        validateRangeCapacity(type, range, used.size, state.implicitCounts[type] ?: 0)
 
-        // Get next sequential ID that hasn't been used as source or target
-        var nextId = state.currentIds.getOrPut(type) { range.first }
-
-        // If we're past range end, loop back to start of valid modding range
-        if (nextId > range.last) {
-            nextId = range.first
-        }
-
-        // Find next available ID, wrapping around if necessary
-        val startingId = nextId
-        do {
-            if (!used.contains(nextId) && !remappedTargets.contains(nextId)) {
-                state.currentIds[type] = nextId + 1
-                remappedTargets.add(nextId)
-                return nextId
-            }
-            nextId++
-            if (nextId > range.last) {
-                nextId = range.first
-            }
-        } while (nextId != startingId)
-
-        throw IllegalStateException("ID range exhausted for $type (${range.first}..${range.last})")
+        return tryPreferredStart(type, range, used, state)
+            ?: findNextAvailableId(type, range, used, state)
     }
 
-    private data class ConflictTracking(
-        val idOwners: MutableMap<EntityType, MutableMap<Long, String>> = mutableMapOf(),
-        val conflicts: MutableMap<EntityType, MutableSet<ModConflict>> = mutableMapOf()
-    )
+    private fun validateRangeCapacity(type: EntityType, range: LongRange, usedCount: Int, implicitCount: Int) {
+        val availableCount = range.last - range.first + 1 - usedCount - implicitCount
+        if (availableCount <= 0) {
+            throw IllegalStateException(
+                "ID range exhausted for $type (${range.first}..${range.last}). " +
+                        "Used: $usedCount, Implicit: $implicitCount"
+            )
+        }
+    }
 
-    private fun findConflicts(
+    private fun tryPreferredStart(
+        type: EntityType,
+        range: LongRange,
+        used: Set<Long>,
+        state: MappingState
+    ): Long? {
+        return preferredStarts[type]?.let { preferred ->
+            if (!state.attemptedPreferredStarts.contains(type) &&
+                preferred in range &&
+                !used.contains(preferred)
+            ) {
+                state.attemptedPreferredStarts.add(type)
+                state.currentPositions[type] = preferred + 1
+                preferred
+            } else null
+        }
+    }
+
+    private fun findNextAvailableId(
+        type: EntityType,
+        range: LongRange,
+        used: Set<Long>,
+        state: MappingState
+    ): Long {
+        var current = state.currentPositions.getOrPut(type) { range.first }
+
+        while (true) {
+            if (current > range.last) {
+                current = range.first
+            }
+
+            if (!used.contains(current)) {
+                state.currentPositions[type] = current + 1
+                return current
+            }
+            current++
+        }
+    }
+
+    private fun findAndProcessConflicts(
         modDefinitions: Map<String, ModDefinition>
-    ): Map<EntityType, Set<ModConflict>> {
-        return modDefinitions.entries.fold(ConflictTracking()) { tracking, (modName, def) ->
-            processModConflicts(modName, def, tracking)
-        }.conflicts
-    }
+    ): Map<EntityType, List<ModConflict>> {
+        val conflicts = mutableMapOf<EntityType, MutableMap<Long, MutableList<String>>>()
 
-    private fun processModConflicts(
-        modName: String,
-        def: ModDefinition,
-        tracking: ConflictTracking
-    ): ConflictTracking {
-        EntityType.entries.forEach { type ->
-            val owners = tracking.idOwners.getOrPut(type) { mutableMapOf() }
-            val conflictingIds = def.getDefinition(type).definedIds.filter { id ->
-                owners[id] != null
-            }.toSet()
+        modDefinitions.forEach { (modName, def) ->
+            EntityType.entries.forEach { type ->
+                def.getDefinition(type).definedIds
+                    .filterNot { ModRanges.Validator.isVanillaId(type, it) }
+                    .forEach { id ->
+                        conflicts.getOrPut(type) { mutableMapOf() }
+                            .getOrPut(id) { mutableListOf() }
+                            .add(modName)
+                    }
+            }
+        }
 
-            if (conflictingIds.isNotEmpty()) {
-                tracking.conflicts.getOrPut(type) { mutableSetOf() }.add(
+        return conflicts.mapValues { (type, idMap) ->
+            idMap.filter { it.value.size > 1 }
+                .map { (id, mods) ->
                     ModConflict(
                         type = type,
-                        conflictingIds = conflictingIds.map(::ModIdentifier).toSet(),
-                        firstMod = owners.getValue(conflictingIds.first()),
-                        secondMod = modName
+                        conflictingIds = setOf(ModIdentifier(id)),
+                        firstMod = mods.first(),
+                        secondMod = mods[1]
                     )
-                )
-            }
-
-            def.getDefinition(type).definedIds.forEach { id ->
-                if (owners[id] == null) owners[id] = modName
-            }
-        }
-        return tracking
+                }
+        }.filterValues { it.isNotEmpty() }
     }
 
-    private fun logConflictsIfAny(conflicts: Map<EntityType, Set<ModConflict>>) {
+    private fun findVanillaModifications(
+        modDefinitions: Map<String, ModDefinition>
+    ): Map<EntityType, Map<Long, List<String>>> {
+        val modifications = mutableMapOf<EntityType, MutableMap<Long, MutableList<String>>>()
+
+        modDefinitions.forEach { (modName, def) ->
+            EntityType.entries.forEach { type ->
+                def.getDefinition(type).vanillaEditedIds
+                    .filter { ModRanges.Validator.isVanillaId(type, it) }
+                    .forEach { id ->
+                        modifications.getOrPut(type) { mutableMapOf() }
+                            .getOrPut(id) { mutableListOf() }
+                            .add(modName)
+                    }
+            }
+        }
+
+        return modifications.mapValues { it.value.toMap() }
+    }
+
+    private fun logInitialAnalysis(
+        conflicts: Map<EntityType, List<ModConflict>>,
+        vanillaModifications: Map<EntityType, Map<Long, List<String>>>
+    ) {
         if (conflicts.isNotEmpty()) {
             val totalConflicts = conflicts.values.sumOf { it.size }
-            debug("Found $totalConflicts ID conflicts between mods:")
+            info("Found $totalConflicts ID conflicts to resolve", useDispatcher = true)
             conflicts.forEach { (type, typeConflicts) ->
-                debug("$type conflicts:")
-                typeConflicts.forEach { conflict ->
-                    debug("$conflict")
-                }
+                debug("$type has ${typeConflicts.size} conflicts:", useDispatcher = false)
+                typeConflicts.forEach { debug("  $it", useDispatcher = false) }
             }
         }
-    }
 
-    private fun logInvalidIdsIfAny(modDefinitions: Map<String, ModDefinition>) {
-        modDefinitions.forEach { (name, def) ->
-            EntityType.entries.forEach { type ->
-                val invalidIds = def.getDefinition(type).definedIds.filter { id ->
-                    !ModRanges.Validator.isValidModdingId(type, id)
-                }
-                if (invalidIds.isNotEmpty()) {
-                    warn("Mod $name has invalid $type IDs: $invalidIds")
-                }
-            }
-        }
+//        vanillaModifications.forEach { (type, mods) ->
+//            mods.forEach { (id, modNames) ->
+//                if (modNames.size > 1) {
+//                    warn(
+//                        "Multiple mods modifying vanilla $type ID $id: ${modNames.joinToString()}",
+//                        useDispatcher = false
+//                    )
+//                }
+//            }
+//        }
     }
 
     private fun initializeRanges() = ModRanges.Modding.run {
-        mapOf(
-            EntityType.WEAPON to (WEAPON_START..WEAPON_END),
-            EntityType.ARMOR to (ARMOR_START..ARMOR_END),
-            EntityType.MONSTER to (MONSTER_START..MONSTER_END),
-            EntityType.SPELL to (SPELL_START..SPELL_END),
-            EntityType.ITEM to (ITEM_START..ITEM_END),
-            EntityType.SITE to (SITE_START..SITE_END),
-            EntityType.NATION to (NATION_START..NATION_END),
-            EntityType.NAME_TYPE to (NAMETYPE_START..NAMETYPE_END),
-            EntityType.ENCHANTMENT to (ENCHANTMENT_START..ENCHANTMENT_END),
-            EntityType.MONTAG to (MONTAG_START..MONTAG_END),
-            EntityType.EVENT_CODE to (EVENTCODE_START..EVENTCODE_END),
-            EntityType.POPTYPE to (POPTYPE_START..POPTYPE_END),
-            EntityType.RESTRICTED_ITEM to (RESTRICTED_ITEM_START..RESTRICTED_ITEM_END)
-        )
+        EntityType.entries.associateWith { type ->
+            when (type) {
+                EntityType.WEAPON -> WEAPON_START..WEAPON_END
+                EntityType.ARMOR -> ARMOR_START..ARMOR_END
+                EntityType.MONSTER -> MONSTER_START..MONSTER_END
+                EntityType.SPELL -> SPELL_START..SPELL_END
+                EntityType.ITEM -> ITEM_START..ITEM_END
+                EntityType.SITE -> SITE_START..SITE_END
+                EntityType.NATION -> NATION_START..NATION_END
+                EntityType.NAME_TYPE -> NAMETYPE_START..NAMETYPE_END
+                EntityType.ENCHANTMENT -> ENCHANTMENT_START..ENCHANTMENT_END
+                EntityType.MONTAG -> MONTAG_START..MONTAG_END
+                EntityType.EVENT_CODE -> EVENTCODE_START..EVENTCODE_END
+                EntityType.POPTYPE -> POPTYPE_START..POPTYPE_END
+                EntityType.RESTRICTED_ITEM -> RESTRICTED_ITEM_START..RESTRICTED_ITEM_END
+            }
+        }
     }
 
     private fun initializePreferredStarts() = mapOf(
@@ -231,6 +286,5 @@ class IdMapper() : Logging {
         EntityType.SITE to 2150L,
         EntityType.NATION to 330L,
         EntityType.POPTYPE to 205L
-        // MONTAG and RESTRICTED_ITEM use default ranges
     )
 }

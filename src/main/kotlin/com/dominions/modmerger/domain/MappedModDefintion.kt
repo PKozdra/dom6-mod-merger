@@ -27,6 +27,10 @@ data class MappedModDefinition(
                     }
             }
 
+    fun cleanup() {
+        mappings.clear()
+    }
+
     fun getMappingsByType(): Map<EntityType, Map<Long, Long>> =
         mappings.entries
             .sortedBy { it.key.name }

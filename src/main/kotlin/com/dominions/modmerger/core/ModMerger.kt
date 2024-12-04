@@ -18,10 +18,13 @@ class ModMerger(
 ) : Logging {
 
     suspend fun mergeMods(modFiles: List<ModFile>): MergeResult {
+        var modDefinitions: Map<String, ModDefinition>? = null
+        var mappedDefinitions: Map<String, MappedModDefinition>? = null
+
         try {
             // Scan mods
             info("Scanning mod files...")
-            val modDefinitions = scanner.scanMods(modFiles)
+            modDefinitions = scanner.scanMods(modFiles)
             info("Finished scanning mods. Total mods scanned: ${modDefinitions.size}")
 
             // Log definitions
@@ -29,7 +32,7 @@ class ModMerger(
 
             // Map IDs
             info("Mapping IDs...")
-            val mappedDefinitions = mapper.createMappings(modDefinitions)
+            mappedDefinitions = mapper.createMappings(modDefinitions)
             logMappings(mappedDefinitions)
             info("Finished mapping IDs.")
 
@@ -50,6 +53,11 @@ class ModMerger(
         } catch (e: Exception) {
             error("Failed to process mods: ${e.message}", e)
             return MergeResult.Failure(e.message ?: "Unknown error occurred")
+        } finally {
+            // Clean up resources
+            modDefinitions?.values?.forEach { it.cleanup() }
+            mappedDefinitions?.values?.forEach { it.cleanup() }
+            System.gc() // Request garbage collection after large operation
         }
     }
 

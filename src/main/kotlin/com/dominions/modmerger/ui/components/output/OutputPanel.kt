@@ -30,7 +30,7 @@ class OutputPanel(
 
     internal val logQueue = LinkedBlockingQueue<Pair<String, LogLevel>>()
     internal val logBuffer = ArrayDeque<Pair<String, LogLevel>>()
-    internal var maxLogBufferSize = 1000  // Maximum number of log messages to keep
+    internal var maxLogBufferSize = 2500  // Maximum number of log messages to keep
 
     internal val activeLogLevels = mutableSetOf<LogLevel>()
 

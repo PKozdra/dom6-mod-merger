@@ -20,37 +20,49 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
         var inSpellBlock = false
         var currentSpellEffect: Long? = null
 
+        debug("Parsing mod file: ${modFile.name}")
+
         modFile.content.lineSequence().forEachIndexed { lineNumber, rawLine ->
             val line = rawLine.trim()
+            // [MODNAME] Parsing line 1: #modname "Test Mod"
+            trace("[${modFile.modName}] Parsing line $lineNumber: $line", useDispatcher = false)
             try {
                 when {
                     // Skip empty lines and comments
-                    line.isBlank() || line.startsWith("--") -> {}
+                    line.isBlank() || line.startsWith("--") -> { trace("[${modFile.modName}] Skipping line $lineNumber", useDispatcher = false) }
 
                     // Handle mod info
-                    isModInfoLine(line) -> handleModInfo(line, definition)
+                    isModInfoLine(line) -> {
+                        trace("[${modFile.modName}] Handling mod info line $lineNumber", useDispatcher = false)
+                        handleModInfo(line, definition)
+                    }
 
                     // Handle multiline description
                     inMultilineDescription -> {
+                        trace("[${modFile.modName}] Handling multiline description line $lineNumber", useDispatcher = false)
                         if (line.contains("\"")) inMultilineDescription = false
                     }
 
                     isDescriptionStart(line) -> {
+                        trace("[${modFile.modName}] Handling description start line $lineNumber", useDispatcher = false)
                         inMultilineDescription = !line.endsWith("\"")
                     }
 
                     // Handle spell blocks
                     line.matches(ModPatterns.SPELL_BLOCK_START) -> {
+                        trace("[${modFile.modName}] Handling spell block start line $lineNumber", useDispatcher = false)
                         inSpellBlock = true
                         handleSpellStart(line, definition)
                     }
 
                     line.matches(ModPatterns.END) -> {
+                        trace("[${modFile.modName}] Handling spell block end line $lineNumber", useDispatcher = false)
                         inSpellBlock = false
                         currentSpellEffect = null
                     }
 
                     inSpellBlock -> {
+                        trace("[${modFile.modName}] Handling spell block content line $lineNumber", useDispatcher = false)
                         handleSpellContent(line, currentSpellEffect, definition)
                         // Update effect if found
                         ModPatterns.SPELL_EFFECT.find(line)?.let {
@@ -59,7 +71,10 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                     }
 
                     // Handle all other entities
-                    else -> handleEntityLine(line, definition)
+                    else -> {
+                        trace("[${modFile.modName}] Handling entity line $lineNumber", useDispatcher = false)
+                        handleEntityLine(line, definition)
+                    }
                 }
             } catch (e: Exception) {
                 error("Error parsing line $lineNumber in ${modFile.name}: $line)", e)
@@ -72,18 +87,24 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
 
     private fun handleEntityLine(line: String, definition: ModDefinition) {
         entityProcessor.detectEntity(line)?.let { match ->
-            val (type, _, id) = match
+            val (type, id, name) = match
+            val matchedIdOrName = (id ?: name) ?: "implicit"
+            trace("Detected entity: $type with ID: $matchedIdOrName", useDispatcher = false)
+
             when {
-                line.startsWith("#new") -> definition.addDefinedId(type, id)
-                line.startsWith("#select") -> {
+                id != null && line.startsWith("#new") -> {
+                    definition.addDefinedId(type, id)
+                }
+                id != null && line.startsWith("#select") -> {
                     if (ModRanges.Validator.isValidModdingId(type, id)) {
                         definition.addDefinedId(type, id)
                     } else {
                         definition.addVanillaEditedId(type, id)
                     }
                 }
-
-                else -> definition.addImplicitDefinition(type)
+                else -> {
+                    definition.addImplicitDefinition(type)
+                }
             }
         }
     }

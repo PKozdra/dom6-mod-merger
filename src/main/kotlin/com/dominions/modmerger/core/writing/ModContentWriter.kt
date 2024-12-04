@@ -123,17 +123,17 @@ class ModContentWriter(
         val trimmedLine = line.trim()
 
         trace(
-            "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}"
+            "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}", useDispatcher = false
         )
 
         return when {
             shouldSkipLine(trimmedLine, currentIndex, context) -> {
-                trace("Skipping line $currentIndex")
+                trace("Skipping line $currentIndex", useDispatcher = false)
                 currentIndex + 1
             }
 
             ModPatterns.SPELL_BLOCK_START.matches(trimmedLine) -> {
-                trace("Found spell block start at line $currentIndex")
+                trace("Found spell block start at line $currentIndex", useDispatcher = false)
                 spellBlockProcessor.startNewBlock(line)
                 context.processedLines.add(line)
                 processSpellBlock(lines, currentIndex + 1, mappedDef, context)
@@ -203,34 +203,34 @@ class ModContentWriter(
         context: ModProcessingContext
     ): Int {
         var currentIndex = startIndex
-        trace("Processing spell block starting at line $startIndex")
+        trace("Processing spell block starting at line $startIndex", useDispatcher = false)
 
         while (currentIndex < lines.size) {
             val line = lines[currentIndex]
             val trimmedLine = line.trim()
 
-            if (ModPatterns.END.matches(trimmedLine)) {
-                trace("Found spell block end at line $currentIndex")
-                val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
-
-                processedBlock.damageMapping?.let { (oldId, newId) ->
-                    trace("Remapping damage ID $oldId to $newId")
-                    val remapComment = createRemapComment(oldId, newId)
-                    context.processedLines.add(remapComment)
+            when {
+                ModPatterns.END.matches(trimmedLine) -> {
+                    trace("Found spell block end at line $currentIndex", useDispatcher = false)
+                    context.processedLines.add(line)
+                    spellBlockProcessor.currentBlock = null
+                    return currentIndex + 1
                 }
 
-                context.processedLines.add(line)
-                spellBlockProcessor.currentBlock = null
-                return currentIndex + 1
-            }
+                trimmedLine.startsWith("#damage") -> {
+                    val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
+                    processedBlock.damageMapping?.let { (oldId, newId) ->
+                        trace("Remapping spell damage ID $oldId to $newId", useDispatcher = false)
+                        context.processedLines.add(createRemapComment(oldId, newId))
+                        context.processedLines.add(ModUtils.replaceId(line, oldId, newId))
+                    } ?: context.processedLines.add(line)
+                }
 
-            val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
-            processedBlock.damageMapping?.let { (oldId, newId) ->
-                trace("Remapping spell damage ID $oldId to $newId")
-                val remapComment = createRemapComment(oldId, newId)
-                context.processedLines.add(remapComment)
-                context.processedLines.add(ModUtils.replaceId(line, oldId, newId))
-            } ?: context.processedLines.add(line)
+                else -> {
+                    // Process non-damage lines normally without remap comments
+                    context.processedLines.add(line)
+                }
+            }
 
             currentIndex++
         }

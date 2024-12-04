@@ -5,54 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="85c95b9c-59a8-4fca-a904-88860f808b24" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/Logging.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Application.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ConsoleApplication.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/GuiApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ModMergerApplication.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Main.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/MergeResult.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MergeResult.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/GrepConsole.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/constants/ModPatternsOptimized.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/constants/RegexWrapper.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMappingStatistics.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMergerService.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/scanning/ModScanner.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/scanning/ModScanner.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/LogDispatcher.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/LogListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MappedModDefintion.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MappedModDefintion.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModDefintion.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModDefintion.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/ApplicationConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/ApplicationConfig.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModOutputConfigPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModOutputConfigPanel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/LogLevelPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/LogLevelPanel.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/model/ModListItem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/model/ModListItem.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -154,6 +124,7 @@
     "Repository.Attach.JavaDocs": "false",
     "Repository.Attach.Sources": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
     "git-widget-placeholder": "master",
@@ -381,7 +352,7 @@
       <workItem from="1733265001815" duration="11263000" />
       <workItem from="1733276685376" duration="7839000" />
       <workItem from="1733317531449" duration="2454000" />
-      <workItem from="1733320034496" duration="8152000" />
+      <workItem from="1733320034496" duration="21819000" />
     </task>
     <servers />
   </component>

@@ -7,115 +7,121 @@ import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
-import kotlin.properties.Delegates
 
-/**
- * Represents a Dominions 6 mod file with validation and lazy-loaded content.
- */
-class ModFile(
-    val file: File? = null,
+class ModFile private constructor(
+    val file: File?,
     val name: String,
     private val contentProvider: () -> String
 ) : Logging {
 
-    private var metadata: ModMetadata? by Delegates.observable(null) { _, _, newValue ->
-        debug("Metadata loaded for mod: $name", useDispatcher = false)
-    }
-
-    // Only load the header portion of the file (first few KB) to extract metadata
-    private fun loadMetadata(): ModMetadata {
-        if (metadata != null) return metadata!!
-
-        val headerContent = file?.let { loadFileHeader(it, 4096) } ?: contentProvider()
-        return parseMetadata(headerContent).also { metadata = it }
-    }
-
-    private fun loadFileHeader(file: File, maxBytes: Int): String {
-        RandomAccessFile(file, "r").use { raf ->
-            val bytes = ByteArray(maxBytes.coerceAtMost(file.length().toInt()))
-            raf.read(bytes)
-            return String(bytes)
-        }
-    }
-
-    /**
-     * The content of the mod file as a string.
-     */
-    val content: String by lazy {
-        try {
-            debug("Loading content from: $name", useDispatcher = false)
-            contentProvider()
-        } catch (e: IOException) {
-            throw InvalidModFileException("Failed to read content from file: $name", e)
-        }
-    }
-
-    private fun parseMetadata(content: String): ModMetadata {
-        val lines = content.lines()
-        val modNameLine = lines.firstOrNull { it.trim().startsWith("#modname") }
-        val descriptionLine = lines.firstOrNull { it.trim().startsWith("#description") }
-        val versionLine = lines.firstOrNull { it.trim().startsWith("#version") }
-        val iconPathLine = lines.firstOrNull { it.trim().startsWith("#icon") }
-
-        debug("Parsing metadata for mod: $name", useDispatcher = false)
-        debug("Found modName line: $modNameLine", useDispatcher = false)
-        debug("Found description line: $descriptionLine", useDispatcher = false)
-        debug("Found version line: $versionLine", useDispatcher = false)
-        debug("Found iconPath line: $iconPathLine", useDispatcher = false)
-
-        return ModMetadata(
-            modName = modNameLine?.substringAfter("\"")?.removeSuffix("\""),
-            description = descriptionLine?.substringAfter("\"")?.removeSuffix("\""),
-            version = versionLine?.substringAfter("\"")?.removeSuffix("\""),
-            iconPath = iconPathLine?.substringAfter("\"")?.removeSuffix("\"")
-        )
-    }
-
-    // Provide metadata properties without loading full content
-    val modName: String get() = loadMetadata().modName ?: name
-    val description: String get() = loadMetadata().description ?: ""
-    val version: String get() = loadMetadata().version ?: ""
-    val iconPath: String? get() = loadMetadata().iconPath
-
-    init {
-        file?.let { validateFile(it) }
-    }
-
-    private fun validateFile(file: File) {
-        require(file.exists()) { "File does not exist: ${file.path}" }
-        require(file.isFile) { "Not a valid file: ${file.path}" }
-        require(file.canRead()) { "File is not readable: ${file.path}" }
-        require(file.extension == "dm") { "File must have .dm extension: ${file.path}" }
-    }
-
     companion object {
-        /**
-         * Factory method to create a ModFile instance from a physical file.
-         */
-        fun fromFile(file: File): ModFile = ModFile(
-            file = file,
-            name = file.nameWithoutExtension,
-            contentProvider = { file.readText() }
+        private const val HEADER_SIZE = 4096
+        private val METADATA_PREFIXES = mapOf(
+            "#modname" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
+            "#description" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
+            "#version" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
+            "#icon" to { content: String -> content.substringAfter("\"").removeSuffix("\"") }
         )
 
-        /**
-         * Factory method to create a ModFile instance from a string content (useful for testing).
-         */
+        fun fromFile(file: File): ModFile {
+            validateFile(file)
+            return ModFile(
+                file = file,
+                name = file.nameWithoutExtension,
+                contentProvider = { file.readText() }
+            )
+        }
+
         fun fromContent(name: String, content: String): ModFile = ModFile(
+            file = null,
             name = name,
             contentProvider = { content }
         )
 
-        // Load mods in chunks for large directories
         fun loadModsFromDirectory(directory: File, chunkSize: Int = 10): Flow<List<ModFile>> = flow {
             directory.walkTopDown()
-                .filter { it.isFile && it.extension == "dm" }
+                .filter { it.isFile && it.extension.equals("dm", ignoreCase = true) }
                 .chunked(chunkSize)
                 .forEach { chunk ->
                     emit(chunk.map { fromFile(it) })
                 }
         }
+
+        private fun validateFile(file: File) {
+            require(file.exists()) { "File does not exist: ${file.path}" }
+            require(file.isFile) { "Not a valid file: ${file.path}" }
+            require(file.canRead()) { "File is not readable: ${file.path}" }
+            require(file.extension.equals("dm", ignoreCase = true)) {
+                "File must have .dm extension: ${file.path}"
+            }
+        }
     }
+
+    /**
+     * Reads and returns the current content of the mod file.
+     */
+    val content: String
+        get() = try {
+            debug("Loading content from: $name", useDispatcher = false)
+            contentProvider()
+        } catch (e: IOException) {
+            throw InvalidModFileException("Failed to read content from file: $name", e)
+        }
+
+    /**
+     * Loads metadata from file header or full content if needed
+     */
+    private fun loadMetadata(): ModMetadata {
+        val headerContent = file?.let { loadFileHeader(it) } ?: content
+        return parseMetadata(headerContent)
+    }
+
+    private fun loadFileHeader(file: File): String {
+        return RandomAccessFile(file, "r").use { raf ->
+            val bytes = ByteArray(HEADER_SIZE.coerceAtMost(file.length().toInt()))
+            raf.read(bytes)
+            String(bytes)
+        }
+    }
+
+    private fun parseMetadata(content: String): ModMetadata {
+        debug("Parsing metadata for mod: $name", useDispatcher = false)
+
+        val lines = content.lines()
+        val metadata = METADATA_PREFIXES.mapValues { (prefix, extractor) ->
+            lines.firstOrNull { it.trim().startsWith(prefix) }
+                ?.let { extractor(it) }
+                ?.also { debug("Found $prefix: $it", useDispatcher = false) }
+        }
+
+        return ModMetadata(
+            modName = metadata["#modname"],
+            description = metadata["#description"],
+            version = metadata["#version"],
+            iconPath = metadata["#icon"]
+        )
+    }
+
+    // Metadata properties - always load fresh
+    val modName: String get() = loadMetadata().modName ?: name
+    val description: String get() = loadMetadata().description ?: ""
+    val version: String get() = loadMetadata().version ?: ""
+    val iconPath: String? get() = loadMetadata().iconPath
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ModFile) return false
+        return file?.absolutePath == other.file?.absolutePath && name == other.name
+    }
+
+    override fun hashCode(): Int {
+        var result = file?.absolutePath.hashCode()
+        result = 31 * result + name.hashCode()
+        return result
+    }
+
+    override fun toString(): String =
+        "ModFile(name=$name, path=${file?.absolutePath ?: "memory"})"
 }
 
 class InvalidModFileException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
