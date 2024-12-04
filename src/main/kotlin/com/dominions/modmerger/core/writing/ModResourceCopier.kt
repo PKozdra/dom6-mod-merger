@@ -1,7 +1,11 @@
 package com.dominions.modmerger.core.writing
 
 import com.dominions.modmerger.MergeWarning
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
+import com.dominions.modmerger.domain.LogDispatcher
+import com.dominions.modmerger.domain.LogLevel
+import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.ModFile
 import mu.KotlinLogging
 import java.io.File
 
@@ -109,11 +113,13 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
                 }
         } catch (e: Exception) {
             val warningMessage = "Failed to copy resources from ${sourceDir.absolutePath}: ${e.message}"
-            warnings.add(MergeWarning.ResourceWarning(
-                modFile = modFile,
-                message = warningMessage,
-                resourcePath = sourceDir.absolutePath
-            ))
+            warnings.add(
+                MergeWarning.ResourceWarning(
+                    modFile = modFile,
+                    message = warningMessage,
+                    resourcePath = sourceDir.absolutePath
+                )
+            )
             log(LogLevel.ERROR, warningMessage)
         }
     }
@@ -136,11 +142,13 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
         } catch (e: Exception) {
             stats.skippedFiles++
             val warningMessage = "Failed to copy ${source.name}: ${e.message}"
-            warnings.add(MergeWarning.ResourceWarning(
-                modFile = modFile,
-                message = warningMessage,
-                resourcePath = source.absolutePath
-            ))
+            warnings.add(
+                MergeWarning.ResourceWarning(
+                    modFile = modFile,
+                    message = warningMessage,
+                    resourcePath = source.absolutePath
+                )
+            )
             log(LogLevel.WARN, warningMessage)
         }
     }
@@ -169,9 +177,11 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
     }
 
     private fun logFinalStats(stats: CopyStats) {
-        log(LogLevel.INFO, """
+        log(
+            LogLevel.INFO, """
             Resource copying completed! Total files processed: ${stats.filesHandled}
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     private fun shouldCopyFile(file: File): Boolean = when {

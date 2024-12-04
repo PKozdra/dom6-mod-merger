@@ -3,15 +3,15 @@ package com.dominions.modmerger
 
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
-import com.dominions.modmerger.core.parsing.*
+import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModContentWriter
 import com.dominions.modmerger.core.writing.ModHeaderWriter
 import com.dominions.modmerger.core.writing.ModResourceCopier
 import com.dominions.modmerger.core.writing.ModWriter
+import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.ModOutputConfig
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.formdev.flatlaf.FlatLightLaf
@@ -24,40 +24,28 @@ fun main(args: Array<String>) {
         else -> true
     }
 
-    if (useGui) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
+    // Initialize infrastructure components
     val gamePathsManager = GamePathsManager()
     val fileSystem = FileSystem(gamePathsManager)
-
-    val entityProcessor = EntityProcessor()
-
-    val modParser = ModParser(
-        entityProcessor = entityProcessor,
-    )
-
     val logDispatcher = LogDispatcher()
 
+    // Initialize configuration manager
+    val configManager = ModOutputConfigManager(fileSystem, gamePathsManager)
+    val defaultConfig = configManager.createDefaultConfig()
+
+    // Initialize core components
+    val entityProcessor = EntityProcessor()
+    val modParser = ModParser(entityProcessor = entityProcessor)
     val mapper = IdMapper(logDispatcher)
     val scanner = ModScanner(modParser)
 
+    // Initialize writers
     val contentWriter = ModContentWriter(
         entityProcessor = entityProcessor,
         logDispatcher = logDispatcher
     )
-
-    val resourceCopier = ModResourceCopier(
-        logDispatcher = logDispatcher
-    )
-
-    val headerWriter = ModHeaderWriter(
-        logDispatcher = logDispatcher
-    )
+    val resourceCopier = ModResourceCopier(logDispatcher = logDispatcher)
+    val headerWriter = ModHeaderWriter(logDispatcher = logDispatcher)
 
     val writer = ModWriter(
         fileSystem = fileSystem,
@@ -67,25 +55,30 @@ fun main(args: Array<String>) {
         headerWriter = headerWriter
     )
 
-    val modOutputConfig = ModOutputConfig(
-        modName = "test_mod",
-        gamePathsManager = gamePathsManager
-    )
-
+    // Create mod merger service with default configuration
     val modMergerService = ModMergerService(
         scanner = scanner,
         mapper = mapper,
         writer = writer,
-        config = modOutputConfig,
+        config = defaultConfig,
         fileSystem = fileSystem,
         logDispatcher = logDispatcher
     )
 
+    // Initialize and run appropriate application type
     val application = if (useGui) {
         FlatLightLaf.setup()
-        GuiApplication(modMergerService, fileSystem, gamePathsManager, logDispatcher)
+        GuiApplication(
+            modMergerService = modMergerService,
+            fileSystem = fileSystem,
+            gamePathsManager = gamePathsManager,
+            logDispatcher = logDispatcher
+        )
     } else {
-        ConsoleApplication(modMergerService, fileSystem)
+        ConsoleApplication(
+            modMergerService = modMergerService,
+            fileSystem = fileSystem,
+        )
     }
 
     application.run()

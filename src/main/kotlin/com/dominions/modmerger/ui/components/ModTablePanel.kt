@@ -7,11 +7,10 @@ import java.awt.event.*
 import java.util.*
 import java.util.Timer
 import javax.swing.*
-import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
-import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
 
 /**
@@ -38,10 +37,9 @@ class ModTablePanel : JPanel() {
         private const val ICON_HEIGHT = 64
         private const val ROW_PADDING = 4
         private const val SEARCH_DELAY_MS = 200L
-        private val SEARCH_COLUMNS = listOf(
-            ModTableModel.TableColumn.NAME.ordinal,
-            ModTableModel.TableColumn.FILENAME.ordinal
-        )
+
+        private const val CHECKBOX_WIDTH = 30
+        private const val SOURCE_ICON_WIDTH = 64
     }
 
     init {
@@ -125,18 +123,17 @@ class ModTablePanel : JPanel() {
         updateStatusLabels()
     }
 
+
     private fun updateStatusLabels() {
         val totalMods = model.rowCount
         val visibleMods = table.rowCount
 
-        // Update mod count label
         modCountLabel.text = when {
             totalMods == 0 -> "No mods found"
             visibleMods < totalMods -> "Showing $visibleMods of $totalMods mods"
             else -> "Showing all $totalMods mods"
         }
 
-        // Update status panel with only selected mods
         statusPanel.updateStatus(model.getSelectedMods())
     }
 
@@ -178,41 +175,80 @@ class ModTablePanel : JPanel() {
 
     private fun JTable.setupTableColumns() {
         columnModel.apply {
-            getColumn(0).apply {
-                width = 30
-                maxWidth = 30
+            // Set column identifiers
+            val columnsList = (0 until columnCount).map { getColumn(it) }
+            columnsList.forEachIndexed { index, tableColumn ->
+                val tableColumnEnum = ModTableModel.TableColumn.entries[index]
+                tableColumn.identifier = tableColumnEnum
+            }
+
+            // Access columns by identifier
+            getColumn(ModTableModel.TableColumn.SELECTED).apply {
+                width = CHECKBOX_WIDTH
+                minWidth = CHECKBOX_WIDTH
+                maxWidth = CHECKBOX_WIDTH
+                resizable = false
                 cellRenderer = CheckBoxRenderer()
                 cellEditor = DefaultCellEditor(JCheckBox())
             }
-            getColumn(1).apply {
+
+            getColumn(ModTableModel.TableColumn.ICON).apply {
                 width = ICON_WIDTH
                 minWidth = ICON_WIDTH
-                preferredWidth = ICON_WIDTH
+                maxWidth = ICON_WIDTH
+                resizable = false
                 cellRenderer = IconRenderer(ICON_WIDTH, ICON_HEIGHT)
             }
-            getColumn(2).apply {
+
+            getColumn(ModTableModel.TableColumn.SOURCE).apply {
+                width = SOURCE_ICON_WIDTH
+                minWidth = SOURCE_ICON_WIDTH
+                maxWidth = SOURCE_ICON_WIDTH
+                resizable = false
+                cellRenderer = SourceTypeRenderer()
+            }
+
+            // Other columns remain flexible...
+            getColumn(ModTableModel.TableColumn.NAME).apply {
                 preferredWidth = 300
-                cellRenderer = ModNameRenderer()
+                cellRenderer = ModNameRenderer(SwingConstants.CENTER)
             }
-            getColumn(3).apply {
+            getColumn(ModTableModel.TableColumn.FILENAME).apply {
                 preferredWidth = 200
-                cellRenderer = createDefaultRenderer()
+                cellRenderer = BaseTableCellRenderer(SwingConstants.CENTER)
             }
-            getColumn(4).apply {
+            getColumn(ModTableModel.TableColumn.SIZE).apply {
                 preferredWidth = 80
-                cellRenderer = SizeRenderer()
+                cellRenderer = BaseTableCellRenderer(SwingConstants.CENTER)
             }
-            getColumn(5).apply {
+            getColumn(ModTableModel.TableColumn.LAST_MODIFIED).apply {
                 preferredWidth = 150
-                cellRenderer = createDefaultRenderer().apply {
-                    horizontalAlignment = SwingConstants.CENTER
-                }
+                cellRenderer = BaseTableCellRenderer(SwingConstants.CENTER)
             }
         }
     }
 
-    private fun createDefaultRenderer() = DefaultTableCellRenderer().apply {
-        border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
+
+    class BaseTableCellRenderer(private val alignment: Int = SwingConstants.LEFT) : TableCellRenderer {
+        private val label = JLabel().apply {
+            horizontalAlignment = alignment
+            border = EmptyBorder(0, 5, 0, 5)
+            isOpaque = true
+        }
+
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): Component {
+            label.text = value?.toString() ?: ""
+            label.background = if (isSelected) table.selectionBackground else table.background
+            label.foreground = if (isSelected) table.selectionForeground else table.foreground
+            return label
+        }
     }
 
     private fun focusOnMod(mod: ModListItem) {
@@ -294,9 +330,33 @@ class ModTablePanel : JPanel() {
     }
 
     private fun createRowSorter() = TableRowSorter(model).apply {
-        sortKeys = listOf(RowSorter.SortKey(2, SortOrder.ASCENDING))
-        setSortable(0, false)
-        setSortable(1, false)
+        // Disable sorting on certain columns
+        setSortable(model.getColumnIndex(ModTableModel.TableColumn.SELECTED), false)
+        setSortable(model.getColumnIndex(ModTableModel.TableColumn.ICON), false)
+        setSortable(model.getColumnIndex(ModTableModel.TableColumn.SOURCE), false)
+
+        // Comparator for the SIZE column
+        setComparator(model.getColumnIndex(ModTableModel.TableColumn.SIZE)) { a, b ->
+            val sizeA = parseSize(a as String)
+            val sizeB = parseSize(b as String)
+            sizeA.compareTo(sizeB)
+        }
+
+        // Default sort key
+        sortKeys = listOf(
+            RowSorter.SortKey(model.getColumnIndex(ModTableModel.TableColumn.NAME), SortOrder.ASCENDING)
+        )
+    }
+
+    private fun parseSize(sizeStr: String): Long {
+        val value = sizeStr.replace(",", ".").split(" ")[0].toDouble()
+        return when {
+            sizeStr.endsWith("TB") -> (value * 1024 * 1024 * 1024 * 1024).toLong()
+            sizeStr.endsWith("GB") -> (value * 1024 * 1024 * 1024).toLong()
+            sizeStr.endsWith("MB") -> (value * 1024 * 1024).toLong()
+            sizeStr.endsWith("KB") -> (value * 1024).toLong()
+            else -> value.toLong()
+        }
     }
 
     private fun scheduleSearch() {
@@ -328,12 +388,17 @@ class ModTablePanel : JPanel() {
 
     private fun createSearchFilter(searchText: String): RowFilter<ModTableModel, Int> {
         val searchTerms = searchText.lowercase(Locale.getDefault()).split(" ").filter { it.isNotEmpty() }
+        val searchColumns = listOf(
+            ModTableModel.TableColumn.NAME,
+            ModTableModel.TableColumn.FILENAME
+        )
 
         return object : RowFilter<ModTableModel, Int>() {
             override fun include(entry: Entry<out ModTableModel, out Int>): Boolean {
                 return searchTerms.all { term ->
-                    SEARCH_COLUMNS.any { column ->
-                        entry.getValue(column).toString().lowercase(Locale.getDefault()).contains(term)
+                    searchColumns.any { column ->
+                        val columnIndex = model.getColumnIndex(column)
+                        entry.getValue(columnIndex).toString().lowercase(Locale.getDefault()).contains(term)
                     }
                 }
             }
@@ -345,17 +410,6 @@ class ModTablePanel : JPanel() {
         searchField.requestFocus()
         rowSorter.rowFilter = null
         updateStatusMessage(null)
-    }
-
-    private fun updateSearchResults() {
-        val totalRows = model.rowCount
-        val filteredRows = rowSorter.viewRowCount
-
-        when {
-            filteredRows == 0 -> updateStatusMessage("No matches found")
-            filteredRows < totalRows -> updateStatusMessage("Showing $filteredRows of $totalRows mods")
-            else -> updateStatusMessage(null)
-        }
     }
 
     private fun updateStatusMessage(message: String?) {

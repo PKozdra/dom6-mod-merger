@@ -6,20 +6,25 @@ import javax.swing.Icon
 import javax.swing.table.AbstractTableModel
 
 class ModTableModel : AbstractTableModel() {
-    private val columns = TableColumn.entries.toTypedArray()
+    // Expose columns as a read-only list
+    val columns: List<TableColumn> = TableColumn.entries
+    private val columnIndexMap = columns.mapIndexed { index, column -> column to index }.toMap()
+
     private val mods = mutableListOf<ModListItem>()
 
-    enum class TableColumn(val displayName: String, val type: Class<*>) {
-        SELECTED("", Boolean::class.java),
-        ICON("Icon", Icon::class.java),
+    enum class TableColumn(val displayName: String, val type: Class<*>, val width: Int? = null) {
+        SELECTED("", Boolean::class.java, 30),
+        ICON("Icon", Icon::class.java, 256),
         NAME("Name", String::class.java),
         FILENAME("File name", String::class.java),
-        SIZE("Size", Long::class.java),
-        LAST_MODIFIED("Last modified", String::class.java);
+        SIZE("Size", String::class.java),
+        LAST_MODIFIED("Last modified", String::class.java),
+        SOURCE("Source", Icon::class.java, 64),
+    }
 
-        companion object {
-            fun fromIndex(index: Int) = values()[index]
-        }
+    // Helper method to get column index from TableColumn enum
+    fun getColumnIndex(column: TableColumn): Int {
+        return columnIndexMap[column] ?: -1
     }
 
     fun updateMods(newMods: List<ModListItem>) {
@@ -33,48 +38,50 @@ class ModTableModel : AbstractTableModel() {
     fun setAllSelected(selected: Boolean) {
         mods.forEachIndexed { index, mod ->
             mods[index] = mod.copy(isSelected = selected)
-            fireTableCellUpdated(index, 0)
+            fireTableCellUpdated(index, getColumnIndex(TableColumn.SELECTED))
         }
     }
 
     fun toggleSelection(row: Int) {
         if (row >= 0 && row < mods.size) {
-            setValueAt(!mods[row].isSelected, row, TableColumn.SELECTED.ordinal)
+            val currentValue = mods[row].isSelected
+            setValueAt(!currentValue, row, getColumnIndex(TableColumn.SELECTED))
         }
     }
 
     fun setSelectedRows(rows: List<Int>, selected: Boolean) {
+        val selectedColumnIndex = getColumnIndex(TableColumn.SELECTED)
         rows.forEach { row ->
             if (row >= 0 && row < mods.size) {
                 mods[row] = mods[row].copy(isSelected = selected)
-                fireTableCellUpdated(row, TableColumn.SELECTED.ordinal)
+                fireTableCellUpdated(row, selectedColumnIndex)
             }
         }
     }
 
     fun getSelectedCount(): Int = mods.count { it.isSelected }
 
-
     override fun getRowCount(): Int = mods.size
     override fun getColumnCount(): Int = columns.size
-    override fun getColumnName(column: Int): String = TableColumn.fromIndex(column).displayName
-    override fun getColumnClass(column: Int): Class<*> = TableColumn.fromIndex(column).type
-    override fun isCellEditable(row: Int, column: Int): Boolean = column == TableColumn.SELECTED.ordinal
+    override fun getColumnName(column: Int): String = columns[column].displayName
+    override fun getColumnClass(column: Int): Class<*> = columns[column].type
+    override fun isCellEditable(row: Int, column: Int): Boolean = columns[column] == TableColumn.SELECTED
 
-    override fun getValueAt(row: Int, column: Int): Comparable<*>? {
+    override fun getValueAt(row: Int, column: Int): Any? {
         val mod = mods[row]
-        return when (TableColumn.fromIndex(column)) {
+        return when (columns[column]) {
             TableColumn.SELECTED -> mod.isSelected
             TableColumn.ICON -> mod.iconPath
+            TableColumn.SOURCE -> mod.sourceType
             TableColumn.NAME -> mod.modName
             TableColumn.FILENAME -> mod.fileName
-            TableColumn.SIZE -> mod.size
+            TableColumn.SIZE -> mod.getFormattedSize()
             TableColumn.LAST_MODIFIED -> mod.getFormattedDate()
         }
     }
 
     override fun setValueAt(value: Any?, row: Int, column: Int) {
-        if (column == TableColumn.SELECTED.ordinal && value is Boolean) {
+        if (columns[column] == TableColumn.SELECTED && value is Boolean) {
             mods[row] = mods[row].copy(isSelected = value)
             fireTableCellUpdated(row, column)
         }

@@ -1,9 +1,9 @@
 package com.dominions.modmerger.core.writing
 
 import com.dominions.modmerger.MergeWarning
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.domain.LogLevel
-import com.dominions.modmerger.domain.ModOutputConfig
 import com.dominions.modmerger.domain.ModFile
 import mu.KotlinLogging
 import java.time.LocalDateTime
@@ -26,7 +26,8 @@ class ModHeaderWriter(
             val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
             val headerContent = buildString {
-                appendLine("#modname \"${config.modName}\"")
+                // Use display name for in-game modname
+                appendLine("#modname \"${config.displayName}\"")
                 appendLine("#description \"${config.description}")
                 appendLine("\nMerged from:")
                 sourceModFiles.forEach { appendLine("- ${it.name}") }
@@ -37,11 +38,13 @@ class ModHeaderWriter(
                         appendLine("#icon \"${icon.name}\"")
                     } else {
                         sourceModFiles.firstOrNull()?.let { modFile ->
-                            warnings.add(MergeWarning.ResourceWarning(
-                                modFile = modFile,
-                                message = "Icon file not found",
-                                resourcePath = icon.absolutePath
-                            ))
+                            warnings.add(
+                                MergeWarning.ResourceWarning(
+                                    modFile = modFile,
+                                    message = "Icon file not found",
+                                    resourcePath = icon.absolutePath
+                                )
+                            )
                         }
                     }
                 }
@@ -58,10 +61,12 @@ class ModHeaderWriter(
             log(LogLevel.ERROR, error)
 
             sourceModFiles.firstOrNull()?.let { modFile ->
-                warnings.add(MergeWarning.ContentWarning(
-                    modFile = modFile,
-                    message = error
-                ))
+                warnings.add(
+                    MergeWarning.ContentWarning(
+                        modFile = modFile,
+                        message = error
+                    )
+                )
             }
         }
 

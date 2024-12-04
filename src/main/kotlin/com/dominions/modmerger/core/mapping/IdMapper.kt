@@ -35,7 +35,9 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
     private data class MappingState(
         val usedIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf() },
         val currentIds: MutableMap<EntityType, Long> = mutableMapOf(),
-        val remappedTargetIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(mutableMapOf()) { mutableSetOf() },
+        val remappedTargetIds: MutableMap<EntityType, MutableSet<Long>> = EntityType.entries.associateWithTo(
+            mutableMapOf()
+        ) { mutableSetOf() },
         val attemptedPreferredStart: MutableSet<EntityType> = mutableSetOf()
     )
 
@@ -46,16 +48,21 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
     )
 
     private fun createMappingForMod(modDef: ModDefinition, state: MappingState): MappedModDefinition {
-        val result = EntityType.entries.fold(MappingResult(
-            mappedDefinition = MappedModDefinition(modDef.modFile),
-            remappedCount = 0,
-            keptCount = 0
-        )) { acc, type ->
+        val result = EntityType.entries.fold(
+            MappingResult(
+                mappedDefinition = MappedModDefinition(modDef.modFile),
+                remappedCount = 0,
+                keptCount = 0
+            )
+        ) { acc, type ->
             processEntityType(type, modDef.getDefinition(type), acc, state)
         }
 
         if (result.remappedCount > 0) {
-            log(LogLevel.INFO, "Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs")
+            log(
+                LogLevel.INFO,
+                "Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs"
+            )
         }
 
         return result.mappedDefinition
@@ -78,6 +85,7 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
                     state.usedIds[type]?.add(newId)
                     remappedCount++
                 }
+
                 else -> {
                     state.usedIds[type]?.add(id)
                     keptCount++
@@ -94,7 +102,8 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
     private fun getNextAvailableId(type: EntityType, state: MappingState): Long {
         val range = ranges[type] ?: throw IllegalStateException("No range defined for $type")
         val used = state.usedIds[type] ?: throw IllegalStateException("No used IDs tracking for $type")
-        val remappedTargets = state.remappedTargetIds[type] ?: throw IllegalStateException("No remapped targets tracking for $type")
+        val remappedTargets =
+            state.remappedTargetIds[type] ?: throw IllegalStateException("No remapped targets tracking for $type")
 
         // Try preferred start first if not already attempted
         val preferredStart = preferredStarts[type]

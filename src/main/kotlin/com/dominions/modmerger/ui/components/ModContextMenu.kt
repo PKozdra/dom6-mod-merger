@@ -3,7 +3,6 @@ package com.dominions.modmerger.ui.components
 import com.dominions.modmerger.ui.model.ModListItem
 import mu.KotlinLogging
 import java.awt.Desktop
-import java.awt.SystemColor.desktop
 import java.awt.event.MouseEvent
 import java.io.File
 import java.net.URI
@@ -115,7 +114,7 @@ class ModContextMenu(
             logger.debug { "Added Steam Workshop option for mod: ${mod.fileName} (ID: $workshopId)" }
         }
 
-        add(createMenuItem("Open mod file with default program") {
+        add(createMenuItem("Open with Associated Application") {
             openDmFile(mod)
         })
     }

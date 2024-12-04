@@ -3,14 +3,16 @@ package com.dominions.modmerger.testutils
 
 import com.dominions.modmerger.core.ModMergerService
 import com.dominions.modmerger.core.mapping.IdMapper
-import com.dominions.modmerger.core.parsing.*
+import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.processing.EntityProcessor
+import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModContentWriter
 import com.dominions.modmerger.core.writing.ModHeaderWriter
 import com.dominions.modmerger.core.writing.ModResourceCopier
 import com.dominions.modmerger.core.writing.ModWriter
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
+import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import java.io.File
@@ -47,7 +49,9 @@ object TestUtils {
         val gamePathsManager = TestGamePathsManager(tempDir)
         val fileSystem = FileSystem(gamePathsManager)
 
-        val contentWriter = ModContentWriter(entityProcessor, logDispatcher)
+        val spellBlockProcessor = SpellBlockProcessor()
+
+        val contentWriter = ModContentWriter(entityProcessor, spellBlockProcessor, logDispatcher)
         val resourceCopier = ModResourceCopier(logDispatcher)
         val headerWriter = ModHeaderWriter(logDispatcher)
 

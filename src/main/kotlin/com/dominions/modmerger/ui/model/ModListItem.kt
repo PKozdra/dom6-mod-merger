@@ -7,6 +7,11 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+enum class ModSourceType {
+    STEAM,
+    LOCAL
+}
+
 /**
  * UI model representing a mod file with optimized resource loading and caching.
  */
@@ -15,6 +20,16 @@ data class ModListItem(
     var isSelected: Boolean = false
 ) {
     private val logger = KotlinLogging.logger {}
+
+    // Determine source type (Steam or Local)
+    val sourceType: ModSourceType by lazy {
+        val path = modFile.file?.absolutePath ?: return@lazy ModSourceType.LOCAL
+        if (path.contains("\\workshop\\content\\2511500\\")) {
+            ModSourceType.STEAM
+        } else {
+            ModSourceType.LOCAL
+        }
+    }
 
     // Eagerly loaded properties
     val fileName: String = modFile.file?.name ?: "Unknown"

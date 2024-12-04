@@ -1,0 +1,35 @@
+package com.dominions.modmerger.infrastructure
+
+import mu.KotlinLogging
+import java.awt.Image
+import javax.swing.ImageIcon
+
+object ApplicationConfig {
+    private val logger = KotlinLogging.logger {}
+
+    const val APP_NAME = "Dominions 6 Mod Merger"
+    const val APP_VERSION = "0.0.1"
+    private const val APP_ICON_PATH = "icon.ico"
+
+    /**
+     * Gets the application icon, scaling it if dimensions are provided
+     */
+    fun getApplicationIcon(width: Int? = null, height: Int? = null): ImageIcon? {
+        return try {
+            val resource = ApplicationConfig::class.java.classLoader.getResource(APP_ICON_PATH)
+                ?: throw IllegalStateException("Application icon not found")
+
+            val icon = ImageIcon(resource)
+
+            if (width != null && height != null) {
+                val scaled = icon.image.getScaledInstance(width, height, Image.SCALE_SMOOTH)
+                ImageIcon(scaled)
+            } else {
+                icon
+            }
+        } catch (e: Exception) {
+            logger.error { "Failed to load application icon: ${e.message}" }
+            null
+        }
+    }
+}

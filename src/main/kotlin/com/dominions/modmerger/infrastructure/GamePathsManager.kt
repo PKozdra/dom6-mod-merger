@@ -4,7 +4,6 @@ package com.dominions.modmerger.infrastructure
 import com.dominions.modmerger.constants.GameConstants
 import mu.KotlinLogging
 import java.io.File
-import java.nio.file.Path
 import java.nio.file.Paths
 
 open class GamePathsManager {
@@ -27,10 +26,12 @@ open class GamePathsManager {
                 val appData = System.getenv("APPDATA")
                 Paths.get(appData, "Dominions6", "mods").toFile()
             }
+
             System.getProperty("os.name").contains("Mac") -> {
                 val userHome = System.getProperty("user.home")
                 Paths.get(userHome, "Library", "Application Support", "Dominions6", "mods").toFile()
             }
+
             else -> {
                 val userHome = System.getProperty("user.home")
                 Paths.get(userHome, ".local", "share", "Dominions6", "mods").toFile()
@@ -49,11 +50,13 @@ open class GamePathsManager {
             System.getProperty("os.name").contains("Windows") -> {
                 findWindowsSteamPath()
             }
+
             System.getProperty("os.name").contains("Mac") -> {
                 val userHome = System.getProperty("user.home")
                 File("$userHome/Library/Application Support/Steam")
                     .takeIf { it.exists() }
             }
+
             else -> {
                 val userHome = System.getProperty("user.home")
                 File("$userHome/.steam/steam")

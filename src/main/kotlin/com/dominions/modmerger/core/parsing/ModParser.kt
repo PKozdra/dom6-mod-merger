@@ -4,10 +4,10 @@ package com.dominions.modmerger.core.parsing
 import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.constants.ModRanges
-import com.dominions.modmerger.domain.ModDefinition
-import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.domain.EntityType
+import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.utils.ModUtils
 import mu.KotlinLogging
 import kotlin.math.abs
@@ -35,6 +35,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                     inMultilineDescription -> {
                         if (line.contains("\"")) inMultilineDescription = false
                     }
+
                     isDescriptionStart(line) -> {
                         inMultilineDescription = !line.endsWith("\"")
                     }
@@ -44,10 +45,12 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                         inSpellBlock = true
                         handleSpellStart(line, definition)
                     }
+
                     line.matches(ModPatterns.END) -> {
                         inSpellBlock = false
                         currentSpellEffect = null
                     }
+
                     inSpellBlock -> {
                         handleSpellContent(line, currentSpellEffect, definition)
                         // Update effect if found
@@ -80,6 +83,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                         definition.addVanillaEditedId(type, id)
                     }
                 }
+
                 else -> definition.addImplicitDefinition(type)
             }
         }
@@ -114,6 +118,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                             definition.addDefinedId(EntityType.MONTAG, abs(damage))
                         }
                     }
+
                     effect in GameConstants.SpellEffects.ENCHANTMENT_EFFECTS -> {
                         definition.addDefinedId(EntityType.ENCHANTMENT, damage)
                     }

@@ -1,35 +1,27 @@
 package com.dominions.modmerger.ui.components
 
-import com.dominions.modmerger.domain.ModOutputConfig
-import com.dominions.modmerger.infrastructure.FileSystem
-import com.dominions.modmerger.infrastructure.GamePathsManager
-import java.awt.BorderLayout
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import java.awt.Insets
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
+import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
+import mu.KotlinLogging
+import java.awt.*
+import java.io.File
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
-import java.awt.Color
-import java.io.File
-import mu.KotlinLogging
 
 class ModOutputConfigPanel(
-    private val fileSystem: FileSystem,
-    private val gamePathsManager: GamePathsManager
+    private val configManager: ModOutputConfigManager,
 ) : JPanel() {
     private val logger = KotlinLogging.logger {}
 
-    // UI Components
+    // UI Components - simplified to core requirements
+    private val displayNameField = JTextField(20)
     private val modNameField = JTextField(20)
-    private val versionField = JTextField("1.0", 5)
-    private val descriptionArea = JTextArea(3, 20)
     private val directoryField = JTextField(30)
     private val directoryButton = JButton("Browse...")
     private val previewLabel = JLabel()
     private val validationLabel = JLabel()
 
-    // Validation state
     private var isValid = false
         private set(value) {
             field = value
@@ -48,7 +40,6 @@ class ModOutputConfigPanel(
         layout = BorderLayout(10, 10)
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
 
-        // Create main form panel
         val formPanel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
             insets = Insets(5, 5, 5, 5)
@@ -56,55 +47,37 @@ class ModOutputConfigPanel(
             fill = GridBagConstraints.HORIZONTAL
         }
 
-        // Mod Name
+        // Display Name (allows spaces)
         gbc.apply {
             gridx = 0; gridy = 0
             gridwidth = 1
         }
-        formPanel.add(JLabel("Mod Name:"), gbc)
+        formPanel.add(JLabel("Mod Display Name:"), gbc)
 
         gbc.apply {
             gridx = 1
             gridwidth = 2
-            fill = GridBagConstraints.HORIZONTAL
             weightx = 1.0
         }
-        formPanel.add(modNameField, gbc)
+        formPanel.add(displayNameField, gbc)
 
-        // Version
+        // Technical Mod Name (no spaces)
         gbc.apply {
             gridx = 0; gridy = 1
             gridwidth = 1
             weightx = 0.0
         }
-        formPanel.add(JLabel("Version:"), gbc)
+        formPanel.add(JLabel("Technical Name:"), gbc)
 
         gbc.apply {
             gridx = 1
             gridwidth = 2
         }
-        formPanel.add(versionField, gbc)
-
-        // Description
-        gbc.apply {
-            gridx = 0; gridy = 2
-            gridwidth = 1
-        }
-        formPanel.add(JLabel("Description:"), gbc)
-
-        gbc.apply {
-            gridx = 1
-            gridwidth = 2
-        }
-        descriptionArea.apply {
-            lineWrap = true
-            wrapStyleWord = true
-        }
-        formPanel.add(JScrollPane(descriptionArea), gbc)
+        formPanel.add(modNameField, gbc)
 
         // Directory
         gbc.apply {
-            gridx = 0; gridy = 3
+            gridx = 0; gridy = 2
             gridwidth = 1
         }
         formPanel.add(JLabel("Directory:"), gbc)
@@ -125,71 +98,57 @@ class ModOutputConfigPanel(
 
         // Preview
         gbc.apply {
-            gridx = 0; gridy = 4
+            gridx = 0; gridy = 3
             gridwidth = 3
         }
         formPanel.add(previewLabel, gbc)
 
         // Validation
         gbc.apply {
-            gridx = 0; gridy = 5
+            gridx = 0; gridy = 4
             gridwidth = 3
         }
         formPanel.add(validationLabel, gbc)
 
-        // Add form to panel
         add(formPanel, BorderLayout.CENTER)
 
-        // Setup directory button action
-        directoryButton.addActionListener {
-            chooseDirectory()
-        }
+        // Help tooltips
+        displayNameField.toolTipText = "The name that will appear in-game (spaces allowed)"
+        modNameField.toolTipText = "Technical name for files and folders (no spaces, underscores allowed)"
+
+        directoryButton.addActionListener { chooseDirectory() }
+
+        // Auto-generate technical name from display name
+        displayNameField.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = updateTechnicalName()
+            override fun removeUpdate(e: DocumentEvent) = updateTechnicalName()
+            override fun changedUpdate(e: DocumentEvent) = updateTechnicalName()
+        })
     }
 
-    private fun setupValidation() {
-        val documentListener = object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = validateInput()
-            override fun removeUpdate(e: DocumentEvent) = validateInput()
-            override fun changedUpdate(e: DocumentEvent) = validateInput()
+    private fun updateTechnicalName() {
+        if (!modNameField.hasFocus()) {
+            modNameField.text = ModOutputConfigManager.sanitizeModName(displayNameField.text)
         }
-
-        modNameField.document.addDocumentListener(documentListener)
-        versionField.document.addDocumentListener(documentListener)
-        directoryField.document.addDocumentListener(documentListener)
     }
 
     private fun setupInitialState() {
-        // Set default directory to local mods path
-        directoryField.text = gamePathsManager.getLocalModPath().absolutePath
+        directoryField.text = configManager.getDefaultDirectory().absolutePath
+        val defaultConfig = configManager.createDefaultConfig()
+        displayNameField.text = defaultConfig.displayName
+        modNameField.text = defaultConfig.modName
         validateInput()
     }
 
     private fun validateInput() {
-        val errors = mutableListOf<String>()
+        val (valid, errors) = configManager.validateConfig(
+            modName = modNameField.text,
+            displayName = displayNameField.text,
+            directory = File(directoryField.text)
+        )
 
-        // Validate mod name
-        modNameField.text.let { name ->
-            val (valid, error) = fileSystem.validateModName(name)
-            if (!valid) {
-                errors.add(error ?: "Invalid mod name")
-            }
-        }
-
-        // Validate version
-        if (!versionField.text.matches(Regex("^\\d+\\.\\d+$"))) {
-            errors.add("Version must be in format X.YY")
-        }
-
-        // Validate directory
-        val directory = File(directoryField.text)
-        if (!directory.exists() && !directory.canWrite()) {
-            errors.add("Selected directory is not writable")
-        }
-
-        // Update UI
-        if (errors.isEmpty()) {
-            validationLabel.text = "✓ Configuration is valid"
-            validationLabel.foreground = Color(0, 150, 0)
+        if (valid) {
+            validationLabel.text = ""
             isValid = true
             updatePreview()
         } else {
@@ -201,10 +160,32 @@ class ModOutputConfigPanel(
     }
 
     private fun updatePreview() {
-        val modName = modNameField.text
-        val directory = File(directoryField.text)
-        val expectedPath = File(directory, "$modName/$modName.dm").absolutePath
-        previewLabel.text = "<html>Output will be created at:<br><font color='gray'>$expectedPath</font></html>"
+        val previewPath = configManager.generatePreviewPath(
+            modName = modNameField.text,
+            directory = File(directoryField.text)
+        )
+        previewLabel.text = "<html>Output will be created at:<br><font color='gray'>$previewPath</font></html>"
+    }
+
+    fun getConfiguration(): ModOutputConfig? {
+        if (!isValid) return null
+
+        return ModOutputConfig.Builder(modNameField.text, configManager.gamePathsManager)
+            .setDisplayName(displayNameField.text)
+            .setDirectory(File(directoryField.text))
+            .build()
+    }
+
+    private fun setupValidation() {
+        val documentListener = object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = validateInput()
+            override fun removeUpdate(e: DocumentEvent) = validateInput()
+            override fun changedUpdate(e: DocumentEvent) = validateInput()
+        }
+
+        displayNameField.document.addDocumentListener(documentListener)
+        modNameField.document.addDocumentListener(documentListener)
+        directoryField.document.addDocumentListener(documentListener)
     }
 
     private fun chooseDirectory() {
@@ -218,16 +199,6 @@ class ModOutputConfigPanel(
             directoryField.text = fileChooser.selectedFile.absolutePath
             validateInput()
         }
-    }
-
-    fun getConfiguration(): ModOutputConfig? {
-        if (!isValid) return null
-
-        return ModOutputConfig.Builder(modNameField.text, gamePathsManager)
-            .setDirectory(File(directoryField.text))
-            .setDescription(descriptionArea.text)
-            .setVersion(versionField.text)
-            .build()
     }
 
     fun addValidationListener(listener: (Boolean) -> Unit) {

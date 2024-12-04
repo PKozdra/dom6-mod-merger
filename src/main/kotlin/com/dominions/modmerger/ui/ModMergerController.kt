@@ -4,7 +4,10 @@ package com.dominions.modmerger.ui
 import com.dominions.modmerger.MergeResult
 import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.core.ModMerger
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
+import com.dominions.modmerger.domain.LogDispatcher
+import com.dominions.modmerger.domain.LogLevel
+import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.ui.model.ModListItem
@@ -24,6 +27,13 @@ class ModMergerController(
     private val logger = KotlinLogging.logger {}
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var modLoadListener: ((List<ModListItem>) -> Unit)? = null
+
+    private var outputConfigProvider: (() -> ModOutputConfig?)? = null
+
+    // Add method to ModMergerController
+    fun setOutputConfigProvider(provider: () -> ModOutputConfig?) {
+        outputConfigProvider = provider
+    }
 
     fun setModLoadListener(listener: (List<ModListItem>) -> Unit) {
         modLoadListener = listener
@@ -71,30 +81,45 @@ class ModMergerController(
         logDispatcher.log(LogLevel.INFO, "Found $totalMods total mods")
     }
 
+    // Modify mergeMods method in ModMergerController
     fun mergeMods(mods: List<ModFile>, onMergeCompleted: () -> Unit) {
+        val outputConfig = outputConfigProvider?.invoke()
+        if (outputConfig == null) {
+            logDispatcher.log(LogLevel.ERROR, "Please configure output settings first")
+            onMergeCompleted()
+            return
+        }
+
         logDispatcher.log(LogLevel.INFO, "Starting merge of ${mods.size} mods...")
+        logDispatcher.log(LogLevel.INFO, "Output will be created as: ${outputConfig.modName}")
 
         coroutineScope.launch {
             try {
                 logDispatcher.log(LogLevel.INFO, "Processing mods: ${mods.joinToString { it.name }}")
                 val result = modMergerService.mergeMods(mods)
                 SwingUtilities.invokeLater {
-                    when (result) {
-                        is MergeResult.Success -> {
-                            logDispatcher.log(LogLevel.INFO, "Merge completed successfully!")
-                            if (result.warnings.isNotEmpty()) {
-                                logDispatcher.log(LogLevel.WARN, "Warnings encountered during merge:")
-                                result.warnings.forEach { warning ->
-                                    logDispatcher.log(LogLevel.WARN, "- $warning")
+                    try {
+                        when (result) {
+                            is MergeResult.Success -> {
+                                logDispatcher.log(LogLevel.INFO, "Merge completed successfully!")
+                                if (!result.warnings.isNullOrEmpty()) {
+                                    logDispatcher.log(LogLevel.WARN, "Warnings encountered during merge:")
+                                    result.warnings.forEach { warning ->
+                                        logDispatcher.log(LogLevel.WARN, "- $warning")
+                                    }
                                 }
                             }
-                        }
 
-                        is MergeResult.Failure -> {
-                            logDispatcher.log(LogLevel.ERROR, "Merge failed: ${result.error}")
+                            is MergeResult.Failure -> {
+                                logDispatcher.log(LogLevel.ERROR, "Merge failed: ${result.error}")
+                            }
                         }
+                    } catch (e: Exception) {
+                        logger.error(e) { "Error updating UI after merge" }
+                        logDispatcher.log(LogLevel.ERROR, "Error updating UI: ${e.message}")
+                    } finally {
+                        onMergeCompleted()
                     }
-                    onMergeCompleted()
                 }
             } catch (e: Exception) {
                 logger.error(e) { "Error during merge" }
