@@ -1,7 +1,6 @@
 package com.dominions.modmerger.ui.model
 
 import com.dominions.modmerger.domain.ModFile
-import mu.KotlinLogging
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -19,8 +18,6 @@ data class ModListItem(
     val modFile: ModFile,
     var isSelected: Boolean = false
 ) {
-    private val logger = KotlinLogging.logger {}
-
     // Determine source type (Steam or Local)
     val sourceType: ModSourceType by lazy {
         val path = modFile.file?.absolutePath ?: return@lazy ModSourceType.LOCAL

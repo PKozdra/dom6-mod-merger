@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="85c95b9c-59a8-4fca-a904-88860f808b24" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/Logging.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Application.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ConsoleApplication.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/GuiApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ModMergerApplication.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/MergeResult.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MergeResult.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMergerService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/scanning/ModScanner.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/scanning/ModScanner.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/LogDispatcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/LogListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/ApplicationConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/ApplicationConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerGui.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModOutputConfigPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModOutputConfigPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/LogLevelPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/LogLevelPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/model/ModListItem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/model/ModListItem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="modmerger" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="modmerger" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="modmerger" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="modmerger" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="help" type="c8890929:TasksNode$1" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JUnit5 Test Class" />
+        <option value="Kotlin File" />
+        <option value="Kotlin Enum" />
+        <option value="Class" />
+        <option value="Kotlin Interface" />
+        <option value="Kotlin Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$USER_HOME$/.jdks/graalvm-ce-21.0.2/lib/src.zip!/java.desktop/sun/awt/FontConfiguration.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="KotlinScriptingSettings">
+    <option name="suppressDefinitionsCheck" value="true" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2p4wks8Ag4acnJoP1CPfnjTc9mR" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Downloaded.Files.Path.Enabled": "false",
+    "Gradle.Build modmerger.executor": "Run",
+    "Gradle.IdMapperTest.executor": "Run",
+    "Gradle.ModMergerTest.executor": "Run",
+    "Gradle.Tests in 'modmerger.test'.executor": "Run",
+    "Gradle.modmerger [build].executor": "Run",
+    "Gradle.modmerger [clean].executor": "Run",
+    "Gradle.modmerger [dependencies].executor": "Run",
+    "Gradle.modmerger [help].executor": "Run",
+    "Gradle.modmerger [nativeCompile].executor": "Run",
+    "Gradle.modmerger [nativeRun].executor": "Run",
+    "Gradle.modmerger [runWithNativeImageAgent].executor": "Run",
+    "Kotlin.MainKt.executor": "Run",
+    "Kotlin.Mod Merger.executor": "Run",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last.edited.regexp": "Sample Text",
+    "last_opened_file_path": "C:/repos/modmerger/src/main/resources/icons",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.language.Kotlin",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\repos\modmerger\src\main\resources\icons" />
+      <recent name="C:\repos\modmerger\libs" />
+      <recent name="C:\repos\modmerger\src\test\resources\mods" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\repos\modmerger\src\main\kotlin\com\dominions\modmerger\domain" />
+      <recent name="C:\repos\modmerger\docs" />
+      <recent name="C:\repos\modmerger\src\main\kotlin\com\dominions\modmerger\ui\components\table\components" />
+      <recent name="C:\repos\modmerger\src\main\kotlin\com\dominions\modmerger\ui\components\table\model" />
+      <recent name="C:\repos\modmerger\src\main\kotlin\com\dominions\modmerger\ui\components\table" />
+    </key>
+    <key name="CreateTestDialog.Recents.Supers">
+      <recent name="" />
+    </key>
+    <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
+      <recent name="com.dominions.modmerger.ui.components.output.model" />
+      <recent name="com.dominions.modmerger.ui.components.table" />
+      <recent name="com.dominions.modmerger.core.writing.config" />
+      <recent name="com.dominions.modmerger.core.writing" />
+      <recent name="com.dominions.modmerger.ui.components.output" />
+    </key>
+    <key name="CreateTestDialog.RecentsKey">
+      <recent name="com.dominions.modmerger.core.mapping" />
+      <recent name="com.dominions.modmerger.scanner" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Kotlin.Mod Merger">
+    <configuration name="modmerger [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="modmerger [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="modmerger [dependencies]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="dependencies" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="modmerger [help]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="help" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="modmerger [nativeRun]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="nativeRun" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="Mod Merger" type="JetRunConfigurationType">
+      <option name="MAIN_CLASS_NAME" value="com.dominions.modmerger.MainKt" />
+      <module name="modmerger.main" />
+      <shortenClasspath name="NONE" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="modmerger" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="modmerger" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Gradle.modmerger [nativeRun]" />
+      <item itemvalue="Gradle.modmerger [build]" />
+      <item itemvalue="Gradle.modmerger [help]" />
+      <item itemvalue="Gradle.modmerger [clean]" />
+      <item itemvalue="Gradle.modmerger [dependencies]" />
+      <item itemvalue="Kotlin.Mod Merger" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.modmerger [dependencies]" />
+        <item itemvalue="Gradle.modmerger [nativeRun]" />
+        <item itemvalue="Gradle.modmerger [build]" />
+        <item itemvalue="Gradle.modmerger [clean]" />
+        <item itemvalue="Gradle.modmerger [help]" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fdfe4dae3a2d-intellij.indexing.shared.core-IU-243.21565.193" />
+        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-IU-243.21565.193" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="85c95b9c-59a8-4fca-a904-88860f808b24" name="Changes" comment="" />
+      <created>1732038805277</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1732038805277</updated>
+      <workItem from="1732038806951" duration="12820000" />
+      <workItem from="1732055019346" duration="807000" />
+      <workItem from="1732121290524" duration="6311000" />
+      <workItem from="1732903840295" duration="6308000" />
+      <workItem from="1732910329037" duration="718000" />
+      <workItem from="1732914047905" duration="10231000" />
+      <workItem from="1732957967674" duration="25462000" />
+      <workItem from="1732992771607" duration="15013000" />
+      <workItem from="1733009336471" duration="8553000" />
+      <workItem from="1733056187169" duration="28798000" />
+      <workItem from="1733161695440" duration="2928000" />
+      <workItem from="1733173198370" duration="6303000" />
+      <workItem from="1733232052038" duration="29179000" />
+      <workItem from="1733264809748" duration="155000" />
+      <workItem from="1733265001815" duration="11263000" />
+      <workItem from="1733276685376" duration="7839000" />
+      <workItem from="1733317531449" duration="2454000" />
+      <workItem from="1733320034496" duration="8152000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="com.dominions.modmerger.domain.ModDefinition" memberName="version" />
+        <PinnedItemInfo parentTag="java.util.LinkedHashMap$Entry" memberName="key" />
+      </pinned-members>
+    </pin-to-top-manager>
+    <watches-manager>
+      <configuration name="JetRunConfigurationType">
+        <watch expression="((LinkedHashMap.Entry)((LinkedHashMap)modDefinitions).entrySet().toArray()[2]).getValue()" custom="java.util.LinkedHashMap,java.util.LinkedHashMap.Entry" />
+        <watch expression="((ModDefinition)((LinkedHashMap.Entry)((LinkedHashMap)modDefinitions).entrySet().toArray()[3]).getValue()).definitions" custom="java.util.LinkedHashMap,java.util.LinkedHashMap.Entry,com.dominions.modmerger.domain.ModDefinition" />
+        <watch expression="((ModDefinition)((LinkedHashMap.Entry)((LinkedHashMap)modDefinitions).entrySet().toArray()[3]).getValue()).definitions" custom="java.util.LinkedHashMap,java.util.LinkedHashMap.Entry,com.dominions.modmerger.domain.ModDefinition" />
+        <watch expression="((LinkedHashMap)((ModDefinition)((LinkedHashMap.Entry)((LinkedHashMap)modDefinitions).entrySet().toArray()[3]).getValue()).definitions).entrySet().toArray()[1]" custom="java.util.LinkedHashMap,java.util.LinkedHashMap.Entry,com.dominions.modmerger.domain.ModDefinition" />
+        <watch expression="((LinkedHashMap)((ModDefinition)((LinkedHashMap.Entry)((LinkedHashMap)modDefinitions).entrySet().toArray()[3]).getValue()).definitions).entrySet().toArray()[1]" custom="java.util.LinkedHashMap,java.util.LinkedHashMap.Entry,com.dominions.modmerger.domain.ModDefinition" />
+        <watch expression="((LinkedHashMap)mappedDefinitions).entrySet().toArray()[4]" custom="java.util.LinkedHashMap" />
+        <watch expression="((LinkedHashMap)mappedDefinitions).entrySet().toArray()[4]" custom="java.util.LinkedHashMap" />
+        <watch expression="((LinkedHashMap)mappedDefinitions).entrySet().toArray()[4]" custom="java.util.LinkedHashMap" />
+        <watch expression="((LinkedHashMap)mappedDefinitions).entrySet().toArray()[4]" custom="java.util.LinkedHashMap" />
+        <watch expression="((LinkedHashMap)modDefinitions).entrySet().toArray()[4]" custom="java.util.LinkedHashMap" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

@@ -1,36 +1,28 @@
-// src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt
 package com.dominions.modmerger.ui
 
-import com.dominions.modmerger.MergeResult
+import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import java.io.File
 import javax.swing.SwingUtilities
 
 class ModMergerController(
     private val modMergerService: ModMerger,
-    private val fileSystem: FileSystem,
     private val gamePathsManager: GamePathsManager,
-    private val logDispatcher: LogDispatcher
-) {
-    private val logger = KotlinLogging.logger {}
+) : Logging {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var modLoadListener: ((List<ModListItem>) -> Unit)? = null
-
     private var outputConfigProvider: (() -> ModOutputConfig?)? = null
 
-    // Add method to ModMergerController
     fun setOutputConfigProvider(provider: () -> ModOutputConfig?) {
         outputConfigProvider = provider
     }
@@ -44,18 +36,17 @@ class ModMergerController(
             // Add Steam workshop path if available
             gamePathsManager.findSteamModPath()?.let {
                 add(it)
-                logDispatcher.log(LogLevel.INFO, "Found Steam workshop path: $it")
+                info("Found Steam workshop path: $it")
             }
 
             // Add local mods directory
             add(gamePathsManager.getLocalModPath().also {
-                logDispatcher.log(LogLevel.INFO, "Using local mods path: $it")
+                info("Using local mods path: $it")
             })
-
         }
 
         if (paths.isEmpty()) {
-            logDispatcher.log(LogLevel.WARN, "No valid mod paths found. Please specify a custom path.")
+            warn("No valid mod paths found. Please specify a custom path.")
             return
         }
 
@@ -70,61 +61,57 @@ class ModMergerController(
                     totalMods++
                 }
             } catch (e: Exception) {
-                logger.error(e) { "Error loading mods from $path" }
-                logDispatcher.log(LogLevel.ERROR, "Error loading mods from $path: ${e.message}")
+                error("Error loading mods from $path: ${e.message}", e)
             }
         }
 
         SwingUtilities.invokeLater {
             modLoadListener?.invoke(modItems)
         }
-        logDispatcher.log(LogLevel.INFO, "Found $totalMods total mods")
+        info("Found $totalMods total mods")
     }
 
-    // Modify mergeMods method in ModMergerController
     fun mergeMods(mods: List<ModFile>, onMergeCompleted: () -> Unit) {
         val outputConfig = outputConfigProvider?.invoke()
         if (outputConfig == null) {
-            logDispatcher.log(LogLevel.ERROR, "Please configure output settings first")
+            error("Please configure output settings first")
             onMergeCompleted()
             return
         }
 
-        logDispatcher.log(LogLevel.INFO, "Starting merge of ${mods.size} mods...")
-        logDispatcher.log(LogLevel.INFO, "Output will be created as: ${outputConfig.modName}")
+        info("Starting merge of ${mods.size} mods...")
+        info("Output will be created as: ${outputConfig.modName}")
 
         coroutineScope.launch {
             try {
-                logDispatcher.log(LogLevel.INFO, "Processing mods: ${mods.joinToString { it.name }}")
+                info("Processing mods: ${mods.joinToString { it.name }}")
                 val result = modMergerService.mergeMods(mods)
                 SwingUtilities.invokeLater {
                     try {
                         when (result) {
                             is MergeResult.Success -> {
-                                logDispatcher.log(LogLevel.INFO, "Merge completed successfully!")
-                                if (!result.warnings.isNullOrEmpty()) {
-                                    logDispatcher.log(LogLevel.WARN, "Warnings encountered during merge:")
+                                info("Merge completed successfully!")
+                                if (result.warnings.isNotEmpty()) {
+                                    warn("Warnings encountered during merge:")
                                     result.warnings.forEach { warning ->
-                                        logDispatcher.log(LogLevel.WARN, "- $warning")
+                                        warn("- $warning")
                                     }
                                 }
                             }
 
                             is MergeResult.Failure -> {
-                                logDispatcher.log(LogLevel.ERROR, "Merge failed: ${result.error}")
+                                error("Merge failed: ${result.error}")
                             }
                         }
                     } catch (e: Exception) {
-                        logger.error(e) { "Error updating UI after merge" }
-                        logDispatcher.log(LogLevel.ERROR, "Error updating UI: ${e.message}")
+                        error("Error updating UI: ${e.message}", e)
                     } finally {
                         onMergeCompleted()
                     }
                 }
             } catch (e: Exception) {
-                logger.error(e) { "Error during merge" }
                 SwingUtilities.invokeLater {
-                    logDispatcher.log(LogLevel.ERROR, "Error during merge: ${e.message}")
+                    error("Error during merge: ${e.message}", e)
                     onMergeCompleted()
                 }
             }

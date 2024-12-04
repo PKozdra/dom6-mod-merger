@@ -1,12 +1,11 @@
 package com.dominions.modmerger.infrastructure
 
 import com.dominions.modmerger.domain.ModFile
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import java.io.File
 import java.io.IOException
 
-class FileSystem(private val gamePathsManager: GamePathsManager) {
-    private val logger = KotlinLogging.logger {}
+class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
 
     companion object {
         private const val MOD_EXTENSION = "dm"
@@ -43,10 +42,10 @@ class FileSystem(private val gamePathsManager: GamePathsManager) {
             if (!modDir.exists() && !modDir.mkdirs()) {
                 throw IOException("Failed to create mod directory: ${modDir.absolutePath}")
             }
-            logger.info { "Created mod directory: ${modDir.absolutePath}" }
+            info("Created mod directory: ${modDir.absolutePath}")
             return modDir
         } catch (e: SecurityException) {
-            logger.error(e) { "Security error creating mod directory: ${modDir.absolutePath}" }
+            error("Security error creating mod directory: ${modDir.absolutePath}", e)
             throw IOException("Security error creating mod directory", e)
         }
     }
@@ -79,7 +78,7 @@ class FileSystem(private val gamePathsManager: GamePathsManager) {
 
         val modFile = File(targetDir, "$modName.$MOD_EXTENSION")
         if (modFile.exists()) {
-            logger.warn { "Mod file already exists: ${modFile.absolutePath}" }
+            warn("Mod file already exists: ${modFile.absolutePath}")
             // Let's not throw here, as we might want to overwrite
         }
     }
@@ -91,13 +90,13 @@ class FileSystem(private val gamePathsManager: GamePathsManager) {
      * @throws IOException if writing fails
      */
     fun writeModFile(modName: String, content: String) {
-        logger.debug { "Writing mod file for: $modName" }
+        debug("Writing mod file for: $modName")
         try {
             val outputFile = getOutputFile(modName)
             outputFile.writeText(content)
-            logger.info { "Successfully wrote mod file: ${outputFile.absolutePath}" }
+            info("Successfully wrote mod file: ${outputFile.absolutePath}")
         } catch (e: IOException) {
-            logger.error(e) { "Failed to write mod file for: $modName" }
+            error("Failed to write mod file: $modName", e)
             throw e
         }
     }
@@ -108,23 +107,23 @@ class FileSystem(private val gamePathsManager: GamePathsManager) {
      * @return List of ModFile objects
      */
     fun findModFiles(directory: File = File(".").absoluteFile): List<ModFile> {
-        logger.debug { "Searching for .$MOD_EXTENSION files in directory: ${directory.absolutePath}" }
+        debug("Searching for .$MOD_EXTENSION files in directory: ${directory.absolutePath}")
 
         return try {
             directory
                 .listFiles { file -> file.isFile && file.extension == MOD_EXTENSION }
                 ?.mapNotNull { file ->
                     try {
-                        logger.debug { "Found mod file: ${file.name}" }
+                        debug("Found mod file: ${file.name}")
                         ModFile.fromFile(file)
                     } catch (e: Exception) {
-                        logger.warn(e) { "Skipping invalid mod file: ${file.name}" }
+                        warn("Failed to read mod file: ${file.name}")
                         null
                     }
                 }
                 ?: emptyList()
         } catch (e: IOException) {
-            logger.error(e) { "Error reading directory: ${directory.absolutePath}" }
+            error("Error reading directory: ${directory.absolutePath}", e)
             emptyList()
         }
     }

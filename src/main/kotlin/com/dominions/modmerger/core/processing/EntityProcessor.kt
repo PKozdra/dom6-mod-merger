@@ -3,10 +3,10 @@ package com.dominions.modmerger.core.processing
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
-import mu.KotlinLogging
 
-class EntityProcessor {
+class EntityProcessor : Logging {
     data class ProcessedEntity(
         val line: String,
         val remapComment: String?
@@ -17,8 +17,6 @@ class EntityProcessor {
         val pattern: Regex,
         val oldId: Long
     )
-
-    private val logger = KotlinLogging.logger {}
 
     companion object {
         private val USAGE_PATTERNS = mapOf(
@@ -121,7 +119,7 @@ class EntityProcessor {
             // Process entity definitions if no usages were found
             return processDefinitionPatterns(line, mappedDef, remapCommentWriter)
         } catch (e: Exception) {
-            logger.error(e) { "Error processing entity line: $line" }
+            error("Error processing entity line: $line", e)
             throw IllegalStateException("Failed to process entity: ${e.message}", e)
         }
     }

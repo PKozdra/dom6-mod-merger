@@ -2,20 +2,18 @@
 package com.dominions.modmerger.infrastructure
 
 import com.dominions.modmerger.constants.GameConstants
-import mu.KotlinLogging
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Paths
 
-open class GamePathsManager {
-    private val logger = KotlinLogging.logger {}
-
+open class GamePathsManager : Logging {
     open fun findSteamModPath(): File? {
-        logger.debug { "Searching for Steam workshop path" }
+        logger.debug("Searching for Steam workshop path")
         return findSteamInstallation()?.let { steamPath ->
             File(steamPath, "steamapps/workshop/content/${GameConstants.GAME_ID}")
                 .takeIf { it.exists() }
                 .also { path ->
-                    logger.debug { "Found Steam workshop path: $path" }
+                    logger.debug("Found Steam workshop path: {}", path)
                 }
         }
     }

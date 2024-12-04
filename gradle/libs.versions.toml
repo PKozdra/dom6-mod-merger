@@ -1,8 +1,0 @@
-[versions]
-kotlin = "2.1.0"
-compose = "1.5.2" # Adjust to the Compose version you want to use
-
-[plugins]
-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-compose = { id = "org.jetbrains.compose", version.ref = "compose" }
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -4,11 +4,11 @@ import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
-import mu.KotlinLogging
 
 
-class SpellBlockProcessor {
+class SpellBlockProcessor : Logging{
     data class SpellBlock(
         val startLine: String,
         val lines: MutableList<String> = mutableListOf(),
@@ -19,14 +19,12 @@ class SpellBlockProcessor {
         var damageMapping: Pair<Long, Long>? = null
     )
 
-    private val logger = KotlinLogging.logger {}
-
     var currentBlock: SpellBlock? = null
         internal set
 
     fun startNewBlock(startLine: String) {
         if (currentBlock != null) {
-            logger.warn { "Starting new spell block while previous block was not closed" }
+            warn("Starting new spell block while previous block was not closed", useDispatcher = false)
         }
         currentBlock = SpellBlock(startLine)
     }
@@ -84,14 +82,14 @@ class SpellBlockProcessor {
             val newId = mappedDef.getMapping(EntityType.MONSTER, damageId)
             if (damageId != newId) {
                 block.damageMapping = damageId to newId
-                logger.debug { "Mapped monster in summoning spell: $damageId -> $newId" }
+                debug("Mapped monster in summoning spell: $damageId -> $newId", useDispatcher = false)
             }
         } else {
             val montagId = -damageId
             val newMontagId = mappedDef.getMapping(EntityType.MONTAG, montagId)
             if (montagId != newMontagId) {
                 block.damageMapping = damageId to -newMontagId
-                logger.debug { "Mapped montag in summoning spell: $montagId -> $newMontagId" }
+                debug("Mapped montag in summoning spell: $montagId -> $newMontagId", useDispatcher = false)
             }
         }
     }

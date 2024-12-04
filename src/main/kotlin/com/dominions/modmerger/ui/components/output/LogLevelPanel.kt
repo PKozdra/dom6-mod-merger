@@ -1,6 +1,6 @@
 package com.dominions.modmerger.ui.components.output
 
-import com.dominions.modmerger.domain.LogLevel
+import com.dominions.modmerger.infrastructure.LogLevel
 import com.dominions.modmerger.infrastructure.PreferencesManager
 import java.awt.Color
 import java.awt.FlowLayout

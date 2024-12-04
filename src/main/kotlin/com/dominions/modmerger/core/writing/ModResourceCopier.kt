@@ -1,19 +1,16 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.MergeWarning
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.ModFile
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
 
 /**
  * Handles copying of mod resources like graphics, sounds, and other assets.
  */
-class ModResourceCopier(private val logDispatcher: LogDispatcher) {
-    private val logger = KotlinLogging.logger {}
+class ModResourceCopier() : Logging {
     private val warnings = mutableListOf<MergeWarning>()
 
     private data class CopyStats(
@@ -56,17 +53,17 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
         val stats = CopyStats()
 
         // First count total files to copy
-        log(LogLevel.INFO, "Scanning mod resources...")
+        info("Scanning mod resources...")
         mappedDefinitions.values.forEach { mappedDef ->
             val sourceModDir = mappedDef.modFile.file?.parentFile ?: return@forEach
             countFiles(sourceModDir, stats)
         }
-        log(LogLevel.INFO, "Found ${stats.totalFiles} files to copy")
+        info("Found ${stats.totalFiles} files to copy")
 
         // Then copy files with progress tracking
         mappedDefinitions.values.forEach { mappedDef ->
             val sourceModDir = mappedDef.modFile.file?.parentFile ?: return@forEach
-            log(LogLevel.INFO, "Copying resources from: ${mappedDef.modFile.name}")
+            info("Copying resources from: ${mappedDef.modFile.name}")
             copyDirectoryContent(sourceModDir, targetModDir, mappedDef.modFile, stats)
         }
 
@@ -88,7 +85,7 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
         stats: CopyStats
     ) {
         if (!sourceDir.exists() || !sourceDir.isDirectory) {
-            log(LogLevel.WARN, "Source directory not found: ${sourceDir.absolutePath}")
+            warn("Source directory not found: ${sourceDir.absolutePath}")
             return
         }
 
@@ -120,7 +117,7 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
                     resourcePath = sourceDir.absolutePath
                 )
             )
-            log(LogLevel.ERROR, warningMessage)
+            error(warningMessage)
         }
     }
 
@@ -149,7 +146,7 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
                     resourcePath = source.absolutePath
                 )
             )
-            log(LogLevel.WARN, warningMessage)
+            warn(warningMessage)
         }
     }
 
@@ -177,8 +174,7 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
     }
 
     private fun logFinalStats(stats: CopyStats) {
-        log(
-            LogLevel.INFO, """
+        info("""
             Resource copying completed! Total files processed: ${stats.filesHandled}
         """.trimIndent()
         )
@@ -189,11 +185,6 @@ class ModResourceCopier(private val logDispatcher: LogDispatcher) {
         file.name in EXCLUDED_FILES -> false
         file.extension.lowercase() in EXCLUDED_EXTENSIONS -> false
         else -> true
-    }
-
-    private fun log(level: LogLevel, message: String) {
-        logger.info { message }
-        logDispatcher.log(level, message)
     }
 
 }

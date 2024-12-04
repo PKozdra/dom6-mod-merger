@@ -1,8 +1,7 @@
 package com.dominions.modmerger.ui.components.output
 
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
-import com.dominions.modmerger.domain.LogListener
+
+import com.dominions.modmerger.infrastructure.*
 import com.dominions.modmerger.ui.util.NoWrapEditorKit
 import java.awt.*
 import java.awt.event.ActionEvent
@@ -26,8 +25,8 @@ import javax.swing.text.StyledEditorKit
  * - Search functionality with highlights and navigation
  */
 class OutputPanel(
-    private val logDispatcher: LogDispatcher
-) : JPanel(BorderLayout()), LogListener {
+    private val logDispatcher: LogDispatcher = GlobalLogDispatcher
+) : JPanel(BorderLayout()), LogListener, Logging {
 
     internal val logQueue = LinkedBlockingQueue<Pair<String, LogLevel>>()
     internal val logBuffer = ArrayDeque<Pair<String, LogLevel>>()
@@ -41,7 +40,7 @@ class OutputPanel(
     private val logLevelPanel = LogLevelPanel(this) // Depends on activeLogLevels
     internal val searchPanel = SearchPanel(this)
 
-    internal var isWordWrapEnabled = true
+    private var isWordWrapEnabled = true
     private val logWorker = LogWorker()
     internal var pauseSearchUpdates = false  // Added to control search updates
 
@@ -52,8 +51,11 @@ class OutputPanel(
         setupLogLevels()
         setupControlPanel()
         setupKeyBindings()
-        logDispatcher.addListener(this) // Register as a listener
+        logDispatcher.addListener(this)
         logWorker.execute()
+
+        // Add initial logging
+        debug("OutputPanel initialized", useDispatcher = false)
     }
 
     private fun setupPanel() {

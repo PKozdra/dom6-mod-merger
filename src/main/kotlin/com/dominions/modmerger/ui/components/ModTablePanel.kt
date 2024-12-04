@@ -1,7 +1,8 @@
 package com.dominions.modmerger.ui.components
 
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
-import mu.KotlinLogging
 import java.awt.*
 import java.awt.event.*
 import java.util.*
@@ -16,7 +17,7 @@ import javax.swing.table.TableRowSorter
 /**
  * Panel that displays and manages a table of mods with search and selection capabilities.
  */
-class ModTablePanel : JPanel() {
+class ModTablePanel : JPanel(), Logging {
     private val model = ModTableModel()
     private val table = createTable()
     private val rowSorter = createRowSorter()
@@ -24,8 +25,6 @@ class ModTablePanel : JPanel() {
     private val statusLabel = JLabel()
     private val searchTimer = Timer()
     private var searchTask: TimerTask? = null
-
-    private val logger = KotlinLogging.logger {}
 
     private val modCountLabel = JLabel()
     private lateinit var statusPanel: StatusPanel
@@ -252,31 +251,31 @@ class ModTablePanel : JPanel() {
     }
 
     private fun focusOnMod(mod: ModListItem) {
-        logger.debug { "Focusing on mod: ${mod.modName}" }
-        logger.debug { "Clearing the search bar" }
+        debug("Focusing on mod: ${mod.modName}", useDispatcher = false)
+        debug("Clearing the search bar", useDispatcher = false)
         clearSearch()
 
-        logger.debug { "Searching for mod in model with ${model.rowCount} total rows" }
+        debug("Searching for mod in model with ${model.rowCount} total rows", useDispatcher = false)
         val modelRow = (0 until model.rowCount).find { row ->
             val currentMod = model.getModAt(row)
-            logger.trace { "Checking row $row: ${currentMod.modName}" }
+            trace("Checking row $row: ${currentMod.modName}", useDispatcher = false)
             currentMod == mod
         }
 
         if (modelRow == null) {
-            logger.warn { "Could not find mod ${mod.modName} in the model" }
+            warn("Could not find mod ${mod.modName} in the model", useDispatcher = false)
             return
         }
 
-        logger.debug { "Found mod at model row: $modelRow" }
+        debug("Found mod at model row: $modelRow", useDispatcher = false)
         val viewRow = table.convertRowIndexToView(modelRow)
-        logger.debug { "Converted to view row: $viewRow" }
+        debug("Converted to view row: $viewRow", useDispatcher = false)
 
-        logger.debug { "Clearing selection and setting new selection interval" }
+        debug("Clearing selection and setting new selection interval", useDispatcher = false)
         table.clearSelection()
         table.setRowSelectionInterval(viewRow, viewRow)
 
-        logger.debug { "Scrolling table to make selected row visible" }
+        debug("Scrolling table to make selected row visible", useDispatcher = false)
         val cellRect = table.getCellRect(viewRow, 0, true)
         table.scrollRectToVisible(cellRect)
     }

@@ -1,9 +1,9 @@
 // src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt
 package com.dominions.modmerger.domain
 
+import com.dominions.modmerger.infrastructure.Logging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import mu.KotlinLogging
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -16,11 +16,10 @@ class ModFile(
     val file: File? = null,
     val name: String,
     private val contentProvider: () -> String
-) {
-    private val logger = KotlinLogging.logger {}
+) : Logging {
 
     private var metadata: ModMetadata? by Delegates.observable(null) { _, _, newValue ->
-        logger.debug { "Metadata loaded for mod: $name" }
+        debug("Metadata loaded for mod: $name", useDispatcher = false)
     }
 
     // Only load the header portion of the file (first few KB) to extract metadata
@@ -44,7 +43,7 @@ class ModFile(
      */
     val content: String by lazy {
         try {
-            logger.debug { "Loading content from: $name" }
+            debug("Loading content from: $name", useDispatcher = false)
             contentProvider()
         } catch (e: IOException) {
             throw InvalidModFileException("Failed to read content from file: $name", e)
@@ -58,11 +57,11 @@ class ModFile(
         val versionLine = lines.firstOrNull { it.trim().startsWith("#version") }
         val iconPathLine = lines.firstOrNull { it.trim().startsWith("#icon") }
 
-        logger.debug { "Parsing metadata for mod: $name" }
-        logger.debug { "Found modName line: $modNameLine" }
-        logger.debug { "Found description line: $descriptionLine" }
-        logger.debug { "Found version line: $versionLine" }
-        logger.debug { "Found iconPath line: $iconPathLine" }
+        debug("Parsing metadata for mod: $name", useDispatcher = false)
+        debug("Found modName line: $modNameLine", useDispatcher = false)
+        debug("Found description line: $descriptionLine", useDispatcher = false)
+        debug("Found version line: $versionLine", useDispatcher = false)
+        debug("Found iconPath line: $iconPathLine", useDispatcher = false)
 
         return ModMetadata(
             modName = modNameLine?.substringAfter("\"")?.removeSuffix("\""),

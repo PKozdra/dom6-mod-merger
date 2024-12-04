@@ -1,7 +1,9 @@
 // src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt
 package com.dominions.modmerger.ui.util
 
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
+import com.dominions.modmerger.infrastructure.Logging
+import com.dominions.modmerger.ui.util.IconCache.defaultIcon
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
@@ -11,8 +13,7 @@ import javax.imageio.ImageIO
 import javax.swing.Icon
 import javax.swing.ImageIcon
 
-object IconCache {
-    private val logger = KotlinLogging.logger {}
+object IconCache : Logging {
     private val cache = ConcurrentHashMap<String, SoftReference<Icon>>()
     private val defaultIcon = createDefaultIcon(256, 64)
 
@@ -22,11 +23,11 @@ object IconCache {
         return cache.compute(path) { _, ref ->
             val cachedIcon = ref?.get()
             if (cachedIcon != null) {
-                logger.debug { "Cache hit for icon: $path" }
+                trace("Cache hit for icon: $path", useDispatcher = false)
                 return@compute ref
             }
 
-            logger.debug { "Cache miss for icon: $path" }
+            trace("Cache miss for icon: $path", useDispatcher = false)
             val newIcon = loadIcon(path, width, height)
             SoftReference(newIcon)
         }?.get() ?: defaultIcon
@@ -43,7 +44,7 @@ object IconCache {
             val scaled = image.getScaledInstance(width, height, Image.SCALE_SMOOTH)
             ImageIcon(scaled)
         } catch (e: Exception) {
-            logger.error(e) { "Failed to load icon: $path" }
+            error("Failed to load icon: $path", e, useDispatcher = false)
             defaultIcon
         }
     }

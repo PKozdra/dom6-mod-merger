@@ -8,12 +8,11 @@ import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
-import mu.KotlinLogging
 import kotlin.math.abs
 
-class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()) {
-    private val logger = KotlinLogging.logger {}
+class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()) : Logging {
 
     fun parse(modFile: ModFile): ModDefinition {
         val definition = ModDefinition(modFile)
@@ -63,7 +62,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                     else -> handleEntityLine(line, definition)
                 }
             } catch (e: Exception) {
-                logger.error { "Error parsing line $lineNumber in ${modFile.name}: $line" }
+                error("Error parsing line $lineNumber in ${modFile.name}: $line)", e)
                 throw ModParsingException("Error in ${modFile.name} at line $lineNumber: $line", e)
             }
         }
@@ -99,7 +98,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
         } ?: if (line.startsWith("#newspell")) {
             definition.addImplicitDefinition(EntityType.SPELL)
         } else {
-            logger.warn { "Unknown spell block start: $line" }
+            error("Unknown spell block start: $line")
         }
     }
 
@@ -139,7 +138,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
     private fun handleModInfo(line: String, definition: ModDefinition) {
         ModUtils.extractString(line, ModPatterns.MOD_NAME)?.let { modName ->
             definition.name = modName
-            logger.debug { "Set mod name: $modName" }
+            debug("Set mod name: $modName", useDispatcher = false)
         }
     }
 }

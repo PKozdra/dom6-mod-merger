@@ -1,7 +1,9 @@
 package com.dominions.modmerger.ui.components
 
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
-import mu.KotlinLogging
+import com.sun.java.accessibility.util.AWTEventMonitor.addComponentListener
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -13,11 +15,7 @@ import javax.swing.text.html.HTMLDocument
 
 class StatusPanel(
     private val onModSelected: (ModListItem) -> Unit
-) : JPanel(BorderLayout()) {
-
-    // add kotlin logger
-    private val logger = KotlinLogging.logger {}
-
+) : JPanel(BorderLayout()), Logging {
 
     private val statusLabel = JEditorPane("text/html", "").apply {
         isEditable = false
@@ -28,18 +26,18 @@ class StatusPanel(
         // In StatusPanel.kt
         addHyperlinkListener { event ->
             if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                logger.debug { "Hyperlink clicked: '${event.description}'" }
-                logger.debug { "Available mods: ${currentMods.map { "'${it.modName}'" }}" }
+                debug("Hyperlink clicked: '${event.description}'", useDispatcher = false)
+                debug("Available mods: ${currentMods.map { "'${it.modName}'" }}" , useDispatcher = false)
 
                 val clickedMod = currentMods.find { mod ->
-                    logger.trace { "Comparing '${mod.modName}' with '${event.description}'" }
+                    trace("Comparing '${mod.modName}' with '${event.description}'", useDispatcher = false)
                     mod.modName == event.description
                 }
 
                 if (clickedMod == null) {
-                    logger.warn { "No matching mod found for '${event.description}'" }
+                    warn("No matching mod found for '${event.description}'", useDispatcher = false)
                 } else {
-                    logger.debug { "Found matching mod: '${clickedMod.modName}'" }
+                    debug("Found matching mod: '${clickedMod.modName}'", useDispatcher = false)
                     onModSelected(clickedMod)
                 }
             }
@@ -86,14 +84,12 @@ class StatusPanel(
         statusLabel.text = buildHtmlContent(parentWidth)
 
         // Update link style in the HTML document
-        (statusLabel.document as? HTMLDocument)?.let { doc ->
-            doc.styleSheet.addRule(
-                """
-                a { color: #000000; text-decoration: underline; }
-                a:hover { cursor: pointer; }
-            """.trimIndent()
-            )
-        }
+        (statusLabel.document as? HTMLDocument)?.styleSheet?.addRule(
+            """
+                    a { color: #000000; text-decoration: underline; }
+                    a:hover { cursor: pointer; }
+                """.trimIndent()
+        )
     }
 
     private fun buildHtmlContent(width: Int): String {

@@ -1,10 +1,13 @@
 package com.dominions.modmerger.infrastructure
 
-import com.dominions.modmerger.domain.LogLevel
 import java.util.prefs.Preferences
 
 object PreferencesManager {
     private val preferences = Preferences.userRoot().node("com/dominions/modmerger")
+
+    var maxLogBufferSize: Int
+        get() = preferences.getInt("maxLogBufferSize", 1000)
+        set(value) = preferences.putInt("maxLogBufferSize", value)
 
     // Log Level Preferences
     fun isLogLevelEnabled(level: LogLevel): Boolean {

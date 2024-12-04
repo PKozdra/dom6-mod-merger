@@ -1,11 +1,9 @@
 package com.dominions.modmerger.infrastructure
 
-import mu.KotlinLogging
 import java.awt.Image
 import javax.swing.ImageIcon
 
-object ApplicationConfig {
-    private val logger = KotlinLogging.logger {}
+object ApplicationConfig : Logging {
 
     const val APP_NAME = "Dominions 6 Mod Merger"
     const val APP_VERSION = "0.0.1"
@@ -28,7 +26,7 @@ object ApplicationConfig {
                 icon
             }
         } catch (e: Exception) {
-            logger.error { "Failed to load application icon: ${e.message}" }
+            error("Failed to load application icon: ${e.message}", useDispatcher = false)
             null
         }
     }

@@ -12,14 +12,18 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    // Coroutines support
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
+
+    // FlatLaf theme support
     implementation("com.formdev:flatlaf:3.4")
+
+    // TGA image support
     implementation("com.twelvemonkeys.imageio:imageio-tga:3.12.0")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.4.12")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+    implementation("org.slf4j:slf4j-api:2.0.9")
 }
 
 // task for automatically generating reflection, serialization, and resource configuration files in META-INF/native-image
@@ -55,7 +59,7 @@ graalvmNative {
                 "-Djava.awt.headless=false",
 
                 // Initialize core packages at build time
-                "--initialize-at-build-time=org.slf4j,ch.qos.logback",
+                "--initialize-at-build-time=org.slf4j",
 
                 // run time initialization
                 "--initialize-at-run-time=com.formdev.flatlaf",

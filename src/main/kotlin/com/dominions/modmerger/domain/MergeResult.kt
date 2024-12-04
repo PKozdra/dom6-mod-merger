@@ -1,6 +1,4 @@
-package com.dominions.modmerger
-
-import com.dominions.modmerger.domain.ModFile
+package com.dominions.modmerger.domain
 
 sealed class MergeResult {
     data class Success(val warnings: List<MergeWarning> = emptyList()) : MergeResult()

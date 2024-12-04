@@ -1,7 +1,8 @@
 package com.dominions.modmerger.ui.components
 
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
-import mu.KotlinLogging
 import java.awt.Desktop
 import java.awt.event.MouseEvent
 import java.io.File
@@ -16,8 +17,7 @@ import javax.swing.event.PopupMenuListener
 class ModContextMenu(
     private val table: JTable,
     private val onError: (String) -> Unit
-) : JPopupMenu() {
-    private val logger = KotlinLogging.logger {}
+) : JPopupMenu(), Logging {
     private val desktop: Desktop? = if (Desktop.isDesktopSupported()) Desktop.getDesktop() else null
 
     companion object {
@@ -33,15 +33,15 @@ class ModContextMenu(
         // Hide menu when clicking outside
         val popupListener = object : PopupMenuListener {
             override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {
-                logger.debug { "Context menu becoming visible" }
+                debug("Context menu becoming visible", useDispatcher = false)
             }
 
             override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) {
-                logger.debug { "Context menu hiding" }
+                debug("Context menu hiding", useDispatcher = false)
             }
 
             override fun popupMenuCanceled(e: PopupMenuEvent) {
-                logger.debug { "Context menu cancelled" }
+                debug("Context menu cancelled", useDispatcher = false)
             }
         }
         addPopupMenuListener(popupListener)
@@ -52,7 +52,7 @@ class ModContextMenu(
         val row = table.rowAtPoint(point)
 
         if (row < 0) {
-            logger.debug { "Clicked outside table rows" }
+            debug("Clicked outside table rows", useDispatcher = false)
             return
         }
 
@@ -60,12 +60,12 @@ class ModContextMenu(
         if (!table.isRowSelected(row)) {
             if (!e.isControlDown && !e.isShiftDown) {
                 table.selectionModel.setSelectionInterval(row, row)
-                logger.debug { "Set single row selection: $row" }
+                debug("Set single row selection: $row", useDispatcher = false)
             }
         }
 
         val selectedRows = table.selectedRows
-        logger.debug { "Selected rows: ${selectedRows.joinToString()}" }
+        debug("Selected rows: ${selectedRows.joinToString()}", useDispatcher = false)
 
         if (selectedRows.isEmpty()) return
 
@@ -76,7 +76,7 @@ class ModContextMenu(
         val screenX = tableLocation.x + point.x
         val screenY = tableLocation.y + point.y
 
-        logger.debug { "Showing menu at screen coordinates: ($screenX, $screenY)" }
+        debug("Showing menu at screen coordinates: ($screenX, $screenY)", useDispatcher = false)
         show(table, point.x, point.y)
     }
 
@@ -88,7 +88,7 @@ class ModContextMenu(
             (table.model as ModTableModel).getModAt(modelRow)
         }
 
-        logger.debug { "Creating menu for ${selectedMods.size} selected mods" }
+        debug("Creating menu for ${selectedMods.size} selected mods", useDispatcher = false)
 
         // Single selection options
         if (selectedMods.size == 1) {
@@ -111,7 +111,7 @@ class ModContextMenu(
             add(createMenuItem("Open in Steam Workshop") {
                 openInSteamWorkshop(workshopId)
             })
-            logger.debug { "Added Steam Workshop option for mod: ${mod.fileName} (ID: $workshopId)" }
+            debug("Added Steam Workshop option for mod: ${mod.fileName} (ID: $workshopId)", useDispatcher = false)
         }
 
         add(createMenuItem("Open with Associated Application") {
@@ -127,14 +127,13 @@ class ModContextMenu(
             throw IllegalStateException(".dm file not found: ${dmFile.absolutePath}")
         }
 
-        logger.debug { "Opening .dm file: ${dmFile.absolutePath}" }
-
+        debug("Opening .dm file: ${dmFile.absolutePath}", useDispatcher = false)
         desktop?.let {
             if (it.isSupported(Desktop.Action.OPEN)) {
                 try {
                     it.open(dmFile)
                 } catch (e: Exception) {
-                    logger.warn { "Failed to open file with default program. Falling back to Notepad: ${e.message}" }
+                    warn("Failed to open file with default program. Falling back to Notepad: ${e.message}", useDispatcher = false)
                     openWithNotepad(dmFile)
                 }
             } else {
@@ -147,9 +146,9 @@ class ModContextMenu(
         try {
             val runtime = Runtime.getRuntime()
             runtime.exec(arrayOf("notepad", file.absolutePath))
-            logger.debug { "Opened .dm file in Notepad: ${file.absolutePath}" }
+            debug("Opened .dm file in Notepad: ${file.absolutePath}", useDispatcher = false)
         } catch (e: Exception) {
-            logger.error(e) { "Failed to open .dm file in Notepad: ${file.absolutePath}" }
+            error("Failed to open .dm file in Notepad: ${file.absolutePath}", e, useDispatcher = false)
             onError("Failed to open .dm file: ${e.message}")
         }
     }
@@ -168,7 +167,7 @@ class ModContextMenu(
             add(createMenuItem("Open All in Steam Workshop") {
                 workshopMods.forEach { (_, id) -> openInSteamWorkshop(id) }
             })
-            logger.debug { "Added Steam Workshop option for ${workshopMods.size} workshop mods" }
+            debug("Added Steam Workshop option for ${workshopMods.size} workshop mods", useDispatcher = false)
         }
     }
 
@@ -177,9 +176,9 @@ class ModContextMenu(
             addActionListener {
                 try {
                     action()
-                    logger.debug { "Executed menu action: $text" }
+                    debug("Executed menu action: $text", useDispatcher = false)
                 } catch (e: Exception) {
-                    logger.error(e) { "Error executing action: $text" }
+                    error("Error executing action: $text", e, useDispatcher = false)
                     onError("Failed to $text: ${e.message}")
                 }
             }
@@ -190,7 +189,7 @@ class ModContextMenu(
         val file = mod.modFile.file ?: throw IllegalStateException("Mod file not found")
         val folder = file.parentFile ?: throw IllegalStateException("Parent folder not found")
 
-        logger.debug { "Opening explorer for: ${folder.absolutePath}" }
+        debug("Opening explorer for: ${folder.absolutePath}", useDispatcher = false)
 
         desktop?.let {
             if (it.isSupported(Desktop.Action.OPEN)) {
@@ -203,7 +202,7 @@ class ModContextMenu(
 
     private fun openInSteamWorkshop(workshopId: String) {
         val uri = URI(STEAM_WORKSHOP_URL + workshopId)
-        logger.debug { "Opening Steam Workshop URL: $uri" }
+        debug("Opening Steam Workshop URL: $uri", useDispatcher = false)
 
         desktop?.let {
             if (it.isSupported(Desktop.Action.BROWSE)) {
@@ -219,10 +218,10 @@ class ModContextMenu(
         return WORKSHOP_ID_PATTERN.matcher(path).let { matcher ->
             if (matcher.matches()) {
                 matcher.group(1).also {
-                    logger.debug { "Extracted workshop ID $it from path: $path" }
+                    debug("Extracted workshop ID $it from path: $path", useDispatcher = false)
                 }
             } else {
-                logger.debug { "No workshop ID found in path: $path" }
+                debug("No workshop ID found in path: $path", useDispatcher = false)
                 null
             }
         }

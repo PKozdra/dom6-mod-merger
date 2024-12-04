@@ -1,10 +1,8 @@
 package com.dominions.modmerger.utils
 
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 
-object ModUtils {
-
-    private val logger = KotlinLogging.logger {}
+object ModUtils : Logging {
 
     fun extractId(line: String, pattern: Regex): Long? {
         return pattern.find(line)?.groupValues?.get(1)?.let { idString ->
@@ -29,13 +27,13 @@ object ModUtils {
         return try {
             pattern.find(line)?.let { matchResult ->
                 matchResult.groups["name"]?.value ?: run {
-                    logger.warn { "Found match but no 'name' group in pattern: $pattern for line: $line" }
+                    warn("Found match but no 'name' group in pattern: $pattern for line: $line", useDispatcher = false)
                     null
                 }
             }
         } catch (e: IllegalArgumentException) {
-            logger.error { "Invalid regex pattern, missing 'name' group: $pattern" }
-            logger.debug { "Line being processed: $line" }
+            error("Invalid regex pattern, missing 'name' group: $pattern", e, useDispatcher = false)
+            debug("Line being processed: $line", useDispatcher = false)
             throw ModProcessingException("Failed to extract name: pattern $pattern is missing 'name' group", e)
         }
     }

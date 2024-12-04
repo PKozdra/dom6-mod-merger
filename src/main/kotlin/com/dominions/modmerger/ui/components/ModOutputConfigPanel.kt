@@ -2,7 +2,7 @@ package com.dominions.modmerger.ui.components
 
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 import java.awt.*
 import java.io.File
 import javax.swing.*
@@ -11,8 +11,7 @@ import javax.swing.event.DocumentListener
 
 class ModOutputConfigPanel(
     private val configManager: ModOutputConfigManager,
-) : JPanel() {
-    private val logger = KotlinLogging.logger {}
+) : JPanel(), Logging {
 
     // UI Components - simplified to core requirements
     private val displayNameField = JTextField(20)

@@ -1,22 +1,18 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.MergeWarning
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.processing.SpellBlockProcessor
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
-import mu.KotlinLogging
 import java.io.Writer
 
 class ModContentWriter(
     private val entityProcessor: EntityProcessor,
     private val spellBlockProcessor: SpellBlockProcessor = SpellBlockProcessor(),
-    private val logDispatcher: LogDispatcher
-) {
-    private val logger = KotlinLogging.logger {}
+) : Logging {
     private val warnings = mutableListOf<MergeWarning>()
 
     private data class ModProcessingContext(
@@ -30,25 +26,25 @@ class ModContentWriter(
     ): List<MergeWarning> {
         warnings.clear()
         try {
-            log(LogLevel.DEBUG, "Starting to process ${mappedDefinitions.size} mod definitions")
+            debug("Starting to process ${mappedDefinitions.size} mod definitions")
 
             val totalStartTime = System.currentTimeMillis()
             mappedDefinitions.forEach { (name, mappedDef) ->
                 val modStartTime = System.currentTimeMillis()
-                log(LogLevel.DEBUG, "Processing mod: $name with ${mappedDef.modFile.content.lines().size} lines")
+                debug("Processing mod: $name with ${mappedDef.modFile.content.lines().size} lines")
                 writer.write("\n-- Begin content from mod: $name\n")
                 processModFile(mappedDef, writer)
                 val modEndTime = System.currentTimeMillis()
-                log(LogLevel.INFO, "Processed mod '$name' in ${modEndTime - modStartTime} ms")
+                info("Processed mod '$name' in ${modEndTime - modStartTime} ms")
             }
             val totalEndTime = System.currentTimeMillis()
             writer.write("\n-- End merged content\n")
-            log(LogLevel.INFO, "Total mod content processing time: ${totalEndTime - totalStartTime} ms")
-            log(LogLevel.DEBUG, "Successfully wrote mod content with ${warnings.size} warnings")
+            info("Total mod content processing time: ${totalEndTime - totalStartTime} ms")
+            info("Successfully wrote mod content with ${warnings.size} warnings")
 
         } catch (e: Exception) {
             val errorMsg = "Failed to process mod content: ${e.message}"
-            log(LogLevel.ERROR, errorMsg, e)
+            error(errorMsg, e)
             warnings.add(
                 MergeWarning.GeneralWarning(
                     message = errorMsg,
@@ -65,8 +61,8 @@ class ModContentWriter(
         val lines = mappedDef.modFile.content.lines()
         val context = ModProcessingContext()
 
-        log(LogLevel.DEBUG, "Starting to process mod file: ${mappedDef.modFile.name}")
-        log(LogLevel.TRACE, "File has ${lines.size} lines")
+        debug("Starting to process mod file: ${mappedDef.modFile.name}")
+        trace("File has ${lines.size} lines")
 
         var index = 0
         val totalLines = lines.size
@@ -76,8 +72,8 @@ class ModContentWriter(
                 index = processNextLine(lines, index, context, mappedDef)
             } catch (e: Exception) {
                 val errorMsg = "Error processing line $index in ${mappedDef.modFile.name}: ${e.message}"
-                log(LogLevel.ERROR, errorMsg, e)
-                log(LogLevel.DEBUG, "Problematic line content: ${lines.getOrNull(index)}")
+                error(errorMsg, e)
+                debug("Problematic line content: ${lines.getOrNull(index)}")
                 throw ModContentProcessingException(errorMsg, e)
             }
             val lineEndTime = System.currentTimeMillis()
@@ -85,7 +81,7 @@ class ModContentWriter(
             // log(LogLevel.TRACE, "Processed line $index in ${lineEndTime - lineStartTime} ms")
         }
 
-        log(LogLevel.DEBUG, "Processed ${context.processedLines.size} lines for ${mappedDef.modFile.name}")
+        debug("Processed ${context.processedLines.size} lines for ${mappedDef.modFile.name}")
         writeProcessedLines(context.processedLines, writer)
     }
 
@@ -126,19 +122,18 @@ class ModContentWriter(
         val line = lines[currentIndex]
         val trimmedLine = line.trim()
 
-        log(
-            LogLevel.TRACE,
+        trace(
             "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}"
         )
 
         return when {
             shouldSkipLine(trimmedLine, currentIndex, context) -> {
-                log(LogLevel.TRACE, "Skipping line $currentIndex")
+                trace("Skipping line $currentIndex")
                 currentIndex + 1
             }
 
             ModPatterns.SPELL_BLOCK_START.matches(trimmedLine) -> {
-                log(LogLevel.TRACE, "Found spell block start at line $currentIndex")
+                trace("Found spell block start at line $currentIndex")
                 spellBlockProcessor.startNewBlock(line)
                 context.processedLines.add(line)
                 processSpellBlock(lines, currentIndex + 1, mappedDef, context)
@@ -208,18 +203,18 @@ class ModContentWriter(
         context: ModProcessingContext
     ): Int {
         var currentIndex = startIndex
-        log(LogLevel.TRACE, "Processing spell block starting at line $startIndex")
+        trace("Processing spell block starting at line $startIndex")
 
         while (currentIndex < lines.size) {
             val line = lines[currentIndex]
             val trimmedLine = line.trim()
 
             if (ModPatterns.END.matches(trimmedLine)) {
-                log(LogLevel.TRACE, "Found spell block end at line $currentIndex")
+                trace("Found spell block end at line $currentIndex")
                 val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
 
                 processedBlock.damageMapping?.let { (oldId, newId) ->
-                    log(LogLevel.TRACE, "Remapping damage ID $oldId to $newId")
+                    trace("Remapping damage ID $oldId to $newId")
                     val remapComment = createRemapComment(oldId, newId)
                     context.processedLines.add(remapComment)
                 }
@@ -231,7 +226,7 @@ class ModContentWriter(
 
             val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
             processedBlock.damageMapping?.let { (oldId, newId) ->
-                log(LogLevel.TRACE, "Remapping spell damage ID $oldId to $newId")
+                trace("Remapping spell damage ID $oldId to $newId")
                 val remapComment = createRemapComment(oldId, newId)
                 context.processedLines.add(remapComment)
                 context.processedLines.add(ModUtils.replaceId(line, oldId, newId))
@@ -241,17 +236,6 @@ class ModContentWriter(
         }
 
         return currentIndex
-    }
-
-    private fun log(level: LogLevel, message: String, error: Throwable? = null) {
-        when (level) {
-            LogLevel.ERROR -> logger.error(error) { message }
-            LogLevel.WARN -> logger.warn { message }
-            LogLevel.INFO -> logger.info { message }
-            LogLevel.DEBUG -> logger.debug { message }
-            LogLevel.TRACE -> logger.trace { message }
-        }
-        logDispatcher.log(level, message)
     }
 }
 

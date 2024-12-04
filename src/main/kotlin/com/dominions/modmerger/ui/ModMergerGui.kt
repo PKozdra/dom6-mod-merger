@@ -2,14 +2,12 @@ package com.dominions.modmerger.ui
 
 import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
-import com.dominions.modmerger.domain.LogDispatcher
 import com.dominions.modmerger.infrastructure.ApplicationConfig
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.ui.components.ModOutputConfigPanel
 import com.dominions.modmerger.ui.components.ModTablePanel
 import com.dominions.modmerger.ui.components.output.OutputPanel
-import mu.KotlinLogging
 import java.awt.*
 import java.util.prefs.Preferences
 import javax.swing.*
@@ -20,9 +18,7 @@ class ModMergerGui(
     modMerger: ModMerger,
     fileSystem: FileSystem,
     gamePathsManager: GamePathsManager,
-    private val logDispatcher: LogDispatcher
 ) {
-    private val logger = KotlinLogging.logger {}
     private val preferences = Preferences.userRoot().node("com/dominions/modmerger")
 
     private val frame = JFrame(ApplicationConfig.APP_NAME).apply {
@@ -32,8 +28,8 @@ class ModMergerGui(
     }
 
     private val modTable = ModTablePanel()
-    private val outputPanel = OutputPanel(logDispatcher)
-    private val controller = ModMergerController(modMerger, fileSystem, gamePathsManager, logDispatcher)
+    private val outputPanel = OutputPanel()
+    private val controller = ModMergerController(modMerger, gamePathsManager)
 
     // UI Components
     private val mergeButton = createStyledMergeButton()

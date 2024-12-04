@@ -1,18 +1,14 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.MergeWarning
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.ModFile
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class ModHeaderWriter(
-    private val logDispatcher: LogDispatcher
-) {
-    private val logger = KotlinLogging.logger {}
+) : Logging {
     private val warnings = mutableListOf<MergeWarning>()
 
     fun writeHeader(
@@ -54,11 +50,11 @@ class ModHeaderWriter(
             }
 
             writer.write(headerContent)
-            log(LogLevel.DEBUG, "Successfully wrote mod header")
+            debug("Successfully wrote mod header")
 
         } catch (e: Exception) {
             val error = "Failed to write mod header: ${e.message}"
-            log(LogLevel.ERROR, error)
+            error(error)
 
             sourceModFiles.firstOrNull()?.let { modFile ->
                 warnings.add(
@@ -71,10 +67,5 @@ class ModHeaderWriter(
         }
 
         return warnings
-    }
-
-    private fun log(level: LogLevel, message: String) {
-        logger.info { message }
-        logDispatcher.log(level, message)
     }
 }

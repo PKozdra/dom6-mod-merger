@@ -2,7 +2,7 @@ package com.dominions.modmerger.core.mapping
 
 import com.dominions.modmerger.constants.ModRanges
 import com.dominions.modmerger.domain.*
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 
 /**
  * Handles ID mapping and conflict resolution for mod entities.
@@ -12,15 +12,14 @@ import mu.KotlinLogging
  *
  * This class is stateless and thread-safe. Each operation creates its own tracking state.
  */
-class IdMapper(private val logDispatcher: LogDispatcher) {
-    private val logger = KotlinLogging.logger {}
+class IdMapper() : Logging {
     private val ranges = initializeRanges()
     private val preferredStarts = initializePreferredStarts()
 
     fun createMappings(modDefinitions: Map<String, ModDefinition>): Map<String, MappedModDefinition> {
         if (modDefinitions.isEmpty()) return emptyMap()
 
-        log(LogLevel.INFO, "Starting ID mapping for ${modDefinitions.size} mods")
+        info("Starting ID mapping for ${modDefinitions.size} mods", useDispatcher = true)
 
         val mappingState = MappingState()
         val conflicts = findConflicts(modDefinitions)
@@ -59,9 +58,7 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
         }
 
         if (result.remappedCount > 0) {
-            log(
-                LogLevel.INFO,
-                "Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs"
+            info("Processed ${modDef.modFile.name}: remapped ${result.remappedCount} IDs, kept ${result.keptCount} original IDs"
             )
         }
 
@@ -182,11 +179,11 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
     private fun logConflictsIfAny(conflicts: Map<EntityType, Set<ModConflict>>) {
         if (conflicts.isNotEmpty()) {
             val totalConflicts = conflicts.values.sumOf { it.size }
-            log(LogLevel.DEBUG, "Found $totalConflicts ID conflicts between mods:")
+            debug("Found $totalConflicts ID conflicts between mods:")
             conflicts.forEach { (type, typeConflicts) ->
-                log(LogLevel.DEBUG, "$type conflicts:")
+                debug("$type conflicts:")
                 typeConflicts.forEach { conflict ->
-                    log(LogLevel.DEBUG, "$conflict")
+                    debug("$conflict")
                 }
             }
         }
@@ -199,7 +196,7 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
                     !ModRanges.Validator.isValidModdingId(type, id)
                 }
                 if (invalidIds.isNotEmpty()) {
-                    log(LogLevel.WARN, "Mod $name has invalid $type IDs: $invalidIds")
+                    warn("Mod $name has invalid $type IDs: $invalidIds")
                 }
             }
         }
@@ -236,9 +233,4 @@ class IdMapper(private val logDispatcher: LogDispatcher) {
         EntityType.POPTYPE to 205L
         // MONTAG and RESTRICTED_ITEM use default ranges
     )
-
-    private fun log(level: LogLevel, message: String) {
-        logger.info { message }
-        logDispatcher.log(level, message)
-    }
 }

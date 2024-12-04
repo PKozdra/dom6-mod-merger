@@ -1,13 +1,11 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.MergeResult
-import com.dominions.modmerger.MergeWarning
+import com.dominions.modmerger.domain.MergeResult
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
-import com.dominions.modmerger.domain.LogDispatcher
-import com.dominions.modmerger.domain.LogLevel
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.infrastructure.FileSystem
-import mu.KotlinLogging
+import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
 import java.nio.file.Files
 
@@ -17,13 +15,10 @@ import java.nio.file.Files
  * Ensures atomic operations and proper rollback in case of failures.
  */
 class ModWriter(
-    private val fileSystem: FileSystem,
-    private val logDispatcher: LogDispatcher,
     private val contentWriter: ModContentWriter,
     private val resourceCopier: ModResourceCopier,
     private val headerWriter: ModHeaderWriter
-) {
-    private val logger = KotlinLogging.logger {}
+) : Logging {
 
     /**
      * Writes the merged mod with transactional safety.
@@ -47,7 +42,7 @@ class ModWriter(
             val startTimeContent = System.currentTimeMillis()
             writeModContent(tempOutputFile, mappedDefinitions, config, warnings)
             val endTimeContent = System.currentTimeMillis()
-            log(LogLevel.INFO, "Mod content written in ${endTimeContent - startTimeContent} ms")
+            info("Mod content written in ${endTimeContent - startTimeContent} ms")
 
             // Copy resources to temp directory
             val startTimeResources = System.currentTimeMillis()
@@ -56,7 +51,7 @@ class ModWriter(
                 mappedDefinitions
             )
             val endTimeResources = System.currentTimeMillis()
-            log(LogLevel.INFO, "Resources copied in ${endTimeResources - startTimeResources} ms")
+            info("Resources copied in ${endTimeResources - startTimeResources} ms")
             warnings.addAll(resourceWarnings)
 
             // Backup existing mod if present
@@ -74,9 +69,9 @@ class ModWriter(
             return MergeResult.Success(warnings)
 
         } catch (e: Exception) {
-            logger.error(e) { "Error during mod writing" }
+            error("Failed to write merged mod: ${e.message}", e)
             rollback(config, backupDir)
-            log(LogLevel.ERROR, "Failed to process mods: ${e.message}")
+            error("Failed to process mods: ${e.message}")
             return MergeResult.Failure(e.message ?: "Unknown error occurred")
         } finally {
             cleanup(tempDir, backupDir)
@@ -141,10 +136,6 @@ class ModWriter(
         backupDir.deleteRecursively()
     }
 
-    private fun log(level: LogLevel, message: String) {
-        logger.info { message }
-        logDispatcher.log(level, message)
-    }
 }
 
 class ModWriterException(message: String, cause: Throwable? = null) :

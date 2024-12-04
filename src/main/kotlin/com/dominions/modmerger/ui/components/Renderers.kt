@@ -1,7 +1,8 @@
 package com.dominions.modmerger.ui.components
 
+import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
+import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModSourceType
-import mu.KotlinLogging
 import java.awt.Color
 import java.awt.Component
 import java.awt.image.BufferedImage
@@ -10,8 +11,7 @@ import javax.swing.border.EmptyBorder
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 
-class SourceTypeRenderer : DefaultTableCellRenderer() {
-    private val logger = KotlinLogging.logger {}
+class SourceTypeRenderer : DefaultTableCellRenderer(), Logging {
 
     init {
         horizontalAlignment = SwingConstants.CENTER
@@ -30,11 +30,11 @@ class SourceTypeRenderer : DefaultTableCellRenderer() {
                 val scaledImage = image.getScaledInstance(iconSize, iconSize, java.awt.Image.SCALE_SMOOTH)
                 ImageIcon(scaledImage)
             } else {
-                logger.warn { "Resource not found or unsupported format: $resourcePath" }
+                warn("Resource not found or unsupported format: $resourcePath", useDispatcher = false)
                 createFallbackIcon(isSteam)
             }
         } catch (e: Exception) {
-            logger.error(e) { "Error loading icon from resource: $resourcePath" }
+            error("Error loading icon from resource: $resourcePath", e, useDispatcher = false)
             createFallbackIcon(isSteam)
         }
     }
@@ -68,7 +68,7 @@ class SourceTypeRenderer : DefaultTableCellRenderer() {
             ModSourceType.STEAM -> steamIcon
             ModSourceType.LOCAL -> localIcon
             else -> {
-                logger.warn { "Unknown source type: $value" }
+                warn("Unknown source type: $value", useDispatcher = false)
                 null
             }
         }
