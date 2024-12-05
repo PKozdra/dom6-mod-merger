@@ -176,6 +176,15 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.icons.FlatOptionPaneWarningIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.icons.FlatWindowCloseIcon",
       "methods": [
         {
@@ -348,6 +357,17 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatOptionPaneUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatPanelUI",
       "methods": [
         {
@@ -451,6 +471,15 @@
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatTableCellBorder$Default",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatTableCellBorder$Selected",
       "methods": [
         {
           "name": "<init>",
@@ -747,6 +776,21 @@
       ]
     },
     {
+      "type": "javax.swing.PopupFactory",
+      "methods": [
+        {
+          "name": "getPopup",
+          "parameterTypes": [
+            "java.awt.Component",
+            "java.awt.Component",
+            "int",
+            "int",
+            "boolean"
+          ]
+        }
+      ]
+    },
+    {
       "type": "javax.swing.filechooser.FileSystemView",
       "methods": [
         {
@@ -783,7 +827,40 @@
       ]
     },
     {
+      "type": "javax.swing.plaf.basic.BasicMenuItemUI",
+      "methods": [
+        {
+          "name": "loadActionMap",
+          "parameterTypes": [
+            "javax.swing.plaf.basic.LazyActionMap"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.swing.plaf.basic.BasicOptionPaneUI",
+      "methods": [
+        {
+          "name": "loadActionMap",
+          "parameterTypes": [
+            "javax.swing.plaf.basic.LazyActionMap"
+          ]
+        }
+      ]
+    },
+    {
       "type": "javax.swing.plaf.basic.BasicPopupMenuUI",
+      "methods": [
+        {
+          "name": "loadActionMap",
+          "parameterTypes": [
+            "javax.swing.plaf.basic.LazyActionMap"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.swing.plaf.basic.BasicSplitPaneUI",
       "methods": [
         {
           "name": "loadActionMap",
@@ -1177,6 +1254,12 @@
       "glob": "icons/steam_icon.png"
     },
     {
+      "glob": "lib/fontconfig.bfc"
+    },
+    {
+      "glob": "lib/fontconfig.properties.src"
+    },
+    {
       "glob": "simplelogger.properties"
     },
     {
@@ -1189,7 +1272,7 @@
     },
     {
       "module": "java.base",
-      "glob": "sun/text/resources/LineBreakIteratorData"
+      "glob": "sun/text/resources/WordBreakIteratorData"
     },
     {
       "module": "java.desktop",
@@ -1284,6 +1367,9 @@
           ]
         }
       ]
+    },
+    {
+      "type": "com.sun.java.swing.plaf.windows.WindowsPopupWindow"
     },
     {
       "type": "java.awt.AWTEvent",
@@ -1430,6 +1516,20 @@
         },
         {
           "name": "width"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.Event",
+      "fields": [
+        {
+          "name": "target"
+        },
+        {
+          "name": "x"
+        },
+        {
+          "name": "y"
         }
       ]
     },
@@ -2127,6 +2227,9 @@
       ]
     },
     {
+      "type": "javax.swing.Popup$HeavyWeightWindow"
+    },
+    {
       "type": "sun.awt.AWTAutoShutdown",
       "methods": [
         {
@@ -2383,6 +2486,15 @@
           "parameterTypes": [
             "long"
           ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.windows.TranslucentWindowPainter$VIOptWindowPainter$1",
+      "methods": [
+        {
+          "name": "run",
+          "parameterTypes": []
         }
       ]
     },

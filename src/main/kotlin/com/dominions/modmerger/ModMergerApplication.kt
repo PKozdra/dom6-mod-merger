@@ -20,7 +20,6 @@ import javax.swing.UIManager
 import kotlin.system.exitProcess
 
 class ModMergerApplication : Logging {
-
     fun run(args: Array<String>) {
         val useGui = args.isEmpty() || args.size != 1 || args[0] != "--console"
 
@@ -28,7 +27,10 @@ class ModMergerApplication : Logging {
 
         if (useGui) {
             info("Starting GUI application", useDispatcher = true)
-            setupGui()
+            if (!setupGui()) {
+                error("Failed to initialize GUI", useDispatcher = true)
+                exitProcess(1)
+            }
             startGuiApplication(components)
         } else {
             warn("Command line mode is no longer supported", useDispatcher = true)
@@ -36,13 +38,15 @@ class ModMergerApplication : Logging {
         }
     }
 
-    private fun setupGui() {
+    private fun setupGui(): Boolean {
         try {
             debug("Setting up GUI look and feel")
             FlatLightLaf.setup()
             UIManager.setLookAndFeel(FlatLightLaf())
+            return true
         } catch (e: Exception) {
             error("Failed to initialize GUI look and feel", e, useDispatcher = true)
+            return false
         }
     }
 

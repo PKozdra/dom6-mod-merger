@@ -20,11 +20,14 @@ kotlin {
     jvmToolchain(23)
 }
 
-tasks.register<JavaExec>("runWithNativeImageAgent") {
-    group = "build"
-    description = "Runs the application with the native-image agent to generate configuration files."
+// Improved agent task
+tasks.register<JavaExec>("generateGraalConfig") {
+    group = "native"
+    description = "Runs the application with the native-image agent to generate configuration files"
     mainClass.set("com.dominions.modmerger.MainKt")
     classpath = sourceSets["main"].runtimeClasspath
+
+    // Configure the agent
     jvmArgs = listOf(
         "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
         "-Djava.awt.headless=false",
@@ -35,6 +38,11 @@ tasks.register<JavaExec>("runWithNativeImageAgent") {
 graalvmNative {
     toolchainDetection.set(false)
 
+    // Enable metadata repository support
+    metadataRepository {
+        enabled.set(true)
+    }
+
     binaries {
         named("main") {
             imageName.set("modmerger")
@@ -42,8 +50,8 @@ graalvmNative {
 
             javaLauncher.set(javaToolchains.launcherFor {
                 languageVersion.set(JavaLanguageVersion.of(23))
-                vendor.set(JvmVendorSpec.matching("GraalVM Community"))
             })
+
 
             buildArgs.addAll(
                 "-H:+UnlockExperimentalVMOptions",
@@ -57,7 +65,7 @@ graalvmNative {
                 "-H:EnableURLProtocols=http,https",
                 "-H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image",
                 "--enable-preview",
-                "--no-fallback"
+                "--no-fallback",
             )
 
             jvmArgs.add("--enable-preview")

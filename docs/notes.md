@@ -1,11 +1,19 @@
-# Notatki do Mod Mergera
+### UPX ###
 
-## Fajne pomysły
+**Przed optymalizacją od GraalVM**
 
-### **1. Generacja adresów ID od preferowanych ID**
-**Problem:**
-Obecnie id są generowane od MODDING_START do MODDING_END z naszego ModRanges.kt (wszystkie dostepne ID dla modowania) co oczywiście może powodować problemy bo chyba łatwiej deweloperom modów będzie trafić na ID z początku listy MODDDING_START...
+`
+upx.exe -4 "C:\repos\modmerger-compressed\*.exe"
+`
 
-**Rozwiązanie:**
-Możemy zrobić generacje ID od preferowanych ID np. od 1000 do 2000, 2000 do 3000 itd. i wtedy deweloperzy modów będą mieli większe szanse na uniknięcie konfliktów z ID. Najlepiej będzie jak sprawdzę które ID są najmniej używane i zrobię generacje od tych ID.
+`
+upx.exe --best "C:\repos\modmerger-compressed\*.dll"
+`
 
+Przy zmniejszeniu rozmiaru exe trzeba używać poziomu kompresji 4, 5+ powoduje błędy w programie.
+
+Jeżeli chodzi o .dll to dla nich --best jest bezpieczne.
+
+Oryginalny rozmiar folderu: 70,4 MB (bajtów: 73 904 138)
+
+Rozmiar folderu po kompresji: 33,0 MB (bajtów: 34 639 312)
