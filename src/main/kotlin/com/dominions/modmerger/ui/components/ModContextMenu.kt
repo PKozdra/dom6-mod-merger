@@ -1,6 +1,5 @@
 package com.dominions.modmerger.ui.components
 
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
 import java.awt.Desktop
@@ -133,7 +132,10 @@ class ModContextMenu(
                 try {
                     it.open(dmFile)
                 } catch (e: Exception) {
-                    warn("Failed to open file with default program. Falling back to Notepad: ${e.message}", useDispatcher = false)
+                    warn(
+                        "Failed to open file with default program. Falling back to Notepad: ${e.message}",
+                        useDispatcher = false
+                    )
                     openWithNotepad(dmFile)
                 }
             } else {

@@ -1,10 +1,9 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.domain.MergeResult
-import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MappedModDefinition
-import com.dominions.modmerger.infrastructure.FileSystem
+import com.dominions.modmerger.domain.MergeResult
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
 import java.nio.file.Files

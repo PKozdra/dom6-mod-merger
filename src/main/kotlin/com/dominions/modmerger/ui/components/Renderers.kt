@@ -1,6 +1,5 @@
 package com.dominions.modmerger.ui.components
 
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModSourceType
 import java.awt.Color

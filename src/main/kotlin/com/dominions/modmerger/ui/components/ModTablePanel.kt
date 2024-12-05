@@ -1,6 +1,5 @@
 package com.dominions.modmerger.ui.components
 
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
 import java.awt.*
@@ -332,7 +331,7 @@ class ModTablePanel : JPanel(), Logging {
         // Disable sorting on certain columns
         setSortable(model.getColumnIndex(ModTableModel.TableColumn.SELECTED), false)
         setSortable(model.getColumnIndex(ModTableModel.TableColumn.ICON), false)
-        setSortable(model.getColumnIndex(ModTableModel.TableColumn.SOURCE), false)
+        setSortable(model.getColumnIndex(ModTableModel.TableColumn.SOURCE), true)
 
         // Comparator for the SIZE column
         setComparator(model.getColumnIndex(ModTableModel.TableColumn.SIZE)) { a, b ->

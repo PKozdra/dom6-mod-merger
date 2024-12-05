@@ -29,7 +29,9 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
             try {
                 when {
                     // Skip empty lines and comments
-                    line.isBlank() || line.startsWith("--") -> { trace("[${modFile.modName}] Skipping line $lineNumber", useDispatcher = false) }
+                    line.isBlank() || line.startsWith("--") -> {
+                        trace("[${modFile.modName}] Skipping line $lineNumber", useDispatcher = false)
+                    }
 
                     // Handle mod info
                     isModInfoLine(line) -> {
@@ -39,7 +41,10 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
 
                     // Handle multiline description
                     inMultilineDescription -> {
-                        trace("[${modFile.modName}] Handling multiline description line $lineNumber", useDispatcher = false)
+                        trace(
+                            "[${modFile.modName}] Handling multiline description line $lineNumber",
+                            useDispatcher = false
+                        )
                         if (line.contains("\"")) inMultilineDescription = false
                     }
 
@@ -62,7 +67,10 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                     }
 
                     inSpellBlock -> {
-                        trace("[${modFile.modName}] Handling spell block content line $lineNumber", useDispatcher = false)
+                        trace(
+                            "[${modFile.modName}] Handling spell block content line $lineNumber",
+                            useDispatcher = false
+                        )
                         handleSpellContent(line, currentSpellEffect, definition)
                         // Update effect if found
                         ModPatterns.SPELL_EFFECT.find(line)?.let {
@@ -95,6 +103,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                 id != null && line.startsWith("#new") -> {
                     definition.addDefinedId(type, id)
                 }
+
                 id != null && line.startsWith("#select") -> {
                     if (ModRanges.Validator.isValidModdingId(type, id)) {
                         definition.addDefinedId(type, id)
@@ -102,6 +111,7 @@ class ModParser(private val entityProcessor: EntityProcessor = EntityProcessor()
                         definition.addVanillaEditedId(type, id)
                     }
                 }
+
                 else -> {
                     definition.addImplicitDefinition(type)
                 }

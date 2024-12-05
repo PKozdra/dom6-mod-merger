@@ -1,10 +1,10 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 import java.io.Writer
@@ -39,6 +39,7 @@ class ModContentWriter(
             }
             val totalEndTime = System.currentTimeMillis()
             writer.write("\n-- End merged content\n")
+
             info("Total mod content processing time: ${totalEndTime - totalStartTime} ms")
             info("Successfully wrote mod content with ${warnings.size} warnings")
 
@@ -123,7 +124,8 @@ class ModContentWriter(
         val trimmedLine = line.trim()
 
         trace(
-            "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}", useDispatcher = false
+            "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}",
+            useDispatcher = false
         )
 
         return when {

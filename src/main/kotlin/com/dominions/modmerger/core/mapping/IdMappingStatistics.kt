@@ -2,7 +2,10 @@
 package com.dominions.modmerger.core.mapping
 
 import com.dominions.modmerger.constants.ModRanges
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.domain.EntityType
+import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.ModConflict
+import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 
 /**
@@ -110,7 +113,7 @@ class IdMappingStatistics : Logging {
         }
     }
 
-    private fun getVanillaEnd(type: EntityType): Long = when(type) {
+    private fun getVanillaEnd(type: EntityType): Long = when (type) {
         EntityType.WEAPON -> ModRanges.Vanilla.WEAPON_END
         EntityType.ARMOR -> ModRanges.Vanilla.ARMOR_END
         EntityType.MONSTER -> ModRanges.Vanilla.MONSTER_END
@@ -203,11 +206,25 @@ class IdMappingStatistics : Logging {
         entityStats.forEach { (type, typeStats) ->
             info("", useDispatcher = true)
             info("=== $type Statistics ===", useDispatcher = true)
-            info("Vanilla Range: Used ${typeStats.usedVanillaIds.size}/${typeStats.totalVanillaRange} (${String.format("%.1f", typeStats.vanillaUtilizationPercent)}%)", useDispatcher = true)
+            info(
+                "Vanilla Range: Used ${typeStats.usedVanillaIds.size}/${typeStats.totalVanillaRange} (${
+                    String.format(
+                        "%.1f",
+                        typeStats.vanillaUtilizationPercent
+                    )
+                }%)", useDispatcher = true
+            )
             if (typeStats.modifiedVanillaIds.isNotEmpty()) {
                 info("Modified Vanilla IDs: ${typeStats.modifiedVanillaIds.size}", useDispatcher = true)
             }
-            info("Modding Range: Used ${typeStats.usedModdingIds.size + typeStats.reservedForImplicit}/${typeStats.totalModdingRange} (${String.format("%.1f", typeStats.moddingUtilizationPercent)}%)", useDispatcher = true)
+            info(
+                "Modding Range: Used ${typeStats.usedModdingIds.size + typeStats.reservedForImplicit}/${typeStats.totalModdingRange} (${
+                    String.format(
+                        "%.1f",
+                        typeStats.moddingUtilizationPercent
+                    )
+                }%)", useDispatcher = true
+            )
             info("  - Explicitly Used: ${typeStats.usedModdingIds.size}", useDispatcher = true)
             info("  - Reserved for Implicit: ${typeStats.reservedForImplicit}", useDispatcher = true)
             info("  - Available: ${typeStats.availableModdingIds}", useDispatcher = true)

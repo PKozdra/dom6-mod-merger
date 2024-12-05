@@ -1,11 +1,13 @@
 package com.dominions.modmerger.core
 
-import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
-import com.dominions.modmerger.domain.*
+import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.MergeResult
+import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.Logging
 

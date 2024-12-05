@@ -5,24 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="85c95b9c-59a8-4fca-a904-88860f808b24" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/GrepConsole.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/constants/ModPatternsOptimized.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/constants/RegexWrapper.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMappingStatistics.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ModMergerApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ModMergerApplication.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/ModMerger.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMapper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMappingStatistics.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/mapping/IdMappingStatistics.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/parsing/ModParser.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/EntityProcessor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/processing/SpellBlockProcessor.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModContentWriter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MappedModDefintion.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/MappedModDefintion.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModDefintion.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModDefintion.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/PreferencesManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModHeaderWriter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModResourceCopier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/core/writing/ModWriter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/FileSystem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/infrastructure/GamePathsManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/ModMergerController.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/output/OutputPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModContextMenu.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/ModTablePanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/Renderers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/components/StatusPanel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/dominions/modmerger/utils/ModUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/simplelogger.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -104,45 +109,45 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Downloaded.Files.Path.Enabled": "false",
-    "Gradle.Build modmerger.executor": "Run",
-    "Gradle.IdMapperTest.executor": "Run",
-    "Gradle.ModMergerTest.executor": "Run",
-    "Gradle.Tests in 'modmerger.test'.executor": "Run",
-    "Gradle.modmerger [build].executor": "Run",
-    "Gradle.modmerger [clean].executor": "Run",
-    "Gradle.modmerger [dependencies].executor": "Run",
-    "Gradle.modmerger [help].executor": "Run",
-    "Gradle.modmerger [nativeCompile].executor": "Run",
-    "Gradle.modmerger [nativeRun].executor": "Run",
-    "Gradle.modmerger [runWithNativeImageAgent].executor": "Run",
-    "Kotlin.MainKt.executor": "Run",
-    "Kotlin.Mod Merger.executor": "Run",
-    "Repository.Attach.Annotations": "false",
-    "Repository.Attach.JavaDocs": "false",
-    "Repository.Attach.Sources": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
-    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "last.edited.regexp": "Sample Text",
-    "last_opened_file_path": "C:/repos/modmerger/src/main/resources/icons",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.language.Kotlin",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
+    &quot;Gradle.Build modmerger.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.IdMapperTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModMergerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Tests in 'modmerger.test'.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [dependencies].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [help].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [nativeCompile].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [nativeRun].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.modmerger [runWithNativeImageAgent].executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.Mod Merger.executor&quot;: &quot;Run&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary&quot;: &quot;JUnit5&quot;,
+    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5&quot;: &quot;&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last.edited.regexp&quot;: &quot;Sample Text&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/repos/modmerger/src/main/resources/icons&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.language.Kotlin&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\repos\modmerger\src\main\resources\icons" />
@@ -290,17 +295,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="modmerger" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <module name="modmerger" />
-      <option name="filePath" />
-      <method v="2" />
-    </configuration>
     <list>
       <item itemvalue="Gradle.modmerger [nativeRun]" />
       <item itemvalue="Gradle.modmerger [build]" />
@@ -352,7 +346,8 @@
       <workItem from="1733265001815" duration="11263000" />
       <workItem from="1733276685376" duration="7839000" />
       <workItem from="1733317531449" duration="2454000" />
-      <workItem from="1733320034496" duration="21819000" />
+      <workItem from="1733320034496" duration="25306000" />
+      <workItem from="1733413238699" duration="193000" />
     </task>
     <servers />
   </component>

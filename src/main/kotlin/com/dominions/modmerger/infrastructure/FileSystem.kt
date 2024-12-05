@@ -1,7 +1,6 @@
 package com.dominions.modmerger.infrastructure
 
 import com.dominions.modmerger.domain.ModFile
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import java.io.File
 import java.io.IOException
 

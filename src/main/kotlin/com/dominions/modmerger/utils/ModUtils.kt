@@ -4,7 +4,6 @@ import com.dominions.modmerger.constants.RegexWrapper
 import com.dominions.modmerger.infrastructure.Logging
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
-import java.util.regex.Matcher
 
 object ModUtils : Logging {
     // Cache for compiled patterns and matchers
@@ -49,7 +48,10 @@ object ModUtils : Logging {
                     try {
                         matcher.group("name")
                     } catch (e: IllegalArgumentException) {
-                        warn("Found match but no 'name' group in pattern: $pattern for line: $line", useDispatcher = false)
+                        warn(
+                            "Found match but no 'name' group in pattern: $pattern for line: $line",
+                            useDispatcher = false
+                        )
                         null
                     }
                 } else null

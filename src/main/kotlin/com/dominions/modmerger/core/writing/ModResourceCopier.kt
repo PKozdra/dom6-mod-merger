@@ -1,8 +1,8 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
@@ -10,7 +10,7 @@ import java.io.File
 /**
  * Handles copying of mod resources like graphics, sounds, and other assets.
  */
-class ModResourceCopier() : Logging {
+class ModResourceCopier : Logging {
     private val warnings = mutableListOf<MergeWarning>()
 
     private data class CopyStats(
@@ -174,7 +174,8 @@ class ModResourceCopier() : Logging {
     }
 
     private fun logFinalStats(stats: CopyStats) {
-        info("""
+        info(
+            """
             Resource copying completed! Total files processed: ${stats.filesHandled}
         """.trimIndent()
         )

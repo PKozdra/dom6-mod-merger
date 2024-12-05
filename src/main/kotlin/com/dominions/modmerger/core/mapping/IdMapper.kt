@@ -31,16 +31,16 @@ class IdMapper : Logging {
             .associate { (name, def) ->
                 name to createMappingForMod(def, state)
             }
-//            .also { mappedDefs ->
-//                statistics.generateAndLogStatistics(
-//                    modDefinitions,
-//                    mappedDefs,
-//                    conflicts,
-//                    vanillaModifications,
-//                    state,
-//                    System.currentTimeMillis() - startTime
-//                )
-//            }
+            .also { mappedDefs ->
+                statistics.generateAndLogStatistics(
+                    modDefinitions,
+                    mappedDefs,
+                    conflicts,
+                    vanillaModifications,
+                    state,
+                    System.currentTimeMillis() - startTime
+                )
+            }
     }
 
     data class MappingState(
@@ -105,12 +105,14 @@ class IdMapper : Logging {
                     keptCount++
                     state.usedIds[type]?.add(id)
                 }
+
                 state.usedIds[type]?.contains(id) == true -> {
                     val newId = getNextAvailableId(type, state)
                     mappedDef.addMapping(type, id, newId)
                     state.usedIds[type]?.add(newId)
                     remappedCount++
                 }
+
                 else -> {
                     state.usedIds[type]?.add(id)
                     keptCount++

@@ -1,14 +1,13 @@
 package com.dominions.modmerger.core.writing
 
-import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
+import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.Logging
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class ModHeaderWriter(
-) : Logging {
+class ModHeaderWriter : Logging {
     private val warnings = mutableListOf<MergeWarning>()
 
     fun writeHeader(

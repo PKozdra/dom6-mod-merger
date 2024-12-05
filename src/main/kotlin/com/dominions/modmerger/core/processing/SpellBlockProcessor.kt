@@ -8,7 +8,7 @@ import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
 
-class SpellBlockProcessor : Logging{
+class SpellBlockProcessor : Logging {
     data class SpellBlock(
         val startLine: String,
         val lines: MutableList<String> = mutableListOf(),

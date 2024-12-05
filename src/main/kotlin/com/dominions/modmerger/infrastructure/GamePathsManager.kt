@@ -2,7 +2,6 @@
 package com.dominions.modmerger.infrastructure
 
 import com.dominions.modmerger.constants.GameConstants
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Paths
 

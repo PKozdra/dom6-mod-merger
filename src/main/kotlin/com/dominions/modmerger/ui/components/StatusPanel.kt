@@ -1,9 +1,7 @@
 package com.dominions.modmerger.ui.components
 
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
-import com.sun.java.accessibility.util.AWTEventMonitor.addComponentListener
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -27,7 +25,7 @@ class StatusPanel(
         addHyperlinkListener { event ->
             if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                 debug("Hyperlink clicked: '${event.description}'", useDispatcher = false)
-                debug("Available mods: ${currentMods.map { "'${it.modName}'" }}" , useDispatcher = false)
+                debug("Available mods: ${currentMods.map { "'${it.modName}'" }}", useDispatcher = false)
 
                 val clickedMod = currentMods.find { mod ->
                     trace("Comparing '${mod.modName}' with '${event.description}'", useDispatcher = false)

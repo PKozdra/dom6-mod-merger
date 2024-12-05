@@ -5,7 +5,10 @@ import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.scanning.ModScanner
-import com.dominions.modmerger.core.writing.*
+import com.dominions.modmerger.core.writing.ModContentWriter
+import com.dominions.modmerger.core.writing.ModHeaderWriter
+import com.dominions.modmerger.core.writing.ModResourceCopier
+import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager

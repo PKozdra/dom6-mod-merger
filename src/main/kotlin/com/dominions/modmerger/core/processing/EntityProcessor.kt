@@ -119,7 +119,7 @@ class EntityProcessor : Logging {
                     val id = ModUtils.extractId(trimmedLine, pattern.toRegex())
                     val name = ModUtils.extractName(trimmedLine, pattern.toRegex())
 
-                    return EntityMatch(type=type, id=id, name=name, patternName=patternName)
+                    return EntityMatch(type = type, id = id, name = name, patternName = patternName)
                 }
             }
         }

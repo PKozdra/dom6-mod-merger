@@ -1,9 +1,7 @@
 // src/main/kotlin/com/dominions/modmerger/ui/util/IconCache.kt
 package com.dominions.modmerger.ui.util
 
-import com.dominions.modmerger.infrastructure.ApplicationConfig.logger
 import com.dominions.modmerger.infrastructure.Logging
-import com.dominions.modmerger.ui.util.IconCache.defaultIcon
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
