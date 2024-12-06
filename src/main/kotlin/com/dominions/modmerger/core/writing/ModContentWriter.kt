@@ -121,7 +121,9 @@ class ModContentWriter(
         mappedDef: MappedModDefinition
     ): Int {
         val line = lines[currentIndex]
-        val trimmedLine = line.trim()
+        val trimmedLine = ModUtils.removeUnreadableCharacters(line)
+        // remove all unreadable unicode characters from the line
+
 
         trace(
             "Processing line $currentIndex: ${if (trimmedLine.length > 50) trimmedLine.take(50) + "..." else trimmedLine}",

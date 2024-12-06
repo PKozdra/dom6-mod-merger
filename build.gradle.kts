@@ -4,8 +4,12 @@ plugins {
     application
 }
 
+application {
+    mainClass.set("com.dominions.modmerger.MainKt")
+}
+
 group = "com.dominions"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -29,7 +33,7 @@ tasks.register<JavaExec>("generateGraalConfig") {
 
     // Configure the agent
     jvmArgs = listOf(
-        "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
+        "-agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image",
         "-Djava.awt.headless=false",
         "--enable-preview"
     )

@@ -15,16 +15,59 @@ class FontConfigurationManager : Logging {
 
     data class SetupResult(
         val success: Boolean,
-        val error: String? = null
+        val error: String? = null,
+        val usedExistingConfig: Boolean = false
     )
 
     fun setupFontConfiguration(): SetupResult {
         try {
             debug("Starting font configuration setup")
-            // Extract fonts to temporary directory
-            val tempDir = createTempDirectory()
-            debug("Created temp directory: ${tempDir.toFile().absolutePath}")
 
+            // Check if we have valid existing configuration
+            System.getProperty("java.home")?.let { javaHome ->
+                debug("Found java.home: $javaHome")
+                val libDir = File(javaHome, "lib")
+
+                if (hasValidFontConfiguration(libDir)) {
+                    debug("Using existing font configuration from: $libDir")
+                    return SetupResult(success = true, usedExistingConfig = true)
+                }
+            }
+
+            debug("No valid existing font configuration found, setting up temporary configuration")
+            return setupTemporaryFontConfiguration()
+        } catch (e: Exception) {
+            val errorMessage = buildErrorMessage(e)
+            error("Failed to setup font configuration", e)
+            showErrorDialog("Font Configuration Error", errorMessage)
+            return SetupResult(success = false, error = errorMessage)
+        }
+    }
+
+    private fun hasValidFontConfiguration(libDir: File): Boolean {
+        if (!libDir.exists() || !libDir.isDirectory) {
+            debug("Lib directory not found or not a directory: ${libDir.absolutePath}")
+            return false
+        }
+
+        // Check for either .properties or .properties.src
+        val hasProperties = File(libDir, "fontconfig.properties").exists() ||
+                File(libDir, "fontconfig.properties.src").exists()
+
+        val hasBfc = File(libDir, "fontconfig.bfc").exists()
+
+        debug("Font configuration check in ${libDir.absolutePath}:")
+        debug("- Has properties file: $hasProperties")
+        debug("- Has BFC file: $hasBfc")
+
+        return hasProperties && hasBfc
+    }
+
+    private fun setupTemporaryFontConfiguration(): SetupResult {
+        val tempDir = createTempDirectory()
+        debug("Created temp directory: ${tempDir.toFile().absolutePath}")
+
+        try {
             extractFontsToDirectory(tempDir.toFile())
 
             // Point font configuration to temporary directory
@@ -41,23 +84,25 @@ class FontConfigurationManager : Logging {
                     debug("Cleaning up temporary font directory")
                     tempDir.toFile().deleteRecursively()
                 } catch (e: Exception) {
-                    error("Failed to clean up temporary font directory", e)
+                    error("Failed to clean up temporary directory", e)
                 }
             })
 
             return SetupResult(success = true)
         } catch (e: Exception) {
-            val errorMessage = buildErrorMessage(e)
-            error("Failed to setup font configuration", e)
-            showErrorDialog("Font Configuration Error", errorMessage)
-            return SetupResult(success = false, error = errorMessage)
+            try {
+                tempDir.toFile().deleteRecursively()
+            } catch (cleanupError: Exception) {
+                error("Failed to clean up after error", cleanupError)
+            }
+            throw e
         }
     }
 
     private fun extractFontsToDirectory(dir: File) {
         val libDir = File(dir, "lib").apply {
             mkdirs()
-            debug("Created lib directory: ${getAbsolutePath()}")
+            debug("Created lib directory: ${absolutePath}")
         }
 
         requiredFiles.forEach { fileName ->
@@ -94,11 +139,13 @@ class FontConfigurationManager : Logging {
             - Insufficient permissions to create temporary files
             - Missing or corrupted application resources
             - System temporary directory is not accessible
+            - Invalid existing font configuration
             
             Technical Details:
             ${e.stackTraceToString().lines().take(3).joinToString("\n")}
             
-            Please ensure the application has write permissions to the temporary directory.
+            Please ensure the application has write permissions to the temporary directory
+            and that all required resources are available.
             If the problem persists, please report this issue.
         """.trimIndent()
     }
@@ -148,9 +195,5 @@ class FontConfigurationManager : Logging {
             System.err.println("Critical Error: Failed to initialize font configuration")
             System.err.println(message)
         }
-    }
-
-    companion object {
-        private val logger = LoggerFactory.getLogger(FontConfigurationManager::class.java)
     }
 }

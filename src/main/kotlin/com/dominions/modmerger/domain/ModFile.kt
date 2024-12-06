@@ -1,4 +1,3 @@
-// src/main/kotlin/com/dominions/modmerger/domain/ModFile.kt
 package com.dominions.modmerger.domain
 
 import com.dominions.modmerger.infrastructure.Logging
@@ -6,7 +5,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.IOException
-import java.io.RandomAccessFile
+import java.nio.channels.FileChannel
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.nio.file.StandardOpenOption
 
 class ModFile private constructor(
     val file: File?,
@@ -16,6 +18,8 @@ class ModFile private constructor(
 
     companion object {
         private const val HEADER_SIZE = 4096
+        private const val BUFFER_SIZE = 8192
+
         private val METADATA_PREFIXES = mapOf(
             "#modname" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
             "#description" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
@@ -28,7 +32,7 @@ class ModFile private constructor(
             return ModFile(
                 file = file,
                 name = file.nameWithoutExtension,
-                contentProvider = { file.readText() }
+                contentProvider = { readFileEfficiently(file) }
             )
         }
 
@@ -55,18 +59,40 @@ class ModFile private constructor(
                 "File must have .dm extension: ${file.path}"
             }
         }
+
+        private fun readFileEfficiently(file: File): String {
+            return FileChannel.open(file.toPath(), StandardOpenOption.READ).use { channel ->
+                val buffer = ByteBuffer.allocate(BUFFER_SIZE)
+                val builder = StringBuilder((file.length() + 1024).toInt())
+
+                while (channel.read(buffer) != -1) {
+                    buffer.flip()
+                    builder.append(StandardCharsets.UTF_8.decode(buffer))
+                    buffer.clear()
+                }
+
+                builder.toString()
+            }
+        }
     }
 
-    /**
-     * Reads and returns the current content of the mod file.
-     */
-    val content: String
-        get() = try {
+    // Cache content using lazy delegation
+    private val lazyContent by lazy {
+        try {
             debug("Loading content from: $name", useDispatcher = false)
             contentProvider()
         } catch (e: IOException) {
             throw InvalidModFileException("Failed to read content from file: $name", e)
         }
+    }
+
+    // Cache metadata using lazy delegation
+    private val metadata by lazy { loadMetadata() }
+
+    /**
+     * Reads and returns the current content of the mod file.
+     */
+    val content: String get() = lazyContent
 
     /**
      * Loads metadata from file header or full content if needed
@@ -77,19 +103,23 @@ class ModFile private constructor(
     }
 
     private fun loadFileHeader(file: File): String {
-        return RandomAccessFile(file, "r").use { raf ->
-            val bytes = ByteArray(HEADER_SIZE.coerceAtMost(file.length().toInt()))
-            raf.read(bytes)
-            String(bytes)
+        return FileChannel.open(file.toPath(), StandardOpenOption.READ).use { channel ->
+            val headerSize = HEADER_SIZE.coerceAtMost(file.length().toInt())
+            val buffer = ByteBuffer.allocate(headerSize)
+            channel.read(buffer)
+            buffer.flip()
+            StandardCharsets.UTF_8.decode(buffer).toString()
         }
     }
 
     private fun parseMetadata(content: String): ModMetadata {
         debug("Parsing metadata for mod: $name", useDispatcher = false)
 
-        val lines = content.lines()
+        // Use sequence for better memory efficiency with large files
         val metadata = METADATA_PREFIXES.mapValues { (prefix, extractor) ->
-            lines.firstOrNull { it.trim().startsWith(prefix) }
+            content.lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith(prefix) }
                 ?.let { extractor(it) }
                 ?.also { debug("Found $prefix: $it", useDispatcher = false) }
         }
@@ -102,11 +132,11 @@ class ModFile private constructor(
         )
     }
 
-    // Metadata properties - always load fresh
-    val modName: String get() = loadMetadata().modName ?: name
-    val description: String get() = loadMetadata().description ?: ""
-    val version: String get() = loadMetadata().version ?: ""
-    val iconPath: String? get() = loadMetadata().iconPath
+    // Metadata properties - now use cached metadata
+    val modName: String get() = metadata.modName ?: name
+    val description: String get() = metadata.description ?: ""
+    val version: String get() = metadata.version ?: ""
+    val iconPath: String? get() = metadata.iconPath
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

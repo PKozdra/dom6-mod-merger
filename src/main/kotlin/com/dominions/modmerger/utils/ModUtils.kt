@@ -80,6 +80,15 @@ object ModUtils : Logging {
         return id in minId..maxId
     }
 
+    fun removeUnreadableCharacters(line: String): String {
+        var result = line.trim()
+        return if (line.startsWith("\uFEFF")) {
+            result.substring(1)
+        } else {
+            result
+        }
+    }
+
     fun getOrCreateWrapper(pattern: Regex): RegexWrapper {
         return patternCache.computeIfAbsent(pattern.pattern) {
             RegexWrapper.of(it)

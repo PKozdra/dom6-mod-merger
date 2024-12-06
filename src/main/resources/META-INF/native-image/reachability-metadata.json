@@ -2323,6 +2323,17 @@
       ]
     },
     {
+      "type": "sun.awt.UngrabEvent",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.awt.Component"
+          ]
+        }
+      ]
+    },
+    {
       "type": "sun.awt.Win32GraphicsConfig",
       "fields": [
         {

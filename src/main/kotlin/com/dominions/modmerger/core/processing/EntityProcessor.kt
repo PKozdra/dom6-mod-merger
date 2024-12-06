@@ -133,6 +133,7 @@ class EntityProcessor : Logging {
         remapCommentWriter: (EntityType, Long, Long) -> String
     ): ProcessedEntity {
         trace("ProcessEntity for line: $line", useDispatcher = false)
+
         try {
             // Handle spell blocks if active
             spellBlockProcessor.currentBlock?.let { currentBlock ->

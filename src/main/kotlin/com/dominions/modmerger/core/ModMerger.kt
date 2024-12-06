@@ -53,7 +53,7 @@ class ModMerger(
                 }
             }
         } catch (e: Exception) {
-            error("Failed to process mods: ${e.message}", e)
+            //error("Failed to process mods: ${e.message}", e)
             return MergeResult.Failure(e.message ?: "Unknown error occurred")
         } finally {
             // Clean up resources

@@ -5,6 +5,8 @@ slf4j = "2.0.12"
 flatlaf = "3.4"
 twelvemonkeys = "3.12.0"
 graalvm-native = "0.10.3"
+# version for jdk 23 (https://github.com/xzel23/badass-runtime-plugin), replace with original version when it's updated
+beryx = "1.13.1-patch-1"
 
 [libraries]
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
@@ -17,3 +19,5 @@ slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-native" }
+# version for jdk 23 (https://github.com/xzel23/badass-runtime-plugin), replace with original version when it's updated
+beryx-runtime = { id = "com.dua3.gradle.runtime", version.ref = "beryx" }
