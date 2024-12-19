@@ -1,6 +1,7 @@
 package com.dominions.modmerger
 
 import com.dominions.modmerger.core.ModMerger
+import com.dominions.modmerger.core.mapping.IdManager
 import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.processing.EntityProcessor
@@ -86,31 +87,9 @@ class ModMergerApplication : Logging {
         val configManager = ModOutputConfigManager(fileSystem, gamePathsManager)
         val defaultConfig = configManager.createDefaultConfig()
 
-        // Core components
-        debug("Initializing core components")
-        val entityProcessor = EntityProcessor()
-        val modParser = ModParser(entityProcessor = entityProcessor)
-        val mapper = IdMapper()
-        val scanner = ModScanner(modParser)
-
-        // Writers
-        debug("Setting up writers")
-        val contentWriter = ModContentWriter(entityProcessor = entityProcessor)
-        val resourceCopier = ModResourceCopier()
-        val headerWriter = ModHeaderWriter()
-
-        val writer = ModWriter(
-            contentWriter = contentWriter,
-            resourceCopier = resourceCopier,
-            headerWriter = headerWriter
-        )
-
         // Create service
         debug("Creating ModMerger service")
         val modMerger = ModMerger(
-            scanner = scanner,
-            mapper = mapper,
-            writer = writer,
             config = defaultConfig,
             fileSystem = fileSystem
         )

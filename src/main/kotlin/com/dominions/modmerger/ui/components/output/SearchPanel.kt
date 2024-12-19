@@ -86,6 +86,14 @@ class SearchPanel(private val outputPanel: OutputPanel) : JPanel() {
         removeDocumentListener()
     }
 
+    fun toggleSearchBar() {
+        if (isVisible) {
+            closeSearchBar()
+        } else {
+            showSearchBar()
+        }
+    }
+
     fun documentUpdated() {
         if (isVisible) {
             performSearchWithDebounce()

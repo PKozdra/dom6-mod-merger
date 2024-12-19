@@ -1,7 +1,12 @@
 package com.dominions.modmerger.ui.components.output
 
 import com.dominions.modmerger.infrastructure.PreferencesManager
+import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.RenderingHints
+import java.awt.event.MouseAdapter
+import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -9,11 +14,15 @@ import javax.swing.*
 
 class ControlPanel(private val outputPanel: OutputPanel) : JPanel(FlowLayout(FlowLayout.LEFT, 5, 5)) {
 
+    private val fontSizeLabel = JLabel()
+
     init {
         add(createWordWrapToggle())
         add(createClearButton())
         add(createExportButton())
-        add(createLineLimitField())  // Added line limit adjustment
+        add(createHelpLabel())
+        add(createLineLimitField())
+        add(createFontSizeLabel())
     }
 
     private fun createWordWrapToggle() = JToggleButton("Word Wrap").apply {
@@ -69,6 +78,72 @@ class ControlPanel(private val outputPanel: OutputPanel) : JPanel(FlowLayout(Flo
         }
     }
 
+    private fun createHelpDialog(): JDialog {
+        val parentFrame = SwingUtilities.getWindowAncestor(this) as? JFrame
+        return JDialog(parentFrame, "Output Panel Help", true).apply {
+            val content = JPanel(BorderLayout(5, 5)).apply {
+                border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+
+                add(JPanel(BorderLayout()).apply {
+                    add(JTextPane().apply {
+                        contentType = "text/html"
+                        isEditable = false
+                        text = """
+                        <html>
+                        <h3>Font Size Control</h3>
+                        <ul>
+                            <li><b>Ctrl + Mouse Wheel</b> to zoom in/out</li>
+                            <li><b>Ctrl + Plus</b> to increase size</li>
+                            <li><b>Ctrl + Minus</b> to decrease size</li>
+                            <li><b>Ctrl + 0</b> to reset to default size</li>
+                        </ul>
+                        
+                        <h3>Search Functionality</h3>
+                        <ul>
+                            <li><b>Ctrl + F</b> to open search bar</li>
+                            <li><b>Enter</b> to find next match</li>
+                            <li><b>Shift + Enter</b> to find previous match</li>
+                            <li>Toggle <b>Case Sensitive</b> and <b>Whole Word</b> search options</li>
+                            <li>Search highlighting updates as you type</li>
+                        </ul>
+                        
+                        <h3>Panel Controls</h3>
+                        <ul>
+                            <li><b>Word Wrap</b> - Toggle line wrapping for better readability</li>
+                            <li><b>Clear</b> - Remove all displayed log content</li>
+                            <li><b>Export</b> - Save current log content to a file</li>
+                            <li><b>Max Lines</b> - Control how many lines are kept in memory</li>
+                        </ul>
+                        </html>
+                        """.trimIndent()
+                        border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
+                    }, BorderLayout.CENTER)
+                }, BorderLayout.CENTER)
+
+                add(JButton("Close").apply {
+                    addActionListener { dispose() }
+                }, BorderLayout.SOUTH)
+            }
+
+            add(content)
+            preferredSize = Dimension(400, 500)
+            pack()
+            setLocationRelativeTo(parentFrame)
+        }
+    }
+
+    private fun createHelpLabel() = JLabel(UIManager.getIcon("OptionPane.questionIcon")).apply {
+        border = BorderFactory.createEmptyBorder(4, 4, 4, 4)
+        cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
+
+        addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                createHelpDialog().isVisible = true
+            }
+        })
+    }
+
+
     private fun createLineLimitField() = JPanel(FlowLayout(FlowLayout.LEFT, 5, 0)).apply {
         add(JLabel("Max Lines:"))
         val lineLimitField = JTextField(5).apply {
@@ -89,5 +164,15 @@ class ControlPanel(private val outputPanel: OutputPanel) : JPanel(FlowLayout(Flo
             }
         }
         add(lineLimitField)
+    }
+
+    private fun createFontSizeLabel() = JPanel(FlowLayout(FlowLayout.LEFT, 2, 0)).apply {
+        add(fontSizeLabel.apply {
+            updateFontSizeStatus(PreferencesManager.fontSize)
+        })
+    }
+
+    fun updateFontSizeStatus(size: Int) {
+        fontSizeLabel.text = "Font Size: $size"
     }
 }

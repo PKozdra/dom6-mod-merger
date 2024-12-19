@@ -24,6 +24,8 @@ class ModTablePanel : JPanel(), Logging {
     private val statusLabel = JLabel()
     private val searchTimer = Timer()
     private var searchTask: TimerTask? = null
+    private var onSelectionChanged: ((List<ModListItem>) -> Unit)? = null
+    private var selectionSaveTimer: Timer? = null
 
     private val modCountLabel = JLabel()
     private lateinit var statusPanel: StatusPanel
@@ -416,6 +418,37 @@ class ModTablePanel : JPanel(), Logging {
 
     fun updateMods(mods: List<ModListItem>) {
         model.updateMods(mods)
+        clearSearch()
+        updateStatusLabels()
+    }
+
+    fun setSelectionChangeListener(listener: (List<ModListItem>) -> Unit) {
+        onSelectionChanged = listener
+
+        // Add model listener to trigger selection changes
+        model.addTableModelListener { event ->
+            if (event.column == ModTableModel.TableColumn.SELECTED.ordinal) {
+                // Debounce the selection saves
+                selectionSaveTimer?.cancel()
+                selectionSaveTimer = Timer()
+                selectionSaveTimer?.schedule(object : TimerTask() {
+                    override fun run() {
+                        SwingUtilities.invokeLater {
+                            onSelectionChanged?.invoke(getSelectedMods())
+                        }
+                    }
+                }, 500) // Wait 500ms before saving
+            }
+        }
+    }
+
+    fun updateModsPreservingSelections(newMods: List<ModListItem>, selectedPaths: Set<String>) {
+        // Update the model with new mods
+        model.updateMods(newMods.map { mod ->
+            // If the mod's path exists in selectedPaths, mark it as selected
+            mod.copy(isSelected = mod.modFile.file?.absolutePath in selectedPaths)
+        })
+
         clearSearch()
         updateStatusLabels()
     }

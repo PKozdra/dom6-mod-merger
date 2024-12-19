@@ -10,7 +10,8 @@ import com.dominions.modmerger.utils.ModUtils
 
 class SpellBlockProcessor : Logging {
     data class SpellBlock(
-        val startLine: String,
+        val type: SpellBlockType,
+        val id: Long?, // For selectspell
         val lines: MutableList<String> = mutableListOf(),
         var effect: Long? = null,
         var damage: Long? = null,
@@ -19,14 +20,32 @@ class SpellBlockProcessor : Logging {
         var damageMapping: Pair<Long, Long>? = null
     )
 
+    enum class SpellBlockType {
+        NEW_SPELL,
+        SELECT_SPELL
+    }
+
     var currentBlock: SpellBlock? = null
         internal set
 
-    fun startNewBlock(startLine: String) {
+    fun startNewBlock(line: String) {
         if (currentBlock != null) {
-            warn("Starting new spell block while previous block was not closed", useDispatcher = false)
+            warn("Starting new spell block while previous block was not closed")
         }
-        currentBlock = SpellBlock(startLine)
+
+        val trimmedLine = line.trim()
+        val type = when {
+            trimmedLine.startsWith("#newspell") -> SpellBlockType.NEW_SPELL
+            trimmedLine.startsWith("#selectspell") -> SpellBlockType.SELECT_SPELL
+            else -> throw IllegalArgumentException("Invalid spell block start: $line")
+        }
+
+        val id = if (type == SpellBlockType.SELECT_SPELL) {
+            ModUtils.extractId(line, ModPatterns.SPELL_SELECT_ID)
+        } else null
+
+        currentBlock = SpellBlock(type = type, id = id)
+        // debug("Started new ${type.name} block${id?.let { " with ID $it" } ?: ""}")
     }
 
     fun processSpellLine(line: String, mappedDef: MappedModDefinition): SpellBlock {

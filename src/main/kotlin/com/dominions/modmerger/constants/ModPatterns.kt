@@ -18,7 +18,8 @@ object ModPatterns {
     )
 
     // Spell patterns
-    val SPELL_BLOCK_START = Regex("""#(newspell|selectspell)""")
+    val NEW_UNNUMBERED_SPELL = Regex("""#newspell(.*)$""")
+    val SPELL_BLOCK_START = Regex("""#(?:newspell|selectspell\s+\d+)(.*)$""")
     val SPELL_EFFECT = Regex("""#effect\s+([-]?\d+)(.*)$""")
     val SPELL_DAMAGE = Regex("""#damage\s+([-]?\d+)(.*)$""")
     val SPELL_COPY_ID = Regex("""#copyspell\s+(\d+)(.*)$""")

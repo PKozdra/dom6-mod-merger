@@ -7,6 +7,7 @@ import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
+import com.dominions.modmerger.infrastructure.PreferencesManager
 import com.dominions.modmerger.ui.model.ModListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ class ModMergerController(
         modLoadListener = listener
     }
 
-    fun loadMods() {
+    fun loadMods(onComplete: ((List<ModListItem>) -> Unit)? = null) {
         val paths = buildList {
             // Add Steam workshop path if available
             gamePathsManager.findSteamModPath()?.let {
@@ -65,9 +66,17 @@ class ModMergerController(
         }
 
         SwingUtilities.invokeLater {
-            modLoadListener?.invoke(modItems)
+            if (PreferencesManager.isAutoRestoreEnabled) {
+                val savedPaths = PreferencesManager.getSelectedModPaths()
+                modLoadListener?.invoke(modItems.map { mod ->
+                    mod.copy(isSelected = mod.modFile.file?.absolutePath in savedPaths)
+                })
+            } else {
+                modLoadListener?.invoke(modItems)
+            }
+            onComplete?.invoke(modItems)
+            info("Found $totalMods total mods")
         }
-        info("Found $totalMods total mods")
     }
 
     fun mergeMods(mods: List<ModFile>, onMergeCompleted: () -> Unit) {
@@ -114,6 +123,15 @@ class ModMergerController(
                     onMergeCompleted()
                 }
             }
+        }
+    }
+
+    fun saveSelections(selectedMods: List<ModListItem>) {
+        if (PreferencesManager.isAutoRestoreEnabled) {
+            val paths = selectedMods
+                .mapNotNull { it.modFile.file?.absolutePath }
+                .toSet()
+            PreferencesManager.saveSelectedModPaths(paths)
         }
     }
 

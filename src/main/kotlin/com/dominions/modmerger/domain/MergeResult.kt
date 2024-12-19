@@ -40,6 +40,6 @@ sealed class MergeWarning {
     // For misc warnings that don't fit other categories
     data class GeneralWarning(
         val message: String,
-        val modFile: ModFile? = null
+        val modFile: String? = null
     ) : MergeWarning()
 }

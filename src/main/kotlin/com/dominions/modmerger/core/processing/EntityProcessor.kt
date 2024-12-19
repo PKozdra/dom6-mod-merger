@@ -2,12 +2,14 @@ package com.dominions.modmerger.core.processing
 
 import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.constants.RegexWrapper
+import com.dominions.modmerger.core.mapping.IdManager
+import com.dominions.modmerger.core.mapping.IdRegistrationResult
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
-class EntityProcessor : Logging {
+class EntityProcessor(private val idManager: IdManager) : Logging {
     data class ProcessedEntity(
         val line: String,
         val remapComment: String?
@@ -18,6 +20,7 @@ class EntityProcessor : Logging {
         val id: Long?,         // From extractId
         val name: String?,     // From extractName
         val patternName: String,
+        val isUnnumbered: Boolean = false
     )
 
     companion object {
@@ -90,15 +93,31 @@ class EntityProcessor : Logging {
             patterns.map { RegexWrapper.fromRegex(it) }
         }
 
+        private val UNNUMBERED_PATTERNS = mapOf(
+            ModPatterns.NEW_UNNUMBERED_MONSTER to EntityType.MONSTER,
+            ModPatterns.NEW_UNNUMBERED_WEAPON to EntityType.WEAPON,
+            ModPatterns.NEW_UNNUMBERED_ARMOR to EntityType.ARMOR,
+            ModPatterns.NEW_UNNUMBERED_ITEM to EntityType.ITEM,
+            ModPatterns.NEW_UNNUMBERED_SITE to EntityType.SITE,
+            ModPatterns.NEW_UNNUMBERED_NATION to EntityType.NATION,
+            ModPatterns.NEW_UNNUMBERED_SPELL to EntityType.SPELL
+        )
+
+        private val NUMBERED_PATTERNS = mapOf(
+            EntityType.MONSTER to ModPatterns.NEW_NUMBERED_MONSTER,
+            EntityType.WEAPON to ModPatterns.NEW_NUMBERED_WEAPON,
+            EntityType.ARMOR to ModPatterns.NEW_NUMBERED_ARMOR,
+            EntityType.ITEM to ModPatterns.NEW_NUMBERED_ITEM,
+            EntityType.SITE to ModPatterns.NEW_NUMBERED_SITE,
+            EntityType.NATION to ModPatterns.SELECT_NUMBERED_NATION
+        ).mapValues { (_, pattern) -> RegexWrapper.fromRegex(pattern) }
+
         // Frequently used patterns
         private val SPELL_BLOCK_START = RegexWrapper.fromRegex(ModPatterns.SPELL_BLOCK_START)
         private val END_PATTERN = RegexWrapper.fromRegex(ModPatterns.END)
     }
 
     private val spellBlockProcessor = SpellBlockProcessor()
-
-    // Reusable StringBuilder for trimming
-    private val trimBuilder = StringBuilder(256)
 
     fun detectEntity(line: String): EntityMatch? {
         val trimmedLine = line.trim()
@@ -110,27 +129,111 @@ class EntityProcessor : Logging {
 
         DEFINITION_PATTERNS.forEach { (type, patterns) ->
             patterns.forEach { pattern ->
-                // First check if pattern matches at all
                 if (pattern.matches(trimmedLine)) {
                     val patternName = pattern.getPatternName()
-                    trace("Found matching pattern: $patternName", useDispatcher = false)
-
-                    // Only try extractions if we have a match
                     val id = ModUtils.extractId(trimmedLine, pattern.toRegex())
                     val name = ModUtils.extractName(trimmedLine, pattern.toRegex())
+                    val isUnnumbered = UNNUMBERED_PATTERNS.keys.any {
+                        it.pattern == pattern.toRegex().pattern
+                    }
 
-                    return EntityMatch(type = type, id = id, name = name, patternName = patternName)
+                    trace("Extracted ID: $id, Name: $name (unnumbered: $isUnnumbered) [Pattern: $patternName, Type: $type]", useDispatcher = false)
+
+                    return EntityMatch(
+                        type = type,
+                        id = id,
+                        name = name,
+                        patternName = patternName,
+                        isUnnumbered = isUnnumbered
+                    )
                 }
             }
         }
         return null
     }
 
+    private fun replaceInPattern(pattern: String, replacements: Map<String, String>): String {
+        var result = pattern
+        replacements.forEach { (placeholder, value) ->
+            result = result.replace(Regex(Regex.escape(placeholder)), value)
+        }
+        return result
+    }
+
+    private data class IdAssignment(
+        val entityType: EntityType,
+        val ids: MutableList<Long> = mutableListOf()
+    )
+
+    private val idAssignments = mutableMapOf<String, MutableMap<EntityType, IdAssignment>>()
+
+    private fun assignIdToUnnumbered(
+        line: String,
+        type: EntityType,
+        modName: String
+    ): Pair<String, Long>? {
+        val unnumberedPattern = UNNUMBERED_PATTERNS.entries.find { (pattern, _) ->
+            RegexWrapper.fromRegex(pattern).matches(line)
+        } ?: return null
+
+        val registrationResult = idManager.registerNewId(type, modName)
+        if (registrationResult !is IdRegistrationResult.Registered) {
+            error("Failed to assign ID for unnumbered entity: $registrationResult")
+            return null
+        }
+
+        val newId = registrationResult.id
+
+        // Track the assignment
+        idAssignments
+            .getOrPut(modName) { mutableMapOf() }
+            .getOrPut(type) { IdAssignment(type) }
+            .ids.add(newId)
+
+        val commandEnd = line.indexOf(' ', line.indexOf('#'))
+        val newLine = if (commandEnd != -1) {
+            line.substring(0, commandEnd) + " " + newId + line.substring(commandEnd)
+        } else {
+            "$line $newId"
+        }
+
+        return newLine to newId
+    }
+
+    // Add a function to log assignments for a mod
+    fun logIdAssignmentsForMod(modName: String) {
+        idAssignments[modName]?.forEach { (_, assignment) ->
+            val ranges = assignment.ids.sorted().fold(mutableListOf<Pair<Long, Long>>()) { acc, id ->
+                if (acc.isEmpty()) {
+                    acc.add(id to id)
+                } else {
+                    val (start, end) = acc.last()
+                    if (id == end + 1) {
+                        acc[acc.lastIndex] = start to id
+                    } else {
+                        acc.add(id to id)
+                    }
+                }
+                acc
+            }
+
+            val rangeStr = ranges.joinToString(", ") { (start, end) ->
+                if (start == end) "$start" else "$start-$end"
+            }
+
+            if (assignment.ids.isNotEmpty()) {
+                warn("Assigned ${assignment.ids.size} IDs for unnumbered entity ${assignment.entityType.name} in mod $modName: $rangeStr")
+            }
+        }
+        idAssignments.remove(modName)
+    }
+
     @Throws(IllegalStateException::class)
     fun processEntity(
         line: String,
         mappedDef: MappedModDefinition,
-        remapCommentWriter: (EntityType, Long, Long) -> String
+        remapCommentWriter: (EntityType, Long, Long) -> String,
+        modName: String
     ): ProcessedEntity {
         trace("ProcessEntity for line: $line", useDispatcher = false)
 
@@ -154,15 +257,37 @@ class EntityProcessor : Logging {
                 return ProcessedEntity(line, null)
             }
 
-            // Process normal entity usage patterns
-            trace("ProcessEntity trying to process usage patterns", useDispatcher = false)
+            // Detect entity and handle unnumbered definitions
+            detectEntity(line)?.let { match ->
+                if (match.isUnnumbered) {
+                    val (newLine, newId) = assignIdToUnnumbered(line, match.type, modName)
+                        ?: return ProcessedEntity(line, null)
+
+                    // warn("Assigned new ID $newId to unnumbered entity ${match.type.name} for mod $modName")
+                    return ProcessedEntity(
+                        newLine,
+                        remapCommentWriter(match.type, -1, newId) // -1 indicates new assignment
+                    )
+                }
+
+                // Handle normal numbered entities
+                match.id?.let { id ->
+                    val newId = mappedDef.getMapping(match.type, id)
+                    if (id != newId) {
+                        return ProcessedEntity(
+                            ModUtils.replaceId(line, id, newId),
+                            remapCommentWriter(match.type, id, newId)
+                        )
+                    }
+                }
+            }
+
+            // Process usage patterns if no definition patterns matched
             processUsagePatterns(line, mappedDef, remapCommentWriter)?.let {
                 return it
             }
 
-            // Process entity definitions if no usages were found
-            trace("ProcessEntity trying to process definition patterns", useDispatcher = false)
-            return processDefinitionPatterns(line, mappedDef, remapCommentWriter)
+            return ProcessedEntity(line, null)
         } catch (e: Exception) {
             error("Error processing entity line: $line", e)
             throw IllegalStateException("Failed to process entity: ${e.message}", e)
@@ -177,7 +302,7 @@ class EntityProcessor : Logging {
     ): ProcessedEntity {
         val processedSpell = spellBlockProcessor.processSpellLine(line, mappedDef)
 
-        // Check if this is the end of the spell block using cached pattern
+        // Check if this is the end of the spell block
         if (END_PATTERN.matches(line)) {
             spellBlockProcessor.currentBlock = null
 
@@ -215,23 +340,5 @@ class EntityProcessor : Logging {
             }
         }
         return null
-    }
-
-    private fun processDefinitionPatterns(
-        line: String,
-        mappedDef: MappedModDefinition,
-        remapCommentWriter: (EntityType, Long, Long) -> String
-    ): ProcessedEntity {
-        detectEntity(line)?.let { match ->
-            match.id?.let { id ->  // Only process if we have an ID
-                val newId = mappedDef.getMapping(match.type, id)
-                if (id != newId) {
-                    val comment = remapCommentWriter(match.type, id, newId)
-                    val newLine = ModUtils.replaceId(line, id, newId)
-                    return ProcessedEntity(newLine, comment)
-                }
-            }
-        }
-        return ProcessedEntity(line, null)
     }
 }

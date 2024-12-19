@@ -5,9 +5,11 @@ import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.infrastructure.ApplicationConfig
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
+import com.dominions.modmerger.infrastructure.PreferencesManager
 import com.dominions.modmerger.ui.components.ModOutputConfigPanel
 import com.dominions.modmerger.ui.components.ModTablePanel
 import com.dominions.modmerger.ui.components.output.OutputPanel
+import com.dominions.modmerger.ui.components.settings.SettingsDialog
 import java.awt.*
 import java.util.prefs.Preferences
 import javax.swing.*
@@ -34,6 +36,11 @@ class ModMergerGui(
     // UI Components
     private val mergeButton = createStyledMergeButton()
 
+    // Add to class properties
+    private val settingsButton = JButton("Settings").apply {
+        addActionListener { showSettings() }
+    }
+
     // Refresh button removed as requested
     private val resetConfigButton = JButton("Reset Config")
     private var processingTimer: Timer? = null
@@ -51,6 +58,11 @@ class ModMergerGui(
         setupComponents()
         setupController()
         loadInitialState()
+
+        // Add selection change listener
+        modTable.setSelectionChangeListener { selectedMods ->
+            controller.saveSelections(selectedMods)
+        }
     }
 
     private fun setupWindow() {
@@ -121,6 +133,10 @@ class ModMergerGui(
         frame.repaint()
     }
 
+    private fun showSettings() {
+        SettingsDialog(frame).isVisible = true
+    }
+
     private fun createStyledMergeButton(): JButton {
         return JButton("Merge Selected Mods").apply {
             font = Font(font.family, Font.BOLD, 14)
@@ -154,6 +170,10 @@ class ModMergerGui(
             add(JPanel(BorderLayout()).apply {
                 add(mergeButton, BorderLayout.WEST)
                 add(JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
+                    add(settingsButton)
+                    add(JButton("Refresh Mods").apply {
+                        addActionListener { handleRefreshButton() }
+                    })
                     add(resetConfigButton)
                     add(outputConfigToggle)
                 }, BorderLayout.EAST)
@@ -168,6 +188,20 @@ class ModMergerGui(
             // Setup button actions
             mergeButton.addActionListener { handleMergeButton() }
             resetConfigButton.addActionListener { handleResetConfigButton() }
+        }
+    }
+
+    private fun handleRefreshButton() {
+        val selectedPaths = modTable.getSelectedMods()
+            .mapNotNull { it.modFile.file?.absolutePath }
+            .toSet()
+
+        controller.loadMods { newMods ->
+            if (PreferencesManager.isAutoRestoreEnabled) {
+                modTable.updateModsPreservingSelections(newMods, selectedPaths)
+            } else {
+                modTable.updateMods(newMods)
+            }
         }
     }
 

@@ -2,21 +2,24 @@
 package com.dominions.modmerger.constants
 
 import com.dominions.modmerger.domain.EntityType
+import kotlin.math.abs
 
 object ModRanges {
     object Vanilla {
-        const val WEAPON_END: Long = 999L
-        const val ARMOR_END: Long = 399L
-        const val MONSTER_END: Long = 4999L
+        const val WEAPON_END: Long = 873L    // Changed from 999L to match in-game
+        const val ARMOR_END: Long = 292L     // Changed from 399L to match in-game
+        const val MONSTER_END: Long = 4063L  // Changed from 5000L to match in-game
         const val NAMETYPE_END: Long = 169L
-        const val SPELL_END: Long = 1999L
+        const val SPELL_END: Long = 1463L    // Changed from 1999L to match in-game
         const val ENCHANTMENT_END: Long = 199L
-        const val ITEM_END: Long = 699L
-        const val SITE_END: Long = 1699L
+        const val ITEM_END: Long = 528L      // Changed from 699L to match in-game
+        // SITE_END supposed to be 1699L but modder DGAF, change later
+        const val SITE_END: Long = 1499L
         const val NATION_END: Long = 149L
         const val POPTYPE_END: Long = 124L
         const val RESTRICTED_ITEM_END: Long = 0L  // No vanilla restricted items
         const val EVENTCODE_END: Long = 0L  // 0 is default/reset code
+        const val MONTAG_END: Long = 0L // 0 is default/reset code
     }
 
     object Modding {
@@ -25,15 +28,15 @@ object ModRanges {
         const val EVENTCODE_END: Long = -300L
 
         // Weapons
-        const val WEAPON_START: Long = Vanilla.WEAPON_END + 1  // 1000
+        const val WEAPON_START: Long = Vanilla.WEAPON_END + 1  // 1000, but actually 874 in-game
         const val WEAPON_END: Long = 3999L
 
         // Armor
-        const val ARMOR_START: Long = Vanilla.ARMOR_END + 1L    // 400
+        const val ARMOR_START: Long = Vanilla.ARMOR_END + 1L    // 400, but actually 293 in-game
         const val ARMOR_END: Long = 1999L
 
         // Monsters
-        const val MONSTER_START: Long = Vanilla.MONSTER_END + 1L // 5000
+        const val MONSTER_START: Long = Vanilla.MONSTER_END + 1L // 5000, but actually 4063 in-game
         const val MONSTER_END: Long = 19999
 
         // Name Types
@@ -85,9 +88,9 @@ object ModRanges {
             EntityType.NATION -> id <= Vanilla.NATION_END
             EntityType.NAME_TYPE -> id <= Vanilla.NAMETYPE_END
             EntityType.ENCHANTMENT -> id <= Vanilla.ENCHANTMENT_END
-            EntityType.MONTAG -> id in Modding.MONTAG_START..Modding.MONTAG_END
-            EntityType.EVENT_CODE -> id == 0L  // Only 0 is vanilla
             EntityType.POPTYPE -> id <= Vanilla.POPTYPE_END
+            EntityType.EVENT_CODE -> id == Vanilla.EVENTCODE_END  // Only 0 is vanilla
+            EntityType.MONTAG -> abs(id) < Modding.MONTAG_START
             EntityType.RESTRICTED_ITEM -> false  // No vanilla restricted items
             else -> false
         }

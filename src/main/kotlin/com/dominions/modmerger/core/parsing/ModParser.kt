@@ -7,10 +7,11 @@ import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
+import jdk.internal.net.http.common.Log.logTrace
 import kotlin.math.abs
 
 class ModParser(
-    private val entityProcessor: EntityProcessor = EntityProcessor(),
+    private val entityProcessor: EntityProcessor,
     private val enableDetailedLogging: Boolean = false
 ) : Logging {
 
@@ -78,38 +79,38 @@ class ModParser(
         try {
             when {
                 isModInfoLine(line) -> {
-                    logTrace(state, "Handling mod info line")
+                    trace("Handling mod info line", useDispatcher = false)
                     handleModInfo(line, state)
                 }
 
                 state.inMultilineDescription -> {
-                    logTrace(state, "Handling multiline description")
+                    trace("Handling multiline description", useDispatcher = false)
                     if (line.contains("\"")) state.inMultilineDescription = false
                 }
 
                 isDescriptionStart(line) -> {
-                    logTrace(state, "Handling description start")
+                    trace("Handling description start", useDispatcher = false)
                     state.inMultilineDescription = !line.endsWith("\"")
                 }
 
                 CompiledPatterns.spellBlockStart.matches(line) -> {
-                    logTrace(state, "Handling spell block start")
+                    trace("Handling spell block start", useDispatcher = false)
                     state.inSpellBlock = true
                     handleSpellStart(line, state)
                 }
 
                 CompiledPatterns.end.matches(line) -> {
-                    logTrace(state, "Handling block end")
+                    trace("Handling block end", useDispatcher = false)
                     state.resetSpellBlock()
                 }
 
                 state.inSpellBlock -> {
-                    logTrace(state, "Handling spell block content")
+                    trace("Handling spell block content", useDispatcher = false)
                     handleSpellBlockContent(line, state)
                 }
 
                 else -> {
-                    logTrace(state, "Handling entity line")
+                    trace("Handling entity line", useDispatcher = false)
                     handleEntityLine(line, state)
                 }
             }
@@ -148,35 +149,33 @@ class ModParser(
 
     private fun handleSummoningEffect(damage: Long, definition: ModDefinition) {
         if (damage > 0) {
-            if (ModRanges.Validator.isVanillaId(EntityType.MONSTER, damage)) {
-                definition.addVanillaEditedId(EntityType.MONSTER, damage)
-            } else {
-                definition.addDefinedId(EntityType.MONSTER, damage)
-            }
-        } else {
-            definition.addDefinedId(EntityType.MONTAG, abs(damage))
+            handleIdAddition(damage, null, EntityType.MONSTER, definition)
+        }
+        else {
+            handleIdAddition(damage, null, EntityType.MONTAG, definition)
         }
     }
 
     private fun handleEntityLine(line: String, state: ParserState) {
         entityProcessor.detectEntity(line)?.let { (type, id, name) ->
-            logTrace(state, "Detected entity: $type with ID: ${id ?: name ?: "implicit"}")
+            trace("Detected entity: $type with ID: ${id ?: name ?: "implicit"}", useDispatcher = false)
+            handleIdAddition(id, name, type, state.definition)
+        }
+    }
 
-            when {
-                id != null && line.startsWith("#new") -> {
-                    state.definition.addDefinedId(type, id)
-                }
-                id != null && line.startsWith("#select") -> {
-                    if (ModRanges.Validator.isValidModdingId(type, id)) {
-                        state.definition.addDefinedId(type, id)
-                    } else {
-                        state.definition.addVanillaEditedId(type, id)
-                    }
-                }
-                else -> {
-                    state.definition.addImplicitDefinition(type)
-                }
+    private fun handleIdAddition(id: Long?, name: String?, type: EntityType, definition: ModDefinition) {
+        if (id != null) {
+            if (ModRanges.Validator.isValidModdingId(type, id)) {
+                definition.addDefinedId(type, id)
+            } else {
+                definition.addVanillaEditedId(type, id)
             }
+        }
+        else if (name != null) {
+            definition.addDefinedName(type, name)
+        }
+        else {
+            definition.addImplicitDefinition(type)
         }
     }
 
@@ -226,11 +225,5 @@ class ModParser(
         }
         error(errorMsg, e)
         throw ModParsingException(errorMsg, e)
-    }
-
-    private inline fun logTrace(state: ParserState, message: String) {
-        if (enableDetailedLogging) {
-            trace("[${state.modFile.modName}] Line ${state.lineNumber}: $message", useDispatcher = false)
-        }
     }
 }

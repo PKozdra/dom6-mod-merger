@@ -8,12 +8,14 @@ import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.TimerTask
 import java.util.concurrent.LinkedBlockingQueue
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.text.BadLocationException
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledEditorKit
+import kotlin.concurrent.schedule
 
 /**
  * A panel that displays log output with configurable log levels and text display options.
@@ -44,6 +46,10 @@ class OutputPanel(
     private val logWorker = LogWorker()
     internal var pauseSearchUpdates = false  // Added to control search updates
 
+    private var currentFontSize = PreferencesManager.fontSize
+
+    private var shouldAutoScroll = true
+
     init {
         setupPanel()
         setupOutputPane()
@@ -51,6 +57,7 @@ class OutputPanel(
         setupLogLevels()
         setupControlPanel()
         setupKeyBindings()
+        setupFontSizeControls()
         logDispatcher.addListener(this)
         logWorker.execute()
 
@@ -66,8 +73,14 @@ class OutputPanel(
     private fun setupOutputPane() {
         outputPane.apply {
             isEditable = false
-            font = Font(Font.MONOSPACED, Font.PLAIN, 12)
+            font = Font(Font.MONOSPACED, Font.PLAIN, currentFontSize)
             editorKit = if (isWordWrapEnabled) StyledEditorKit() else NoWrapEditorKit()
+
+            // Enable drag selection even though pane is not editable
+            enableInputMethods(true)
+
+            // Add context menu
+            componentPopupMenu = createContextMenu()
         }
     }
 
@@ -75,11 +88,44 @@ class OutputPanel(
         scrollPane.apply {
             border = BorderFactory.createTitledBorder("Output")
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+
+            // Track scrolling to determine auto-scroll behavior
+            verticalScrollBar.addAdjustmentListener { e ->
+                val extent = verticalScrollBar.model.extent
+                val maximum = verticalScrollBar.maximum
+                val value = e.value
+                shouldAutoScroll = (value + extent) >= maximum
+            }
         }
+
         val layeredPane = JPanel(BorderLayout())
         layeredPane.add(scrollPane, BorderLayout.CENTER)
         layeredPane.add(searchPanel, BorderLayout.NORTH)
         add(layeredPane, BorderLayout.CENTER)
+    }
+
+    private fun createContextMenu() = JPopupMenu().apply {
+        add(JMenuItem("Copy").apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx)
+            addActionListener {
+                outputPane.copy()
+            }
+        })
+
+        add(JMenuItem("Select All").apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx)
+            addActionListener {
+                outputPane.selectAll()
+            }
+        })
+
+        add(JMenuItem("Search").apply {
+            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx)
+            // if not open, show search bar, otherwise close it
+            addActionListener {
+                searchPanel.toggleSearchBar()
+            }
+        })
     }
 
     private fun setupLogLevels() {
@@ -137,6 +183,99 @@ class OutputPanel(
         outputPane.revalidate()
     }
 
+    private fun setupFontSizeControls() {
+        // Add mouse wheel listener
+        scrollPane.addMouseWheelListener { e ->
+            if (e.isControlDown) {
+                val increment = if (e.wheelRotation < 0) 1 else -1
+                val newSize = (currentFontSize + increment).coerceIn(
+                    PreferencesManager.MIN_FONT_SIZE,
+                    PreferencesManager.MAX_FONT_SIZE
+                )
+
+                if (newSize != currentFontSize) {
+                    // Immediate UI update
+                    currentFontSize = newSize
+                    outputPane.font = Font(Font.MONOSPACED, Font.PLAIN, newSize)
+                    controlPanel.updateFontSizeStatus(newSize)
+
+                    // Debounced preference update using SwingUtilities
+                    SwingUtilities.invokeLater {
+                        fontSizeUpdateTimer?.stop()
+                        fontSizeUpdateTimer = javax.swing.Timer(500) {
+                            PreferencesManager.fontSize = newSize
+                            fontSizeUpdateTimer?.stop()
+                        }.apply {
+                            isRepeats = false
+                            start()
+                        }
+                    }
+                }
+
+                e.consume()
+            } else {
+                // Forward the event to the default scroll pane UI handler
+                scrollPane.parent.dispatchEvent(e)
+            }
+        }
+
+        // Add keyboard shortcuts
+        val inputMap = outputPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+        val actionMap = outputPane.actionMap
+
+        // Ctrl + Plus
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx), "increaseFontSize")
+        actionMap.put("increaseFontSize", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                updateFontSize(currentFontSize + 1)
+            }
+        })
+
+        // Ctrl + Minus
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx), "decreaseFontSize")
+        actionMap.put("decreaseFontSize", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                updateFontSize(currentFontSize - 1)
+            }
+        })
+
+        // Ctrl + 0 (Reset to default)
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_0, Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx), "resetFontSize")
+        actionMap.put("resetFontSize", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                updateFontSize(PreferencesManager.DEFAULT_FONT_SIZE)
+            }
+        })
+    }
+
+    private var fontSizeUpdateTimer: javax.swing.Timer? = null
+
+    private fun updateFontSize(newSize: Int) {
+        val size = newSize.coerceIn(PreferencesManager.MIN_FONT_SIZE, PreferencesManager.MAX_FONT_SIZE)
+        if (size != currentFontSize) {
+            currentFontSize = size
+            outputPane.font = Font(Font.MONOSPACED, Font.PLAIN, size)
+
+            // Update word wrap to handle new font size
+            updateWordWrap(isWordWrapEnabled)
+
+            // Update the status text in ControlPanel
+            controlPanel.updateFontSizeStatus(size)
+
+            // Cancel previous timer if exists
+            fontSizeUpdateTimer?.stop()
+
+            // Create a new timer
+            fontSizeUpdateTimer = javax.swing.Timer(500) {
+                PreferencesManager.fontSize = size
+                fontSizeUpdateTimer?.stop()
+            }
+            fontSizeUpdateTimer?.isRepeats = false
+            fontSizeUpdateTimer?.start()
+        }
+    }
+
+
     private fun appendLogMessage(level: LogLevel, message: String) {
         if (level !in activeLogLevels) return
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
@@ -185,7 +324,10 @@ class OutputPanel(
                     doc.insertString(doc.length, message, style)
                 }
 
-                outputPane.caretPosition = doc.length
+                // Only auto-scroll if we were at the bottom
+                if (shouldAutoScroll) {
+                    outputPane.caretPosition = doc.length
+                }
 
                 if (!pauseSearchUpdates) {
                     searchPanel.documentUpdated()

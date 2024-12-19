@@ -33,6 +33,11 @@ data class ModDefinition(
         getDefinition(type).addDefinedId(id)
     }
 
+    fun addDefinedName(type: EntityType, name: String) {
+        trace("Adding defined name $name for entity type $type", useDispatcher = false)
+        getDefinition(type).addDefinedName(name)
+    }
+
     fun addVanillaEditedId(type: EntityType, id: Long) {
         trace("Adding vanilla edited ID $id for entity type $type", useDispatcher = false)
         getDefinition(type).addVanillaEditedId(id)
@@ -53,5 +58,12 @@ data class ModDefinition(
             .sortedBy { it.key.name }
             .associate { (type, def) ->
                 type to def.definedIds
+            }
+
+    fun getAllVanillaEditedIds(): Map<EntityType, Set<Long>> =
+        definitions.entries
+            .sortedBy { it.key.name }
+            .associate { (type, def) ->
+                type to def.vanillaEditedIds
             }
 }
