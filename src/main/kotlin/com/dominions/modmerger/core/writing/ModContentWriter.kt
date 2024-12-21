@@ -291,6 +291,35 @@ class ModContentWriter(
         context.processedLines.add(processed.line)
     }
 
+    private fun handleDamageMapping(
+        line: String,
+        block: SpellBlockProcessor.SpellBlock,
+        context: ModProcessingContext
+    ) {
+        // debug("Processing damage mapping for line: $line")
+        // debug("Block state: effect=${block.effect}, damageMapping=${block.damageMapping}")
+
+        block.damageMapping?.let { (oldId, newId) ->
+            // debug("Found mapping $oldId -> $newId")
+            val comment = createRemapComment(oldId, newId)
+            // debug("Created comment: $comment")
+            context.processedLines.add(comment)
+
+            val newLine = ModUtils.replaceId(line, oldId, newId)
+            // debug("Created new line: $newLine")
+            context.processedLines.add(newLine)
+        } ?: run {
+            // debug("No mapping needed, using original line")
+            context.processedLines.add(line)
+        }
+    }
+
+    private data class SpellProcessingContext(
+        var currentDamageLine: String? = null,
+        var damageMappingResolved: Boolean = false,
+        var damageLineIndex: Int = -1
+    )
+
     private fun processSpellBlock(
         lines: List<String>,
         startIndex: Int,
@@ -298,20 +327,55 @@ class ModContentWriter(
         context: ModProcessingContext
     ): Int {
         var currentIndex = startIndex
+        // debug("Processing spell block starting at line $startIndex")
+
+        val spellContext = SpellProcessingContext()
 
         while (currentIndex < lines.size) {
             val line = lines[currentIndex]
             val trimmedLine = line.trim()
+            // debug("Processing spell block line: $trimmedLine")
 
             when {
                 ModPatterns.END.matches(trimmedLine) -> {
                     return handleSpellBlockEnd(line, currentIndex, context)
                 }
                 trimmedLine.startsWith("#damage") -> {
-                    handleDamageLine(line, mappedDef, context)
+                    spellContext.currentDamageLine = line
+                    spellContext.damageLineIndex = context.processedLines.size
+                    // Process to store the damage value
+                    val block = spellBlockProcessor.processSpellLine(line, mappedDef)
+                    if (block.damageMapping != null) {
+                        // If we already have an effect, handle the mapping now
+                        handleDamageMapping(line, block, context)
+                        spellContext.damageMappingResolved = true
+                    } else {
+                        // Store line for now, might be remapped later
+                        context.processedLines.add(line)
+                    }
+                }
+                trimmedLine.startsWith("#effect") -> {
+                    // Process effect line
+                    val block = spellBlockProcessor.processSpellLine(line, mappedDef)
+                    // Add effect line as-is
+                    context.processedLines.add(line)
+
+                    // If we had a pending damage line and now have a mapping
+                    if (!spellContext.damageMappingResolved &&
+                        spellContext.currentDamageLine != null &&
+                        spellContext.damageLineIndex >= 0) {
+                        // Get the updated block state after the effect was processed
+                        val updatedBlock = spellBlockProcessor.currentBlock
+                        if (updatedBlock?.damageMapping != null) {
+                            // Remove the original damage line
+                            context.processedLines.removeAt(spellContext.damageLineIndex)
+                            // Add the remapped version
+                            handleDamageMapping(spellContext.currentDamageLine!!, updatedBlock, context)
+                            spellContext.damageMappingResolved = true
+                        }
+                    }
                 }
                 else -> {
-                    // Use the same processing as regular lines
                     processRegularLine(line, mappedDef, context)
                 }
             }
@@ -325,15 +389,6 @@ class ModContentWriter(
         context.processedLines.add(line)
         spellBlockProcessor.currentBlock = null
         return currentIndex + 1
-    }
-
-    private fun handleDamageLine(line: String, mappedDef: MappedModDefinition, context: ModProcessingContext) {
-        val processedBlock = spellBlockProcessor.processSpellLine(line, mappedDef)
-        processedBlock.damageMapping?.let { (oldId, newId) ->
-            trace("Remapping spell damage ID $oldId to $newId")
-            context.processedLines.add(createRemapComment(oldId, newId))
-            context.processedLines.add(ModUtils.replaceId(line, oldId, newId))
-        } ?: context.processedLines.add(line)
     }
 
     private fun createRemapComment(oldId: Long, newId: Long): String {

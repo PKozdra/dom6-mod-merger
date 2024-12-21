@@ -64,11 +64,29 @@ object ModUtils : Logging {
     }
 
     fun replaceId(line: String, oldId: Long, newId: Long): String {
-        val patternString = "\\b$oldId\\b"
+        // Extract the command part (#damage, #monster, etc.)
+        val command = line.substringBefore(" ")
+
+        // Handle special formatting for negative IDs
+        val oldIdStr = if (oldId < 0) "-${kotlin.math.abs(oldId)}" else oldId.toString()
+        val newIdStr = if (newId < 0) "-${kotlin.math.abs(newId)}" else newId.toString()
+
+        // Create pattern that matches command followed by ID and potentially comments
+        val patternString = "$command\\s+$oldIdStr(\\s.*)?$"
         val pattern = numberReplaceCache.computeIfAbsent(patternString) {
             Pattern.compile(it)
         }
-        return pattern.matcher(line).replaceAll(newId.toString())
+
+        // debug("Replacing in line: $line")
+        // debug("Old ID: $oldIdStr, New ID: $newIdStr")
+        // debug("Pattern: $patternString")
+
+        return pattern.matcher(line).replaceAll { matchResult ->
+            val rest = matchResult.group(1) ?: ""
+            "$command $newIdStr$rest"
+        }.also { result ->
+            // debug("Replacement result: $result")
+        }
     }
 
     fun validateIdString(idString: String): Boolean {
