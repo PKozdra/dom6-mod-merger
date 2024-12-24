@@ -41,6 +41,9 @@
       "type": "com.dominions.modmerger.ui.components.output.SearchPanel"
     },
     {
+      "type": "com.dominions.modmerger.ui.components.settings.SettingsDialog"
+    },
+    {
       "type": "com.formdev.flatlaf.icons.FlatAscendingSortIcon",
       "methods": [
         {
@@ -168,6 +171,15 @@
     },
     {
       "type": "com.formdev.flatlaf.icons.FlatMenuItemArrowIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatOptionPaneQuestionIcon",
       "methods": [
         {
           "name": "<init>",
@@ -1269,6 +1281,10 @@
     {
       "module": "java.base",
       "glob": "sun/net/www/content-types.properties"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/text/resources/LineBreakIteratorData"
     },
     {
       "module": "java.base",
@@ -2651,6 +2667,15 @@
           "parameterTypes": [
             "java.awt.Component"
           ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.windows.WInputMethod",
+      "methods": [
+        {
+          "name": "inquireCandidatePosition",
+          "parameterTypes": []
         }
       ]
     },
