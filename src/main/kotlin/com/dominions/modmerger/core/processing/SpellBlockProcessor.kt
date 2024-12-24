@@ -60,7 +60,7 @@ class SpellBlockProcessor : Logging {
         } else null
 
         currentBlock = SpellBlock(type = type, id = id)
-        debug("Started new ${type.name} block${id?.let { " with ID $it" } ?: ""}", useDispatcher = false)
+        // debug("Started new ${type.name} block${id?.let { " with ID $it" } ?: ""}", useDispatcher = false)
     }
 
     fun processSpellLine(line: String, mappedDef: MappedModDefinition): SpellBlock {
@@ -70,16 +70,16 @@ class SpellBlockProcessor : Logging {
         val trimmedLine = line.trim()
 
         // Add complete line debugging
-        debug("RAW LINE: '$line'", useDispatcher = false)
-        debug("TRIMMED LINE: '$trimmedLine'", useDispatcher = false)
-        debug("Does line match SPELL_EFFECT? ${ModPatterns.SPELL_EFFECT.matches(trimmedLine)}", useDispatcher = false)
-        debug("Does line match SPELL_DAMAGE? ${ModPatterns.SPELL_DAMAGE.matches(trimmedLine)}", useDispatcher = false)
+        // debug("RAW LINE: '$line'", useDispatcher = false)
+        // debug("TRIMMED LINE: '$trimmedLine'", useDispatcher = false)
+        // debug("Does line match SPELL_EFFECT? ${ModPatterns.SPELL_EFFECT.matches(trimmedLine)}", useDispatcher = false)
+        // debug("Does line match SPELL_DAMAGE? ${ModPatterns.SPELL_DAMAGE.matches(trimmedLine)}", useDispatcher = false)
 
         try {
-            debug("Processing line: $trimmedLine", useDispatcher = false)
+            // debug("Processing line: $trimmedLine", useDispatcher = false)
             when {
                 ModPatterns.SPELL_EFFECT.matches(trimmedLine) -> {
-                    debug("Matched SPELL_EFFECT pattern", useDispatcher = false)
+                    // debug("Matched SPELL_EFFECT pattern", useDispatcher = false)
                     handleEffectLine(line, block, mappedDef)
                 }
                 ModPatterns.SPELL_DAMAGE.matches(trimmedLine) -> {
@@ -111,23 +111,23 @@ class SpellBlockProcessor : Logging {
     }
 
     private fun handleEffectLine(line: String, block: SpellBlock, mappedDef: MappedModDefinition) {
-        debug("Attempting to handle effect line: $line", useDispatcher = false)
-        debug("SPELL_EFFECT pattern matches? ${ModPatterns.SPELL_EFFECT.matches(line.trim())}", useDispatcher = false)
+        // debug("Attempting to handle effect line: $line", useDispatcher = false)
+        // debug("SPELL_EFFECT pattern matches? ${ModPatterns.SPELL_EFFECT.matches(line.trim())}", useDispatcher = false)
 
         val effectId = ModUtils.extractId(line, ModPatterns.SPELL_EFFECT)
-        debug("Extracted effect ID: $effectId", useDispatcher = false)
+        // debug("Extracted effect ID: $effectId", useDispatcher = false)
 
         block.effect = effectId
-        debug("Captured effect $effectId in spell block", useDispatcher = false)
+        // debug("Captured effect $effectId in spell block", useDispatcher = false)
 
         // If we have pending damage and now have enough context to process it
         if (block.damage != null) {
-            debug("We have pending damage ${block.damage}", useDispatcher = false)
-            debug("hasSummoningEffect: ${block.hasSummoningEffect()}", useDispatcher = false)
-            debug("hasEnchantmentEffect: ${block.hasEnchantmentEffect()}", useDispatcher = false)
+            // debug("We have pending damage ${block.damage}", useDispatcher = false)
+            // debug("hasSummoningEffect: ${block.hasSummoningEffect()}", useDispatcher = false)
+            // debug("hasEnchantmentEffect: ${block.hasEnchantmentEffect()}", useDispatcher = false)
 
             if (block.hasSummoningEffect() || block.hasEnchantmentEffect()) {
-                debug("Processing previously deferred damage now that we have effect ${block.effect}", useDispatcher = false)
+                // debug("Processing previously deferred damage now that we have effect ${block.effect}", useDispatcher = false)
                 processDamageLine(block.damage!!, block, mappedDef)
             }
         }
@@ -136,27 +136,27 @@ class SpellBlockProcessor : Logging {
     private fun handleDamageLine(line: String, block: SpellBlock, mappedDef: MappedModDefinition) {
         val damageId = ModUtils.extractId(line, ModPatterns.SPELL_DAMAGE) ?: return
         block.damage = damageId
-        debug("Found damage ID $damageId", useDispatcher = false)
+        // debug("Found damage ID $damageId", useDispatcher = false)
 
         // Process immediately if we have enough context
         if (block.effect != null || isKnownSummoningSpell(block)) {
-            debug("Processing damage immediately with effect ${block.effect}", useDispatcher = false)
+            // debug("Processing damage immediately with effect ${block.effect}", useDispatcher = false)
             processDamageLine(damageId, block, mappedDef)
         } else {
-            debug("Deferring damage processing until effect or spell type is known", useDispatcher = false)
+            // debug("Deferring damage processing until effect or spell type is known", useDispatcher = false)
         }
     }
 
     private fun processDamageLine(damageId: Long, block: SpellBlock, mappedDef: MappedModDefinition) {
-        debug("Processing damage line with id $damageId and effect ${block.effect}", useDispatcher = false)
+        // debug("Processing damage line with id $damageId and effect ${block.effect}", useDispatcher = false)
 
         when {
             block.hasEnchantmentEffect() -> {
-                debug("Processing as enchantment effect", useDispatcher = false)
+                // debug("Processing as enchantment effect", useDispatcher = false)
                 processEnchantmentDamage(damageId, block, mappedDef)
             }
             block.hasSummoningEffect() || isKnownSummoningSpell(block) -> {
-                debug("Processing as summoning effect", useDispatcher = false)
+                // debug("Processing as summoning effect", useDispatcher = false)
                 processSummoningDamage(damageId, block, mappedDef)
             }
         }
@@ -166,12 +166,12 @@ class SpellBlockProcessor : Logging {
         val newId = mappedDef.getMapping(EntityType.ENCHANTMENT, damageId)
         if (damageId != newId) {
             block.damageMapping = damageId to newId
-            debug("Mapped enchantment in spell: $damageId -> $newId", useDispatcher = false)
+            // debug("Mapped enchantment in spell: $damageId -> $newId", useDispatcher = false)
         }
     }
 
     private fun processSummoningDamage(damageId: Long, block: SpellBlock, mappedDef: MappedModDefinition) {
-        debug("Current montag mappings: ${mappedDef.getMappingsByType()[EntityType.MONTAG]}", useDispatcher = false)
+        // debug("Current montag mappings: ${mappedDef.getMappingsByType()[EntityType.MONTAG]}", useDispatcher = false)
 
         if (damageId > 0) {
             processMonsterDamage(damageId, block, mappedDef)
@@ -184,7 +184,7 @@ class SpellBlockProcessor : Logging {
         val newId = mappedDef.getMapping(EntityType.MONSTER, damageId)
         if (damageId != newId) {
             block.damageMapping = damageId to newId
-            debug("Mapped monster in summoning spell: $damageId -> $newId", useDispatcher = false)
+            // debug("Mapped monster in summoning spell: $damageId -> $newId", useDispatcher = false)
         }
     }
 
@@ -193,7 +193,7 @@ class SpellBlockProcessor : Logging {
         val newMontagId = mappedDef.getMapping(EntityType.MONTAG, montagId)
         if (montagId != newMontagId) {
             block.damageMapping = damageId to -newMontagId
-            debug("Mapped montag in summoning spell: $montagId -> $newMontagId", useDispatcher = false)
+            // debug("Mapped montag in summoning spell: $montagId -> $newMontagId", useDispatcher = false)
         }
     }
 

@@ -4,6 +4,7 @@ import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.MergeWarning
+import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
 import java.nio.file.Files
@@ -25,6 +26,7 @@ class ModWriter(
      */
     fun writeMergedMod(
         mappedDefinitions: Map<String, MappedModDefinition>,
+        modDefinitions: Map<String, ModDefinition>,
         config: ModOutputConfig
     ): MergeResult {
         val warnings = mutableListOf<MergeWarning>()
@@ -39,12 +41,13 @@ class ModWriter(
             // Write mod content to temp directory
             val tempOutputFile = File(tempModDir, "${config.modName}.dm")
             val startTimeContent = System.currentTimeMillis()
-            writeModContent(tempOutputFile, mappedDefinitions, config, warnings)
+            writeModContent(tempOutputFile, mappedDefinitions, modDefinitions, config, warnings)
             val endTimeContent = System.currentTimeMillis()
             info("Mod content written in ${endTimeContent - startTimeContent} ms")
 
             // Copy resources to temp directory
             val startTimeResources = System.currentTimeMillis()
+            info("Starting copying resources...")
             val resourceWarnings = resourceCopier.copyModResources(
                 config.copy(directory = tempDir),
                 mappedDefinitions
@@ -54,16 +57,26 @@ class ModWriter(
             warnings.addAll(resourceWarnings)
 
             // Backup existing mod if present
+            val backupStart = System.currentTimeMillis()
             val targetModDir = File(config.directory, config.modName)
             if (targetModDir.exists()) {
                 targetModDir.copyRecursively(File(backupDir, config.modName), overwrite = true)
             }
+            val backupEnd = System.currentTimeMillis()
+            info("Backup took ${backupEnd - backupStart} ms")
+
+            info("Resource copying done. Now doing commitChanges...")
+            val commitStart = System.currentTimeMillis()
 
             // Atomic move of temporary directory to final location
             val success = commitChanges(tempModDir, targetModDir)
+
             if (!success) {
                 throw ModWriterException("Failed to commit mod changes")
             }
+
+            val commitEnd = System.currentTimeMillis()
+            info("commitChanges took ${commitEnd - commitStart} ms")
 
             return MergeResult.Success(warnings)
 
@@ -73,13 +86,18 @@ class ModWriter(
             error("Failed to process mods: ${e.message}")
             return MergeResult.Failure(e.message ?: "Unknown error occurred")
         } finally {
+            info("Cleaning up temp/backup directories...")
+            val cleanupStart = System.currentTimeMillis()
             cleanup(tempDir, backupDir)
+            val cleanupEnd = System.currentTimeMillis()
+            info("Cleanup took ${cleanupEnd - cleanupStart} ms")
         }
     }
 
     private fun writeModContent(
         outputFile: File,
         mappedDefinitions: Map<String, MappedModDefinition>,
+        modDefinitions: Map<String, ModDefinition>,
         config: ModOutputConfig,
         warnings: MutableList<MergeWarning>
     ) {
@@ -93,7 +111,7 @@ class ModWriter(
             warnings.addAll(headerWarnings)
 
             // Process and write content
-            val contentWarnings = contentWriter.processModContent(mappedDefinitions, writer)
+            val contentWarnings = contentWriter.processModContent(mappedDefinitions, modDefinitions, writer)
             warnings.addAll(contentWarnings)
         }
     }

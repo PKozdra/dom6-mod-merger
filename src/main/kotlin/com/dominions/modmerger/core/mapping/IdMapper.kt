@@ -43,19 +43,63 @@ class IdMapper : Logging {
     ): MappedModDefinition {
         val mappedDef = MappedModDefinition(modDef.modFile)
 
-        // Process each entity type
+        // First process explicit IDs
         EntityType.entries.forEach { type ->
-            processEntityType(type, modDef, modName, idManager, mappedDef)
+            processExplicitIds(type, modDef, modName, idManager, mappedDef)
+        }
+
+        // Then handle implicit definitions and update name mappings
+        EntityType.entries.forEach { type ->
+            processImplicitDefinitions(type, modDef, modName, idManager, mappedDef)
         }
 
         return mappedDef
     }
 
-    /**
-     * Processes all IDs for a specific entity type within a mod.
-     * Maintains sequential relationships by processing IDs in order.
-     */
-    private fun processEntityType(
+    private fun processImplicitDefinitions(
+        type: EntityType,
+        modDef: ModDefinition,
+        modName: String,
+        idManager: IdManager,
+        mappedDef: MappedModDefinition
+    ) {
+        val entityDef = modDef.getDefinition(type)
+        val implicitCount = entityDef.getImplicitDefinitionCount()
+
+        if (implicitCount > 0) {
+            debug("Processing $implicitCount implicit definitions for $type in $modName")
+
+            val results = idManager.registerImplicitIds(type, implicitCount, modName)
+
+            // Process results and update name mappings
+            val implicitNameMappings = entityDef.getImplicitNameMappings()
+            results.forEachIndexed { index, result ->
+                when (result) {
+                    is IdRegistrationResult.Registered -> {
+
+                        // Record the final assigned ID for that implicit index
+                        entityDef.setImplicitAssignedId(index, result.id)
+
+                        // Update any names associated with this implicit definition
+                        implicitNameMappings[index]?.forEach { name ->
+                            entityDef.updateNameToId(name, result.id)
+                            // debug("Updated implicit name mapping: $name -> ${result.id}")
+                        }
+                    }
+                    is IdRegistrationResult.Error -> {
+                        error("Failed to assign ID for implicit $type in $modName: ${result.message}")
+                        throw IdMappingException("Failed to assign ID for implicit $type in $modName: ${result.message}")
+                    }
+                    else -> {
+                        error("Unexpected result type for implicit ID assignment: $result")
+                        throw IdMappingException("Unexpected result type for implicit ID assignment: $result")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun processExplicitIds(
         type: EntityType,
         modDef: ModDefinition,
         modName: String,
@@ -66,26 +110,22 @@ class IdMapper : Logging {
         val sortedIds = entityDef.definedIds.sorted()
         if (sortedIds.isEmpty()) return
 
-        // Track base ID for maintaining sequential relationships
         var baseId: Long? = null
         var lastNewId: Long? = null
 
-        // Process all IDs in order
         sortedIds.forEach { originalId ->
-            // Request next sequential ID if we're in a sequence
             val requestedId = if (baseId != null && lastNewId != null) {
                 lastNewId + (originalId - sortedIds[sortedIds.indexOf(originalId) - 1])
             } else null
 
             when (val result = idManager.registerOrRemapId(type, originalId, modName, requestedId)) {
                 is IdRegistrationResult.Registered -> {
-                    // Reset sequence tracking for direct registrations
                     baseId = null
                     lastNewId = null
                     trace("Using original ID for $modName: $type $originalId")
                 }
+
                 is IdRegistrationResult.Remapped -> {
-                    // Start or continue sequence
                     if (baseId == null) {
                         baseId = result.newId
                     }
@@ -93,12 +133,13 @@ class IdMapper : Logging {
                     mappedDef.addMapping(type, originalId, result.newId)
                     trace("Remapped ID for $modName: $type $originalId -> ${result.newId}")
                 }
+
                 is IdRegistrationResult.VanillaConflict -> {
-                    // Reset sequence tracking for vanilla conflicts
                     baseId = null
                     lastNewId = null
                     warn("Possible conflict, vanilla ID processed for $modName: $type ${result.id}")
                 }
+
                 is IdRegistrationResult.Error -> {
                     throw IdMappingException(
                         "Failed to map ID $originalId for $type in $modName: ${result.message}"

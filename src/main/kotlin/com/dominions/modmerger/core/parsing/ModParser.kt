@@ -15,6 +15,28 @@ class ModParser(
     private val enableDetailedLogging: Boolean = false
 ) : Logging {
 
+    // Tracking of current entity context for things like NAME -> ID mapping
+    private data class EntityContext(
+        val type: EntityType,
+        var currentId: Long?
+    )
+
+    private class ParserState(
+        val modFile: ModFile,
+        val definition: ModDefinition = ModDefinition(modFile),
+        var inMultilineDescription: Boolean = false,
+        var inSpellBlock: Boolean = false,
+        var currentSpellEffect: Long? = null,
+        var lineNumber: Int = 0,
+        var currentEntityContext: EntityContext? = null
+    ) {
+        fun resetContext() {
+            currentEntityContext = null
+            inSpellBlock = false
+            currentSpellEffect = null
+        }
+    }
+
     private object CompiledPatterns {
         val modName = RegexWrapper.fromRegex(ModPatterns.MOD_NAME)
         val descriptionLine = RegexWrapper.fromRegex(ModPatterns.MOD_DESCRIPTION_LINE)
@@ -27,6 +49,7 @@ class ModParser(
         val spellEffect = RegexWrapper.fromRegex(ModPatterns.SPELL_EFFECT)
         val spellDamage = RegexWrapper.fromRegex(ModPatterns.SPELL_DAMAGE)
         val spellSelectId = RegexWrapper.fromRegex(ModPatterns.SPELL_SELECT_ID)
+        val entityName = RegexWrapper.fromRegex(ModPatterns.ENTITY_NAME)
 
         // Thread-local matchers for hot paths
         private val threadLocalMatchers = ThreadLocal.withInitial {
@@ -40,20 +63,6 @@ class ModParser(
         fun getMatcher(type: String, input: String) =
             threadLocalMatchers.get()[type]?.reset(input)
                 ?: throw IllegalArgumentException("Unknown matcher type: $type")
-    }
-
-    private class ParserState(
-        val modFile: ModFile,
-        val definition: ModDefinition = ModDefinition(modFile),
-        var inMultilineDescription: Boolean = false,
-        var inSpellBlock: Boolean = false,
-        var currentSpellEffect: Long? = null,
-        var lineNumber: Int = 0
-    ) {
-        fun resetSpellBlock() {
-            inSpellBlock = false
-            currentSpellEffect = null
-        }
     }
 
     fun parse(modFile: ModFile): ModDefinition {
@@ -101,12 +110,17 @@ class ModParser(
 
                 CompiledPatterns.end.matches(line) -> {
                     trace("Handling block end", useDispatcher = false)
-                    state.resetSpellBlock()
+                    state.resetContext()
                 }
 
                 state.inSpellBlock -> {
                     trace("Handling spell block content", useDispatcher = false)
                     handleSpellBlockContent(line, state)
+                }
+
+                CompiledPatterns.entityName.matches(line) -> {
+                    trace("Handling entity name definition", useDispatcher = false)
+                    handleNameDefinition(line, state)
                 }
 
                 else -> {
@@ -149,30 +163,58 @@ class ModParser(
 
     private fun handleSummoningEffect(damage: Long, definition: ModDefinition) {
         if (damage > 0) {
-            handleIdAddition(damage, null, EntityType.MONSTER, definition)
+            handleIdAddition(damage, EntityType.MONSTER, definition)
         }
         else {
-            handleIdAddition(damage, null, EntityType.MONTAG, definition)
+            handleIdAddition(damage, EntityType.MONTAG, definition)
         }
     }
 
     private fun handleEntityLine(line: String, state: ParserState) {
         entityProcessor.detectEntity(line)?.let { (type, id, name) ->
             trace("Detected entity: $type with ID: ${id ?: name ?: "implicit"}", useDispatcher = false)
-            handleIdAddition(id, name, type, state.definition)
+
+            when {
+                id != null -> {
+                    handleIdAddition(id, type, state.definition)
+                    state.currentEntityContext = EntityContext(type, id)
+                }
+                else -> {
+                    val implicitIndex = state.definition.addImplicitDefinition(type)
+                    state.currentEntityContext = EntityContext(type, null)
+                    trace("Created implicit definition #$implicitIndex for ${type.name}", useDispatcher = false)
+                }
+            }
         }
     }
 
-    private fun handleIdAddition(id: Long?, name: String?, type: EntityType, definition: ModDefinition) {
+    private fun handleNameDefinition(line: String, state: ParserState) {
+        val context = state.currentEntityContext ?: return
+
+        ModUtils.extractString(line, CompiledPatterns.entityName.toRegex())?.let { name ->
+            state.definition.addDefinedName(
+                type = context.type,
+                name = name,
+                id = context.currentId,
+                lineNumber = state.lineNumber
+            )
+
+            if (context.currentId != null) {
+                debug("Associated ${context.type.name} name '$name' with ID ${context.currentId}", useDispatcher = false)
+            } else {
+                val implicitIndex = state.definition.getDefinition(context.type).getImplicitDefinitionCount() - 1
+                debug("Stored ${context.type.name} name '$name' for implicit definition #$implicitIndex", useDispatcher = false)
+            }
+        }
+    }
+
+    private fun handleIdAddition(id: Long?, type: EntityType, definition: ModDefinition) {
         if (id != null) {
             if (ModRanges.Validator.isValidModdingId(type, id)) {
                 definition.addDefinedId(type, id)
             } else {
                 definition.addVanillaEditedId(type, id)
             }
-        }
-        else if (name != null) {
-            definition.addDefinedName(type, name)
         }
         else {
             definition.addImplicitDefinition(type)

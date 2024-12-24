@@ -64,28 +64,38 @@ object ModUtils : Logging {
     }
 
     fun replaceId(line: String, oldId: Long, newId: Long): String {
-        // Extract the command part (#damage, #monster, etc.)
-        val command = line.substringBefore(" ")
+        // First check if this is a command-style line (starts with #)
+        if (line.trimStart().startsWith("#")) {
+            // Extract the command part (#damage, #monster, etc.)
+            val command = line.substringBefore(" ")
 
-        // Handle special formatting for negative IDs
-        val oldIdStr = if (oldId < 0) "-${kotlin.math.abs(oldId)}" else oldId.toString()
-        val newIdStr = if (newId < 0) "-${kotlin.math.abs(newId)}" else newId.toString()
+            // Handle special formatting for negative IDs
+            val oldIdStr = if (oldId < 0) "-${kotlin.math.abs(oldId)}" else oldId.toString()
+            val newIdStr = if (newId < 0) "-${kotlin.math.abs(newId)}" else newId.toString()
 
-        // Create pattern that matches command followed by ID and potentially comments
-        val patternString = "$command\\s+$oldIdStr(\\s.*)?$"
-        val pattern = numberReplaceCache.computeIfAbsent(patternString) {
-            Pattern.compile(it)
-        }
+            // Create pattern that matches command followed by ID and potentially comments
+            // Note the \\s* to handle optional space before comment
+            val patternString = "$command\\s+$oldIdStr(\\s*.*)?$"
+            val pattern = numberReplaceCache.computeIfAbsent(patternString) {
+                Pattern.compile(it)
+            }
 
-        // debug("Replacing in line: $line")
-        // debug("Old ID: $oldIdStr, New ID: $newIdStr")
-        // debug("Pattern: $patternString")
+            // debug("Replacing line: $line")
+            // debug("Pattern: $patternString")
 
-        return pattern.matcher(line).replaceAll { matchResult ->
-            val rest = matchResult.group(1) ?: ""
-            "$command $newIdStr$rest"
-        }.also { result ->
-            // debug("Replacement result: $result")
+            return pattern.matcher(line).replaceAll { matchResult ->
+                val rest = matchResult.group(1) ?: ""
+                "$command $newIdStr$rest"
+            }.also { result ->
+                // debug("Result: $result")
+            }
+        } else {
+            // For non-command lines (like comments), use word boundary matching
+            val patternString = "\\b$oldId\\b"
+            val pattern = numberReplaceCache.computeIfAbsent(patternString) {
+                Pattern.compile(it)
+            }
+            return pattern.matcher(line).replaceAll(newId.toString())
         }
     }
 

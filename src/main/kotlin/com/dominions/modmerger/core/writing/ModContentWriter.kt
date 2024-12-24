@@ -5,6 +5,7 @@ import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.MergeWarning
+import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 import java.io.Writer
@@ -18,11 +19,13 @@ class ModContentWriter(
 
     private data class ModProcessingContext(
         var inMultilineDescription: Boolean = false,
-        var processedLines: MutableList<String> = mutableListOf()
+        var processedLines: MutableList<String> = mutableListOf(),
+        val modDefinition: ModDefinition
     )
 
     fun processModContent(
         mappedDefinitions: Map<String, MappedModDefinition>,
+        modDefinitions: Map<String, ModDefinition>,
         writer: Writer
     ): List<MergeWarning> {
         warnings.clear()
@@ -31,7 +34,9 @@ class ModContentWriter(
             val totalStartTime = System.currentTimeMillis()
 
             mappedDefinitions.forEach { (name, mappedDef) ->
-                processModDefinition(name, mappedDef, writer)
+                val originalDef = modDefinitions[name]
+                    ?: throw ModContentProcessingException("Cannot find original definition for mod $name")
+                processModDefinition(name, mappedDef, originalDef, writer)
             }
 
             writer.write("\n-- End merged content\n")
@@ -42,17 +47,23 @@ class ModContentWriter(
         return warnings
     }
 
-    private fun processModDefinition(name: String, mappedDef: MappedModDefinition, writer: Writer) {
+    private fun processModDefinition(
+        name: String,
+        mappedDef: MappedModDefinition,
+        originalDef: ModDefinition,
+        writer: Writer
+    ) {
         val modStartTime = System.currentTimeMillis()
+        entityProcessor.cleanImplicitIdIterators()
         debug("Processing mod: $name with ${mappedDef.modFile.content.lines().size} lines")
         writer.write("\n-- Begin content from mod: $name\n")
-        processModFile(mappedDef, writer)
+        processModFile(mappedDef, originalDef, writer)
         info("Processed mod '$name' in ${System.currentTimeMillis() - modStartTime} ms")
     }
 
-    private fun processModFile(mappedDef: MappedModDefinition, writer: Writer) {
+    private fun processModFile(mappedDef: MappedModDefinition, originalDef: ModDefinition, writer: Writer) {
         val lines = mappedDef.modFile.content.lines()
-        val context = ModProcessingContext()
+        val context = ModProcessingContext(modDefinition = originalDef)
 
         debug("Starting to process mod file: ${mappedDef.modFile.name}")
         trace("File has ${lines.size} lines")
@@ -275,16 +286,16 @@ class ModContentWriter(
         }
 
         val processed = entityProcessor.processEntity(
-            line = processedLine,
+            line = line,
             mappedDef = mappedDef,
             remapCommentWriter = { type, oldId, newId ->
                 if (oldId == -1L) {
-                    "-- MOD MERGER: Assigned new ID $newId for ${type.name}, previously unassigned"
+                    "-- MOD MERGER: Assigned new ID $newId for ${type.name}"
                 } else {
                     "-- MOD MERGER: Remapped ${type.name} $oldId -> $newId"
                 }
             },
-            modName = mappedDef.modFile.name
+            modDef = context.modDefinition  // Pass the original ModDefinition
         )
 
         processed.remapComment?.let { context.processedLines.add(it) }

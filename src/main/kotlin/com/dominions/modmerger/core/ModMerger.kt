@@ -69,13 +69,19 @@ class ModMerger(
             logMappings(mappedDefinitions)
             info("Finished mapping IDs.")
 
+            // Freeze all definitions after mapping is complete
+            info("Freezing definitions...")
+            modDefinitions.values.forEach { it.freeze() }
+            mappedDefinitions.values.forEach { it.freeze() }
+            info("Definitions frozen.")
+
             // Log possible vanilla conflicts
             val vanillaConflicts = analyzeVanillaConflicts(modDefinitions)
             logVanillaConflictReport(vanillaConflicts)
 
             // Write merged mod
             info("Generating merged mod...")
-            return when (val result = writer.writeMergedMod(mappedDefinitions, config)) {
+            return when (val result = writer.writeMergedMod(mappedDefinitions, modDefinitions, config)) {
                 is MergeResult.Success -> {
                     val outputPath = fileSystem.getOutputFile(config.modName).absolutePath
                     info("Merged mod saved to: $outputPath")
@@ -94,7 +100,11 @@ class ModMerger(
             // Clean up resources
             modDefinitions?.values?.forEach { it.cleanup() }
             mappedDefinitions?.values?.forEach { it.cleanup() }
+            info("Starting forced GC...")
+            val gcStart = System.currentTimeMillis()
             System.gc() // Request garbage collection after large operation
+            val gcEnd = System.currentTimeMillis()
+            info("Forced GC took ${gcEnd - gcStart} ms")
         }
     }
 

@@ -1,11 +1,13 @@
 package com.dominions.modmerger.core.processing
 
 import com.dominions.modmerger.constants.ModPatterns
+import com.dominions.modmerger.constants.ModPatterns.SPELL_BLOCK_START
 import com.dominions.modmerger.constants.RegexWrapper
 import com.dominions.modmerger.core.mapping.IdManager
 import com.dominions.modmerger.core.mapping.IdRegistrationResult
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
+import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
@@ -103,6 +105,17 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
             ModPatterns.NEW_UNNUMBERED_SPELL to EntityType.SPELL
         )
 
+        private val REFERENCE_PATTERNS = mapOf(
+            EntityType.MONSTER to listOf(ModPatterns.MONSTER_REFERENCES),
+            EntityType.WEAPON to listOf(ModPatterns.WEAPON_REFERENCES),
+            EntityType.ARMOR to listOf(ModPatterns.ARMOR_REFERENCES),
+            EntityType.ITEM to listOf(ModPatterns.ITEM_REFERENCES),
+            EntityType.SITE to listOf(ModPatterns.SITE_REFERENCES),
+            EntityType.NATION to listOf(ModPatterns.NATION_REFERENCES),
+        ).mapValues { (_, patterns) ->
+            patterns.map { RegexWrapper.fromRegex(it) }
+        }
+
         private val NUMBERED_PATTERNS = mapOf(
             EntityType.MONSTER to ModPatterns.NEW_NUMBERED_MONSTER,
             EntityType.WEAPON to ModPatterns.NEW_NUMBERED_WEAPON,
@@ -167,29 +180,41 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
 
     private val idAssignments = mutableMapOf<String, MutableMap<EntityType, IdAssignment>>()
 
+    private val nextImplicitDefinitionIndex = mutableMapOf<Pair<EntityType, String>, Int>()
+
+    fun cleanImplicitIdIterators() {
+        nextImplicitDefinitionIndex.clear()
+    }
+
     private fun assignIdToUnnumbered(
         line: String,
         type: EntityType,
-        modName: String
+        modDef: ModDefinition,
+        mappedDef: MappedModDefinition
     ): Pair<String, Long>? {
         val unnumberedPattern = UNNUMBERED_PATTERNS.entries.find { (pattern, _) ->
             RegexWrapper.fromRegex(pattern).matches(line)
         } ?: return null
 
-        val registrationResult = idManager.registerNewId(type, modName)
-        if (registrationResult !is IdRegistrationResult.Registered) {
-            error("Failed to assign ID for unnumbered entity: $registrationResult")
-            return null
-        }
+        // Each time we see an unnumbered entity for (type, modDef.name),
+        // we increment the implicit index and fetch the assigned ID.
+        val key = type to modDef.name
+        val index = nextImplicitDefinitionIndex.getOrDefault(key, 0)
+        nextImplicitDefinitionIndex[key] = index + 1
 
-        val newId = registrationResult.id
+        // Now retrieve the final ID that was assigned for this implicit index
+        val entityDef = modDef.getDefinition(type)
+        val assignedId = entityDef.getAssignedIdForImplicitIndex(index)
+            ?: run {
+                debug("No assigned ID found for $type implicit index=$index in mod=${modDef.name}")
+                return null
+            }
 
-        // Track the assignment
-        idAssignments
-            .getOrPut(modName) { mutableMapOf() }
-            .getOrPut(type) { IdAssignment(type) }
-            .ids.add(newId)
+        // 'mappedDef.getMapping' handles the case where that assignedId got remapped
+        // (but typically it's the same if your IdMapper is setting final IDs).
+        val newId = mappedDef.getMapping(type, assignedId)
 
+        // Insert the ID into the #newmonster line
         val commandEnd = line.indexOf(' ', line.indexOf('#'))
         val newLine = if (commandEnd != -1) {
             line.substring(0, commandEnd) + " " + newId + line.substring(commandEnd)
@@ -233,7 +258,7 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
         line: String,
         mappedDef: MappedModDefinition,
         remapCommentWriter: (EntityType, Long, Long) -> String,
-        modName: String
+        modDef: ModDefinition
     ): ProcessedEntity {
         trace("ProcessEntity for line: $line", useDispatcher = false)
 
@@ -241,7 +266,7 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
             // Handle spell blocks if active
             spellBlockProcessor.currentBlock?.let { currentBlock ->
                 trace("ProcessEntity spell block line: $line", useDispatcher = false)
-                return handleSpellBlock(line, currentBlock, mappedDef, remapCommentWriter)
+                return handleSpellBlock(line, mappedDef, remapCommentWriter)
             }
 
             // Fast path - if line doesn't start with #, no need for regex matching
@@ -257,16 +282,18 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
                 return ProcessedEntity(line, null)
             }
 
+            // Handle cases where we have name references
+            processNameReference(line, mappedDef, modDef)?.let { return it }
+
             // Detect entity and handle unnumbered definitions
             detectEntity(line)?.let { match ->
                 if (match.isUnnumbered) {
-                    val (newLine, newId) = assignIdToUnnumbered(line, match.type, modName)
+                    val (newLine, newId) = assignIdToUnnumbered(line, match.type, modDef, mappedDef)
                         ?: return ProcessedEntity(line, null)
 
-                    // warn("Assigned new ID $newId to unnumbered entity ${match.type.name} for mod $modName")
-                    return ProcessedEntity(
+                    return ProcessedEntity (
                         newLine,
-                        remapCommentWriter(match.type, -1, newId) // -1 indicates new assignment
+                        remapCommentWriter(match.type, -1, newId)
                     )
                 }
 
@@ -294,9 +321,45 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
         }
     }
 
+    private fun processNameReference(
+        line: String,
+        mappedDef: MappedModDefinition,
+        modDef: ModDefinition
+    ): ProcessedEntity? {
+        // Skip definition commands
+        if (line.trimStart().startsWith("#new")) {
+            return null
+        }
+
+        REFERENCE_PATTERNS.forEach { (type, patterns) ->
+            for (pattern in patterns) {
+                pattern.toRegex().find(line)?.let { match ->
+                    // Extract the name maintaining original spacing
+                    val nameMatch = Regex(""""([^"]+)"""").find(line) ?: return@let
+                    val name = nameMatch.groupValues[1]
+
+                    modDef.getDefinition(type).getIdForName(name)?.let { id ->
+                        val newId = mappedDef.getMapping(type, id)
+                        //debug("Replacing $type name reference '$name' with ID $id -> $newId in command: ${line.substringBefore(" ")}")
+
+                        // Replace the quoted name with ID while preserving spacing
+                        val prefix = line.substring(0, nameMatch.range.first)
+                        val suffix = line.substring(nameMatch.range.last + 1)
+                        val newLine = prefix + newId + suffix
+
+                        return ProcessedEntity(
+                            newLine,
+                            "-- MOD MERGER: Replaced ${type.name} name reference '$name' with ID $newId"
+                        )
+                    }
+                }
+            }
+        }
+        return null
+    }
+
     private fun handleSpellBlock(
         line: String,
-        currentBlock: SpellBlockProcessor.SpellBlock,
         mappedDef: MappedModDefinition,
         remapCommentWriter: (EntityType, Long, Long) -> String
     ): ProcessedEntity {

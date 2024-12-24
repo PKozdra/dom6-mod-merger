@@ -106,6 +106,45 @@ class IdManager private constructor(
     }
 
     /**
+     * Registers multiple new IDs for implicit definitions.
+     * Tries to maintain sequential IDs when possible.
+     */
+    fun registerImplicitIds(
+        type: EntityType,
+        count: Int,
+        modName: String
+    ): List<IdRegistrationResult> {
+        debug("Registering $count implicit IDs for $type in $modName")
+        val results = mutableListOf<IdRegistrationResult>()
+        var lastId: Long? = null
+
+        repeat(count) {
+            val newId = if (lastId != null) {
+                // Try to get sequential ID if we have a previous assignment
+                findNextAvailableId(type, startFrom = lastId + 1)
+            } else {
+                findNextAvailableId(type)
+            } ?: return results.also {
+                it.add(IdRegistrationResult.Error("No available IDs for type $type after ${results.size} assignments"))
+            }
+
+            assignId(type, newId, IdSource.NEW_ASSIGNMENT, AssignmentType.GENERATED, modName)
+            lastId = newId
+            results.add(IdRegistrationResult.Registered(newId))
+        }
+
+        debug("Registered implicit IDs for $type in $modName: ${results.joinToString {
+            when (it) {
+                is IdRegistrationResult.Registered -> it.id.toString()
+                else -> "error"
+            }
+        }}")
+
+        return results
+    }
+
+
+    /**
      * Creates a new ID assignment.
      */
     private fun assignId(
@@ -144,31 +183,6 @@ class IdManager private constructor(
         assignId(type, newId, IdSource.NEW_ASSIGNMENT, AssignmentType.REMAPPED, modName)
         return IdRegistrationResult.Remapped(originalId, newId)
     }
-
-    /**
-     * Registers a new ID for an unnumbered entity.
-     * Used when processing entities that don't have explicit IDs assigned.
-     *
-     * @param type The entity type
-     * @param modName The name of the mod requesting the ID
-     * @return Registration result containing the new ID or error
-     */
-    fun registerNewId(type: EntityType, modName: String): IdRegistrationResult {
-        val newId = findNextAvailableId(type) ?: return IdRegistrationResult.Error(
-            "No available IDs for type $type"
-        )
-
-        assignId(
-            type = type,
-            id = newId,
-            source = IdSource.NEW_ASSIGNMENT,
-            assignmentType = AssignmentType.GENERATED,
-            modName = modName
-        )
-
-        return IdRegistrationResult.Registered(newId)
-    }
-
     /**
      * Checks if an ID is available for use.
      */
@@ -183,9 +197,14 @@ class IdManager private constructor(
      * Finds the next available ID for a type.
      * Tries preferred start, then sequential search, then range start.
      */
-    private fun findNextAvailableId(type: EntityType): Long? {
+    private fun findNextAvailableId(type: EntityType, startFrom: Long? = null): Long? {
         val range = moddingRanges.getValue(type)
-        val typeAssignments = assignments.getValue(type)
+
+        // If we have a starting point, try from there first
+        if (startFrom != null && isIdAvailable(type, startFrom)) {
+            nextAvailableId[type] = startFrom + 1
+            return startFrom
+        }
 
         // Try preferred start
         preferredStarts[type]?.let { preferred ->
@@ -205,15 +224,17 @@ class IdManager private constructor(
             current++
         }
 
-        // Try from range start
-        current = range.start
-        val maxSearch = nextAvailableId.getValue(type)
-        while (current < maxSearch) {
-            if (isIdAvailable(type, current)) {
-                nextAvailableId[type] = current + 1
-                return current
+        // Try from range start if we haven't already
+        if (current != range.start) {
+            current = range.start
+            val maxSearch = nextAvailableId.getValue(type)
+            while (current < maxSearch) {
+                if (isIdAvailable(type, current)) {
+                    nextAvailableId[type] = current + 1
+                    return current
+                }
+                current++
             }
-            current++
         }
 
         return null
@@ -228,12 +249,6 @@ class IdManager private constructor(
             nextAvailableId[type] = preferredStarts[type] ?: moddingRanges.getValue(type).start
         }
     }
-
-    fun getAssignmentInfo(type: EntityType, id: Long): IdAssignment? =
-        assignments[type]?.get(id)
-
-    fun isIdUsed(type: EntityType, id: Long): Boolean =
-        assignments[type]?.containsKey(id) == true
 
     companion object {
         fun createFromModRanges(): IdManager {
