@@ -1,6 +1,12 @@
 {
   "reflection": [
     {
+      "type": "[B"
+    },
+    {
+      "type": "[C"
+    },
+    {
       "type": "[Ljava.awt.event.MouseListener;"
     },
     {
@@ -643,6 +649,9 @@
       "type": "com.twelvemonkeys.imageio.stream.BufferedRAFImageInputStreamSpi"
     },
     {
+      "type": "java.awt.Image"
+    },
+    {
       "type": "java.awt.SequencedEvent"
     },
     {
@@ -763,6 +772,33 @@
     },
     {
       "type": "java.awt.image.ColorConvertOp"
+    },
+    {
+      "type": "java.io.InputStream"
+    },
+    {
+      "type": "java.io.Reader"
+    },
+    {
+      "type": "java.lang.String"
+    },
+    {
+      "type": "java.net.URL"
+    },
+    {
+      "type": "java.nio.ByteBuffer"
+    },
+    {
+      "type": "java.nio.CharBuffer"
+    },
+    {
+      "type": "java.rmi.MarshalledObject"
+    },
+    {
+      "type": "java.rmi.Remote"
+    },
+    {
+      "type": "java.util.List"
     },
     {
       "type": "java.util.concurrent.atomic.AtomicBoolean",
@@ -1291,6 +1327,10 @@
       "glob": "sun/text/resources/WordBreakIteratorData"
     },
     {
+      "module": "java.datatransfer",
+      "glob": "sun/datatransfer/resources/flavormap.properties"
+    },
+    {
       "module": "java.desktop",
       "glob": "com/formdev/flatlaf/resources/Bundle.properties"
     },
@@ -1351,6 +1391,11 @@
       "locales": [
         "pl-PL"
       ]
+    }
+  ],
+  "serialization": [
+    {
+      "type": "java.lang.String"
     }
   ],
   "jni": [
@@ -2521,6 +2566,15 @@
       "methods": [
         {
           "name": "run",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.windows.WClipboard",
+      "methods": [
+        {
+          "name": "lostSelectionOwnershipImpl",
           "parameterTypes": []
         }
       ]
