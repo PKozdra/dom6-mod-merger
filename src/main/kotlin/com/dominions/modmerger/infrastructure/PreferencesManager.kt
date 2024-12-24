@@ -1,20 +1,49 @@
 package com.dominions.modmerger.infrastructure
 
+import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.index
+import java.io.File
 import java.util.prefs.Preferences
 
 object PreferencesManager : Logging {
     private val preferences = Preferences.userRoot().node("com/dominions/modmerger")
     private const val MAX_VALUE_LENGTH = 8000  // Safe limit for most systems
     private const val PATHS_DELIMITER = "||"
-    // In PreferencesManager
     const val DEFAULT_FONT_SIZE = 12
     const val MIN_FONT_SIZE = 6
     const val MAX_FONT_SIZE = 48
+    // Mod Output Config Preferences
+    private const val CONFIG_MOD_NAME = "config.modName"
+    private const val CONFIG_DISPLAY_NAME = "config.displayName"
+    private const val CONFIG_DIRECTORY = "config.directory"
 
     var fontSize: Int
         get() = preferences.getInt("output.fontSize", DEFAULT_FONT_SIZE)
         set(value) = preferences.putInt("output.fontSize", value.coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE))
+
+    fun saveModConfig(config: ModOutputConfig) {
+        preferences.put(CONFIG_MOD_NAME, config.modName)
+        preferences.put(CONFIG_DISPLAY_NAME, config.displayName)
+        preferences.put(CONFIG_DIRECTORY, config.directory.absolutePath)
+        //debug("Saved mod configuration to preferences")
+    }
+
+    fun loadModConfig(gamePathsManager: GamePathsManager): ModOutputConfig? {
+        val modName = preferences.get(CONFIG_MOD_NAME, null) ?: return null
+
+        return try {
+            ModOutputConfig(
+                modName = modName,
+                displayName = preferences.get(CONFIG_DISPLAY_NAME, modName),
+                directory = File(preferences.get(CONFIG_DIRECTORY,
+                    gamePathsManager.getLocalModPath().absolutePath)),
+                gamePathsManager = gamePathsManager
+            )
+        } catch (e: Exception) {
+            error("Failed to load mod configuration from preferences", e)
+            null
+        }
+    }
 
     // Log Level Preferences
     fun isLogLevelEnabled(level: LogLevel): Boolean {

@@ -7,8 +7,6 @@ import com.dominions.modmerger.domain.MergeWarning
 import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import java.io.File
-import java.nio.file.Files
-
 
 /**
  * Handles writing merged mod content with transactional safety.
@@ -20,77 +18,38 @@ class ModWriter(
     private val headerWriter: ModHeaderWriter
 ) : Logging {
 
-    /**
-     * Writes the merged mod with transactional safety.
-     * If any step fails, all changes are rolled back.
-     */
     fun writeMergedMod(
         mappedDefinitions: Map<String, MappedModDefinition>,
         modDefinitions: Map<String, ModDefinition>,
         config: ModOutputConfig
     ): MergeResult {
         val warnings = mutableListOf<MergeWarning>()
-        val tempDir = createTempDirectory(config)
-        val backupDir = createBackupDirectory(config)
+        val targetModDir = File(config.directory, config.modName)
 
         try {
-            // Create temporary working directory
-            val tempModDir = File(tempDir, config.modName)
-            tempModDir.mkdirs()
+            // Create target directory if it doesn't exist
+            targetModDir.mkdirs()
 
-            // Write mod content to temp directory
-            val tempOutputFile = File(tempModDir, "${config.modName}.dm")
+            // Write mod content directly to target
+            val outputFile = File(targetModDir, "${config.modName}.dm")
             val startTimeContent = System.currentTimeMillis()
-            writeModContent(tempOutputFile, mappedDefinitions, modDefinitions, config, warnings)
+            writeModContent(outputFile, mappedDefinitions, modDefinitions, config, warnings)
             val endTimeContent = System.currentTimeMillis()
             info("Mod content written in ${endTimeContent - startTimeContent} ms")
 
-            // Copy resources to temp directory
+            // Copy resources directly to target
             val startTimeResources = System.currentTimeMillis()
             info("Starting copying resources...")
-            val resourceWarnings = resourceCopier.copyModResources(
-                config.copy(directory = tempDir),
-                mappedDefinitions
-            )
+            val resourceWarnings = resourceCopier.copyModResources(config, mappedDefinitions)
             val endTimeResources = System.currentTimeMillis()
             info("Resources copied in ${endTimeResources - startTimeResources} ms")
             warnings.addAll(resourceWarnings)
-
-            // Backup existing mod if present
-            val backupStart = System.currentTimeMillis()
-            val targetModDir = File(config.directory, config.modName)
-            if (targetModDir.exists()) {
-                targetModDir.copyRecursively(File(backupDir, config.modName), overwrite = true)
-            }
-            val backupEnd = System.currentTimeMillis()
-            info("Backup took ${backupEnd - backupStart} ms")
-
-            info("Resource copying done. Now doing commitChanges...")
-            val commitStart = System.currentTimeMillis()
-
-            // Atomic move of temporary directory to final location
-            val success = commitChanges(tempModDir, targetModDir)
-
-            if (!success) {
-                throw ModWriterException("Failed to commit mod changes")
-            }
-
-            val commitEnd = System.currentTimeMillis()
-            info("commitChanges took ${commitEnd - commitStart} ms")
 
             return MergeResult.Success(warnings)
 
         } catch (e: Exception) {
             error("Failed to write merged mod: ${e.message}", e)
-            rollback(config, backupDir)
-            error("Failed to process mods: ${e.message}")
             return MergeResult.Failure(e.message ?: "Unknown error occurred")
-        } finally {
-            info("Cleaning up temp/backup directories...")
-            val cleanupStart = System.currentTimeMillis()
-            cleanup(tempDir, backupDir)
-            val cleanupEnd = System.currentTimeMillis()
-            info("Cleanup took ${cleanupEnd - cleanupStart} ms")
         }
     }
 
@@ -116,59 +75,14 @@ class ModWriter(
         }
     }
 
-    private fun createTempDirectory(config: ModOutputConfig): File {
-        val tempDir = Files.createTempDirectory("mod_merger_temp").toFile()
-        tempDir.deleteOnExit()
-        return tempDir
-    }
-
-    private fun createBackupDirectory(config: ModOutputConfig): File {
-        val backupDir = Files.createTempDirectory("mod_merger_backup").toFile()
-        backupDir.deleteOnExit()
-        return backupDir
-    }
-
-    private fun commitChanges(tempModDir: File, targetModDir: File): Boolean {
-        if (targetModDir.exists()) {
-            targetModDir.deleteRecursively()
-        }
-        return tempModDir.renameTo(targetModDir)
-    }
-
-    private fun rollback(config: ModOutputConfig, backupDir: File) {
+    fun checkExistingFiles(config: ModOutputConfig): Int {
         val targetModDir = File(config.directory, config.modName)
-        val backupModDir = File(backupDir, config.modName)
-
-        if (targetModDir.exists()) {
-            targetModDir.deleteRecursively()
-        }
-
-        if (backupModDir.exists()) {
-            backupModDir.copyRecursively(targetModDir, overwrite = true)
+        return if (targetModDir.exists()) {
+            targetModDir.walkTopDown()
+                .filter { it.isFile }
+                .count()
+        } else {
+            0
         }
     }
-
-    private fun cleanup(tempDir: File, backupDir: File) {
-        tempDir.deleteRecursively()
-        backupDir.deleteRecursively()
-    }
-
 }
-
-class ModWriterException(message: String, cause: Throwable? = null) :
-    Exception(message, cause)
-
-/**
- * Extension of ModOutputConfig to support temporary directories
- */
-private fun ModOutputConfig.copy(directory: File): ModOutputConfig =
-    ModOutputConfig(
-        modName = this.modName,
-        displayName = this.displayName,
-        directory = directory,
-        description = this.description,
-        version = this.version,
-        icon = this.icon,
-        sourceMods = this.sourceMods,
-        gamePathsManager = this.gamePathsManager
-    )

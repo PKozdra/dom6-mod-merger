@@ -20,9 +20,13 @@ import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.Logging
 
 class ModMerger(
-    private val config: ModOutputConfig,
+    private var config: ModOutputConfig,
     private val fileSystem: FileSystem,
 ) : Logging {
+
+    fun updateConfig(newConfig: ModOutputConfig) {
+        this.config = newConfig
+    }
 
     suspend fun mergeMods(modFiles: List<ModFile>): MergeResult {
         var modDefinitions: Map<String, ModDefinition>? = null
@@ -100,11 +104,11 @@ class ModMerger(
             // Clean up resources
             modDefinitions?.values?.forEach { it.cleanup() }
             mappedDefinitions?.values?.forEach { it.cleanup() }
-            info("Starting forced GC...")
-            val gcStart = System.currentTimeMillis()
+            //info("Starting forced GC...")
+            //val gcStart = System.currentTimeMillis()
             System.gc() // Request garbage collection after large operation
-            val gcEnd = System.currentTimeMillis()
-            info("Forced GC took ${gcEnd - gcStart} ms")
+            //val gcEnd = System.currentTimeMillis()
+            //info("Forced GC took ${gcEnd - gcStart} ms")
         }
     }
 

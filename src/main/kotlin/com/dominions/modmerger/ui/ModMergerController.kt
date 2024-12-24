@@ -2,6 +2,12 @@ package com.dominions.modmerger.ui
 
 import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.core.ModMerger
+import com.dominions.modmerger.core.mapping.IdManager
+import com.dominions.modmerger.core.processing.EntityProcessor
+import com.dominions.modmerger.core.writing.ModContentWriter
+import com.dominions.modmerger.core.writing.ModHeaderWriter
+import com.dominions.modmerger.core.writing.ModResourceCopier
+import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
@@ -29,6 +35,16 @@ class ModMergerController(
 
     fun setModLoadListener(listener: (List<ModListItem>) -> Unit) {
         modLoadListener = listener
+    }
+
+    // Add this function to check for existing files
+    fun checkExistingFiles(config: ModOutputConfig): Int {
+        val writer = ModWriter(
+            contentWriter = ModContentWriter(entityProcessor = EntityProcessor(IdManager.createFromModRanges())),
+            resourceCopier = ModResourceCopier(),
+            headerWriter = ModHeaderWriter()
+        )
+        return writer.checkExistingFiles(config)
     }
 
     fun loadMods(onComplete: ((List<ModListItem>) -> Unit)? = null) {
@@ -79,16 +95,11 @@ class ModMergerController(
         }
     }
 
-    fun mergeMods(mods: List<ModFile>, onMergeCompleted: () -> Unit) {
-        val outputConfig = outputConfigProvider?.invoke()
-        if (outputConfig == null) {
-            error("Please configure output settings first")
-            onMergeCompleted()
-            return
-        }
+    fun mergeMods(mods: List<ModFile>, config: ModOutputConfig, onMergeCompleted: () -> Unit) {
+        modMergerService.updateConfig(config)
 
         info("Starting merge of ${mods.size} mods...")
-        info("Output will be created as: ${outputConfig.modName}")
+        info("Output will be created as: ${config.modName}")
 
         coroutineScope.launch {
             try {

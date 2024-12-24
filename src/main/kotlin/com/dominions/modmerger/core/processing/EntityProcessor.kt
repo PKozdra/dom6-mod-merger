@@ -314,6 +314,23 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
                 return it
             }
 
+            // Handle special cases before returning unmodified line
+            if (line.contains("Keledones")) {
+                val newLine = when {
+                    line.trim().startsWith("#name") -> {
+                        line.replace(""""Craft Keledones"""", """"Craft Keledone"""")
+                    }
+                    else -> line.replace("Craft Keledones", "Craft Keledone")
+                }
+
+                if (newLine != line) {
+                    return ProcessedEntity(
+                        newLine,
+                        "-- MOD MERGER: Temporary fix - replaced 'Craft Keledones' with 'Craft Keledone'. TODO: Implement better alternative"
+                    )
+                }
+            }
+
             return ProcessedEntity(line, null)
         } catch (e: Exception) {
             error("Error processing entity line: $line", e)

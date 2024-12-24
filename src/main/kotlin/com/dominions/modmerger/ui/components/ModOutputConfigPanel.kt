@@ -13,7 +13,13 @@ class ModOutputConfigPanel(
     private val configManager: ModOutputConfigManager,
 ) : JPanel(), Logging {
 
-    // UI Components - simplified to core requirements
+    private val configChangeListeners = mutableListOf<(ModOutputConfig?) -> Unit>()
+
+    // Debounce timer
+    private var debounceTimer: Timer? = null
+    private val DEBOUNCE_DELAY = 500 // 500ms delay
+
+    // UI Components - only keep what we need
     private val displayNameField = JTextField(20)
     private val modNameField = JTextField(20)
     private val directoryField = JTextField(30)
@@ -32,6 +38,7 @@ class ModOutputConfigPanel(
     init {
         setupUI()
         setupValidation()
+        setupListeners()
         setupInitialState()
     }
 
@@ -116,6 +123,19 @@ class ModOutputConfigPanel(
         modNameField.toolTipText = "Technical name for files and folders (no spaces, underscores allowed)"
 
         directoryButton.addActionListener { chooseDirectory() }
+    }
+
+    private fun setupListeners() {
+        val documentListener = object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = debouncedNotifyConfigChanged()
+            override fun removeUpdate(e: DocumentEvent) = debouncedNotifyConfigChanged()
+            override fun changedUpdate(e: DocumentEvent) = debouncedNotifyConfigChanged()
+        }
+
+        // Add the same listener to all fields
+        modNameField.document.addDocumentListener(documentListener)
+        displayNameField.document.addDocumentListener(documentListener)
+        directoryField.document.addDocumentListener(documentListener)
 
         // Auto-generate technical name from display name
         displayNameField.document.addDocumentListener(object : DocumentListener {
@@ -125,10 +145,42 @@ class ModOutputConfigPanel(
         })
     }
 
+    private fun debouncedNotifyConfigChanged() {
+        debounceTimer?.stop()
+        debounceTimer = Timer(DEBOUNCE_DELAY) { _ ->
+            notifyConfigChanged()
+            debounceTimer = null
+        }.apply {
+            isRepeats = false
+            start()
+        }
+    }
+
+    private fun notifyConfigChanged() {
+        val config = getConfiguration()
+        configChangeListeners.forEach { it(config) }
+    }
+
+    fun cleanup() {
+        debounceTimer?.stop()
+        debounceTimer = null
+    }
+
     private fun updateTechnicalName() {
         if (!modNameField.hasFocus()) {
             modNameField.text = ModOutputConfigManager.sanitizeModName(displayNameField.text)
         }
+    }
+
+    fun getConfiguration(): ModOutputConfig? {
+        if (!isValid) return null
+
+        return ModOutputConfig(
+            modName = modNameField.text,
+            displayName = displayNameField.text,
+            directory = File(directoryField.text),
+            gamePathsManager = configManager.gamePathsManager
+        )
     }
 
     private fun setupInitialState() {
@@ -166,15 +218,6 @@ class ModOutputConfigPanel(
         previewLabel.text = "<html>Output will be created at:<br><font color='gray'>$previewPath</font></html>"
     }
 
-    fun getConfiguration(): ModOutputConfig? {
-        if (!isValid) return null
-
-        return ModOutputConfig.Builder(modNameField.text, configManager.gamePathsManager)
-            .setDisplayName(displayNameField.text)
-            .setDirectory(File(directoryField.text))
-            .build()
-    }
-
     private fun setupValidation() {
         val documentListener = object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = validateInput()
@@ -202,6 +245,10 @@ class ModOutputConfigPanel(
 
     fun addValidationListener(listener: (Boolean) -> Unit) {
         validationListeners.add(listener)
+    }
+
+    fun addConfigChangeListener(listener: (ModOutputConfig?) -> Unit) {
+        configChangeListeners.add(listener)
     }
 
     private fun notifyValidationListeners(isValid: Boolean) {

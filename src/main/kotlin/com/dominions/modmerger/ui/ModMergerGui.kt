@@ -47,7 +47,11 @@ class ModMergerGui(
     private var processingDots = 0
 
     private val configManager = ModOutputConfigManager(fileSystem, gamePathsManager)
-    private val outputConfigPanel = ModOutputConfigPanel(configManager)
+    private val outputConfigPanel = ModOutputConfigPanel(configManager).apply {
+        addConfigChangeListener { config ->
+            config?.let { configManager.saveConfig(it) }
+        }
+    }
     private val outputConfigToggle = JButton("Output Settings ▼").apply {
         addActionListener { toggleOutputConfig() }
     }
@@ -232,11 +236,27 @@ class ModMergerGui(
             return
         }
 
+        val config = outputConfigPanel.getConfiguration() ?: return
+
+        // Check for existing files
+        val existingFiles = controller.checkExistingFiles(config)
+        if (existingFiles > 0) {
+            val result = showConfirmDialog(
+                "Directory '${config.directory.absolutePath}\\${config.modName}' already has $existingFiles files in it. " +
+                        "These files might be overwritten. Are you sure you want to continue?",
+                "Existing Files Warning"
+            )
+
+            if (result != JOptionPane.YES_OPTION) {
+                return
+            }
+        }
+
         mergeButton.isEnabled = false
         startProcessingAnimation()
         outputPanel.pauseSearchUpdates = true
 
-        controller.mergeMods(selectedMods) {
+        controller.mergeMods(selectedMods, config) {
             outputPanel.pauseSearchUpdates = false
             mergeButton.isEnabled = true
             stopProcessingAnimation()
@@ -289,6 +309,7 @@ class ModMergerGui(
     }
 
     private fun dispose() {
+        outputConfigPanel.cleanup() // Clean up debounce timer
         frame.dispose()
     }
 }
