@@ -41,16 +41,16 @@ val commonBuildArgs = listOf(
 
 // Production-specific build arguments
 val productionBuildArgs = listOf(
-    "-Os",                                    // Size optimization
+    //"-Os",                                    // Size optimization
     "-R:MaxHeapSize=4G",                      // Memory limit
     "-H:+RemoveUnusedSymbols",                // Remove unused symbols
     "-H:-PrintAnalysisCallTree",              // Disable analysis tree printing
     "-H:-ReportExceptionStackTraces",         // Disable exception stack traces
     "-H:Log=registerResource:5",              // Reduce logging verbosity
-    "--initialize-at-build-time",             // Initialize more at build time
+    //"--initialize-at-build-time",             // Initialize more at build time
     "-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS",
     "-H:NativeLinkerOption=/ENTRY:mainCRTStartup",
-    "--pgo=${project.projectDir}/src/main/resources/profiles/default.iprof"
+    //"--pgo=${project.projectDir.resolve("src/main/resources/profiles/default.iprof")}"
 )
 
 // Development-specific build arguments
