@@ -1,17 +1,16 @@
 package com.dominions.modmerger.core.processing
 
 import com.dominions.modmerger.constants.ModPatterns
-import com.dominions.modmerger.constants.ModPatterns.SPELL_BLOCK_START
 import com.dominions.modmerger.constants.RegexWrapper
-import com.dominions.modmerger.core.mapping.IdManager
-import com.dominions.modmerger.core.mapping.IdRegistrationResult
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
-class EntityProcessor(private val idManager: IdManager) : Logging {
+class EntityProcessor(
+    private val implicitIdProcessor: ImplicitIdProcessor = ImplicitIdProcessor()
+) : Logging {
     data class ProcessedEntity(
         val line: String,
         val remapComment: String?
@@ -165,92 +164,8 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
         return null
     }
 
-    private fun replaceInPattern(pattern: String, replacements: Map<String, String>): String {
-        var result = pattern
-        replacements.forEach { (placeholder, value) ->
-            result = result.replace(Regex(Regex.escape(placeholder)), value)
-        }
-        return result
-    }
-
-    private data class IdAssignment(
-        val entityType: EntityType,
-        val ids: MutableList<Long> = mutableListOf()
-    )
-
-    private val idAssignments = mutableMapOf<String, MutableMap<EntityType, IdAssignment>>()
-
-    private val nextImplicitDefinitionIndex = mutableMapOf<Pair<EntityType, String>, Int>()
-
     fun cleanImplicitIdIterators() {
-        nextImplicitDefinitionIndex.clear()
-    }
-
-    private fun assignIdToUnnumbered(
-        line: String,
-        type: EntityType,
-        modDef: ModDefinition,
-        mappedDef: MappedModDefinition
-    ): Pair<String, Long>? {
-        val unnumberedPattern = UNNUMBERED_PATTERNS.entries.find { (pattern, _) ->
-            RegexWrapper.fromRegex(pattern).matches(line)
-        } ?: return null
-
-        // Each time we see an unnumbered entity for (type, modDef.name),
-        // we increment the implicit index and fetch the assigned ID.
-        val key = type to modDef.name
-        val index = nextImplicitDefinitionIndex.getOrDefault(key, 0)
-        nextImplicitDefinitionIndex[key] = index + 1
-
-        // Now retrieve the final ID that was assigned for this implicit index
-        val entityDef = modDef.getDefinition(type)
-        val assignedId = entityDef.getAssignedIdForImplicitIndex(index)
-            ?: run {
-                debug("No assigned ID found for $type implicit index=$index in mod=${modDef.name}")
-                return null
-            }
-
-        // 'mappedDef.getMapping' handles the case where that assignedId got remapped
-        // (but typically it's the same if your IdMapper is setting final IDs).
-        val newId = mappedDef.getMapping(type, assignedId)
-
-        // Insert the ID into the #newmonster line
-        val commandEnd = line.indexOf(' ', line.indexOf('#'))
-        val newLine = if (commandEnd != -1) {
-            line.substring(0, commandEnd) + " " + newId + line.substring(commandEnd)
-        } else {
-            "$line $newId"
-        }
-
-        return newLine to newId
-    }
-
-    // Add a function to log assignments for a mod
-    fun logIdAssignmentsForMod(modName: String) {
-        idAssignments[modName]?.forEach { (_, assignment) ->
-            val ranges = assignment.ids.sorted().fold(mutableListOf<Pair<Long, Long>>()) { acc, id ->
-                if (acc.isEmpty()) {
-                    acc.add(id to id)
-                } else {
-                    val (start, end) = acc.last()
-                    if (id == end + 1) {
-                        acc[acc.lastIndex] = start to id
-                    } else {
-                        acc.add(id to id)
-                    }
-                }
-                acc
-            }
-
-            val rangeStr = ranges.joinToString(", ") { (start, end) ->
-                if (start == end) "$start" else "$start-$end"
-            }
-
-            if (assignment.ids.isNotEmpty()) {
-                warn("Assigned ${assignment.ids.size} IDs for unnumbered entity ${assignment.entityType.name} in mod $modName: $rangeStr")
-            }
-        }
-        idAssignments.remove(modName)
+        implicitIdProcessor.cleanIndices()
     }
 
     @Throws(IllegalStateException::class)
@@ -288,12 +203,16 @@ class EntityProcessor(private val idManager: IdManager) : Logging {
             // Detect entity and handle unnumbered definitions
             detectEntity(line)?.let { match ->
                 if (match.isUnnumbered) {
-                    val (newLine, newId) = assignIdToUnnumbered(line, match.type, modDef, mappedDef)
-                        ?: return ProcessedEntity(line, null)
+                    val processedLine = implicitIdProcessor.processImplicitDefinition(
+                        line,
+                        match.type,
+                        modDef,
+                        mappedDef
+                    ) ?: return ProcessedEntity(line, null)
 
-                    return ProcessedEntity (
-                        newLine,
-                        remapCommentWriter(match.type, -1, newId)
+                    return ProcessedEntity(
+                        processedLine.newLine,
+                        processedLine.remapComment ?: remapCommentWriter(match.type, -1, processedLine.newId)
                     )
                 }
 

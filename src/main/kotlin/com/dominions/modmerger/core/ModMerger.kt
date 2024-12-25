@@ -41,7 +41,7 @@ class ModMerger(
 
             // Core components
             debug("Initializing core components")
-            val entityProcessor = EntityProcessor(idManager)
+            val entityProcessor = EntityProcessor()
             val modParser = ModParser(entityProcessor = entityProcessor)
             val mapper = IdMapper()
             val scanner = ModScanner(modParser)

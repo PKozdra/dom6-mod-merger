@@ -40,7 +40,7 @@ class ModMergerController(
     // Add this function to check for existing files
     fun checkExistingFiles(config: ModOutputConfig): Int {
         val writer = ModWriter(
-            contentWriter = ModContentWriter(entityProcessor = EntityProcessor(IdManager.createFromModRanges())),
+            contentWriter = ModContentWriter(entityProcessor = EntityProcessor()),
             resourceCopier = ModResourceCopier(),
             headerWriter = ModHeaderWriter()
         )
