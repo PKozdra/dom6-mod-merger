@@ -36,6 +36,9 @@ kotlin {
 // Common build arguments for both dev and prod
 val commonBuildArgs = listOf(
     "-H:+UnlockExperimentalVMOptions",
+    "-J-Xmx16G",                              // Use up to 16GB RAM for compilation
+    "-J-XX:ActiveProcessorCount=3",           // Use 3 out of 6 cores
+    "-J-XX:MaxRAMPercentage=60",              // Use max 60% of total RAM
     "-Djava.awt.headless=false",
     "--initialize-at-build-time=org.slf4j",
     "--initialize-at-run-time=com.formdev.flatlaf",
