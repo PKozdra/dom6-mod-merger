@@ -620,6 +620,17 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatToolTipUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatViewportUI",
       "methods": [
         {
@@ -1300,6 +1311,9 @@
     },
     {
       "glob": "icons/steam_icon.png"
+    },
+    {
+      "glob": "icons/warhammer_icon.png"
     },
     {
       "glob": "lib/fontconfig.bfc"
@@ -2592,6 +2606,10 @@
       "methods": [
         {
           "name": "disposeLater",
+          "parameterTypes": []
+        },
+        {
+          "name": "dynamicallyLayoutContainer",
           "parameterTypes": []
         },
         {

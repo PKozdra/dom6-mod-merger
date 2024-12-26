@@ -46,8 +46,6 @@ class ModParser(
         val descriptionStart = RegexWrapper.fromRegex(ModPatterns.MOD_DESCRIPTION_START)
         val spellBlockStart = RegexWrapper.fromRegex(ModPatterns.SPELL_BLOCK_START)
         val end = RegexWrapper.fromRegex(ModPatterns.END)
-        val spellEffect = RegexWrapper.fromRegex(ModPatterns.SPELL_EFFECT)
-        val spellDamage = RegexWrapper.fromRegex(ModPatterns.SPELL_DAMAGE)
         val spellSelectId = RegexWrapper.fromRegex(ModPatterns.SPELL_SELECT_ID)
         val entityName = RegexWrapper.fromRegex(ModPatterns.ENTITY_NAME)
 
@@ -113,14 +111,14 @@ class ModParser(
                     state.resetContext()
                 }
 
-                state.inSpellBlock -> {
-                    trace("Handling spell block content", useDispatcher = false)
-                    handleSpellBlockContent(line, state)
-                }
-
                 CompiledPatterns.entityName.matches(line) -> {
                     trace("Handling entity name definition", useDispatcher = false)
                     handleNameDefinition(line, state)
+                }
+
+                state.inSpellBlock -> {
+                    trace("Handling spell block content", useDispatcher = false)
+                    handleSpellBlockContent(line, state)
                 }
 
                 else -> {
@@ -222,15 +220,27 @@ class ModParser(
     }
 
     private fun handleSpellStart(line: String, state: ParserState) {
-        ModUtils.extractId(line, CompiledPatterns.spellSelectId.toRegex())?.let { id ->
-            if (id >= ModRanges.Modding.SPELL_START) {
-                state.definition.addDefinedId(EntityType.SPELL, id)
+        // Try to extract an ID from lines like "#selectspell 123"
+        val extractedId = ModUtils.extractId(line, CompiledPatterns.spellSelectId.toRegex())
+        if (extractedId != null) {
+            // We found an explicit ID
+            if (extractedId >= ModRanges.Modding.SPELL_START) {
+                state.definition.addDefinedId(EntityType.SPELL, extractedId)
             } else {
-                state.definition.addVanillaEditedId(EntityType.SPELL, id)
+                state.definition.addVanillaEditedId(EntityType.SPELL, extractedId)
             }
-        } ?: if (line.startsWith("#newspell")) {
+
+            // IMPORTANT: set the parser context to this ID
+            state.currentEntityContext = EntityContext(EntityType.SPELL, extractedId)
+        }
+        else if (line.startsWith("#newspell")) {
+            // We have an implicit ID (i.e. the user didn't specify a numeric ID)
             state.definition.addImplicitDefinition(EntityType.SPELL)
-        } else {
+
+            // We don't know the numeric ID, so store null in the context
+            state.currentEntityContext = EntityContext(EntityType.SPELL, null)
+        }
+        else {
             error("Unknown spell block start: $line")
         }
     }

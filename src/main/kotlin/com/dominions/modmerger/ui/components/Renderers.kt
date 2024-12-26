@@ -2,6 +2,7 @@ package com.dominions.modmerger.ui.components
 
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModSourceType
+import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.image.BufferedImage
@@ -82,29 +83,6 @@ class SourceTypeRenderer : DefaultTableCellRenderer(), Logging {
     }
 }
 
-// Rest of the renderer classes remain unchanged
-class SizeRenderer : TableCellRenderer {
-    private val label = JLabel().apply {
-        horizontalAlignment = SwingConstants.RIGHT
-        border = EmptyBorder(0, 5, 0, 5)
-        isOpaque = true
-    }
-
-    override fun getTableCellRendererComponent(
-        table: JTable,
-        value: Any?,
-        isSelected: Boolean,
-        hasFocus: Boolean,
-        row: Int,
-        column: Int
-    ): Component {
-        label.text = value as? String ?: ""
-        label.background = if (isSelected) table.selectionBackground else table.background
-        label.foreground = if (isSelected) table.selectionForeground else table.foreground
-        return label
-    }
-}
-
 class CheckBoxRenderer : TableCellRenderer {
     private val checkBox = JCheckBox().apply {
         horizontalAlignment = SwingConstants.CENTER
@@ -129,10 +107,28 @@ class CheckBoxRenderer : TableCellRenderer {
 class ModNameRenderer(
     private val alignment: Int = SwingConstants.LEFT
 ) : TableCellRenderer {
+    private val panel = JPanel(BorderLayout(5, 0))
     private val label = JLabel().apply {
         border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
         isOpaque = true
         horizontalAlignment = alignment
+    }
+
+    private val groupIcon = JLabel().apply {
+        // Load our custom chain icon
+        icon = IconLoader.loadIcon(
+            resourcePath = "/icons/warhammer_icon.png",
+            iconSize = 32,
+            fallbackColor = Color(0, 120, 180)  // Use Steam blue as fallback
+        )
+        border = EmptyBorder(0, 2, 0, 2)
+        isVisible = false
+    }
+
+    init {
+        panel.isOpaque = true
+        panel.add(groupIcon, BorderLayout.WEST)
+        panel.add(label, BorderLayout.CENTER)
     }
 
     override fun getTableCellRendererComponent(
@@ -144,8 +140,29 @@ class ModNameRenderer(
         column: Int
     ): Component {
         label.text = value as? String ?: ""
-        label.background = if (isSelected) table.selectionBackground else table.background
-        label.foreground = if (isSelected) table.selectionForeground else table.foreground
-        return label
+
+        // Convert view index to model index
+        val modelRow = if (table.rowSorter != null) {
+            table.rowSorter.convertRowIndexToModel(row)
+        } else {
+            row
+        }
+
+        val model = table.model as ModTableModel
+        val mod = model.getModAt(modelRow)  // Use modelRow instead of row
+        groupIcon.isVisible = mod.group != null
+
+        if (mod.group != null) {
+            panel.toolTipText = "<html><b>${mod.group.name}</b><br>${mod.group.description}</html>"
+        } else {
+            panel.toolTipText = null
+        }
+
+        panel.background = if (isSelected) table.selectionBackground else table.background
+        panel.foreground = if (isSelected) table.selectionForeground else table.foreground
+        label.background = panel.background
+        label.foreground = panel.foreground
+
+        return panel
     }
 }

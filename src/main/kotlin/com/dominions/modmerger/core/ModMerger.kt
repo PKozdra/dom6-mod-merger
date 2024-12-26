@@ -5,6 +5,7 @@ import com.dominions.modmerger.core.mapping.IdManager
 import com.dominions.modmerger.core.mapping.IdMapper
 import com.dominions.modmerger.core.parsing.ModParser
 import com.dominions.modmerger.core.processing.EntityProcessor
+import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.core.scanning.ModScanner
 import com.dominions.modmerger.core.writing.ModContentWriter
 import com.dominions.modmerger.core.writing.ModHeaderWriter
@@ -16,12 +17,14 @@ import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.domain.ModGroupHandler
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.Logging
 
 class ModMerger(
     private var config: ModOutputConfig,
     private val fileSystem: FileSystem,
+    private val groupHandler: ModGroupHandler
 ) : Logging {
 
     fun updateConfig(newConfig: ModOutputConfig) {
@@ -40,15 +43,17 @@ class ModMerger(
             info("ID manager initialized.")
 
             // Core components
-            debug("Initializing core components")
+            debug("Initializing core components...")
             val entityProcessor = EntityProcessor()
+            val spellBlockProcessor = SpellBlockProcessor()
             val modParser = ModParser(entityProcessor = entityProcessor)
             val mapper = IdMapper()
             val scanner = ModScanner(modParser)
+            debug("Core components initialized.")
 
             // Writers
-            debug("Setting up writers")
-            val contentWriter = ModContentWriter(entityProcessor = entityProcessor)
+            debug("Setting up writers...")
+            val contentWriter = ModContentWriter(entityProcessor = entityProcessor, spellBlockProcessor = spellBlockProcessor)
             val resourceCopier = ModResourceCopier()
             val headerWriter = ModHeaderWriter()
 
@@ -57,11 +62,16 @@ class ModMerger(
                 resourceCopier = resourceCopier,
                 headerWriter = headerWriter
             )
+            debug("Writers set up.")
 
+            // Set up groups
+            debug("Setting up mod groups...")
+            val processedFiles = groupHandler.processFiles(modFiles)
+            debug("Mod groups set up.")
 
             // Scan mods
             info("Scanning mod files...")
-            modDefinitions = scanner.scanMods(modFiles)
+            modDefinitions = scanner.scanMods(processedFiles)
             info("Finished scanning mods. Total mods scanned: ${modDefinitions.size}")
 
             // Log definitions
@@ -70,6 +80,7 @@ class ModMerger(
             // Map IDs
             info("Mapping IDs...")
             mappedDefinitions = mapper.createMappings(modDefinitions, idManager)
+            val resourceMappedDefinitions = buildResourceMappings(mappedDefinitions)
             logMappings(mappedDefinitions)
             info("Finished mapping IDs.")
 
@@ -77,6 +88,7 @@ class ModMerger(
             info("Freezing definitions...")
             modDefinitions.values.forEach { it.freeze() }
             mappedDefinitions.values.forEach { it.freeze() }
+            resourceMappedDefinitions.values.forEach { it.freeze() }
             info("Definitions frozen.")
 
             // Log possible vanilla conflicts
@@ -85,7 +97,12 @@ class ModMerger(
 
             // Write merged mod
             info("Generating merged mod...")
-            return when (val result = writer.writeMergedMod(mappedDefinitions, modDefinitions, config)) {
+            return when (val result = writer.writeMergedMod(
+                mappedDefinitions = mappedDefinitions,
+                modDefinitions = modDefinitions,
+                config = config,
+                resourceMappedDefinitions = resourceMappedDefinitions
+            )) {
                 is MergeResult.Success -> {
                     val outputPath = fileSystem.getOutputFile(config.modName).absolutePath
                     info("Merged mod saved to: $outputPath")
@@ -110,6 +127,26 @@ class ModMerger(
             //val gcEnd = System.currentTimeMillis()
             //info("Forced GC took ${gcEnd - gcStart} ms")
         }
+    }
+
+    private fun buildResourceMappings(
+        mappedDefinitions: Map<String, MappedModDefinition>
+    ): Map<String, MappedModDefinition> {
+        val resourceMappedDefinitions = mutableMapOf<String, MappedModDefinition>()
+
+        mappedDefinitions.forEach { (name, mappedDef) ->
+            if (name.startsWith("_Combined_")) {
+                // For combined files, add original files for resource copying
+                groupHandler.getSourceFiles(name).forEach { originalFile ->
+                    resourceMappedDefinitions[originalFile.name] = MappedModDefinition(originalFile)
+                }
+            } else {
+                // For non-grouped files, use original mapping
+                resourceMappedDefinitions[name] = mappedDef
+            }
+        }
+
+        return resourceMappedDefinitions
     }
 
     private fun logDefinitions(modDefinitions: Map<String, ModDefinition>) {

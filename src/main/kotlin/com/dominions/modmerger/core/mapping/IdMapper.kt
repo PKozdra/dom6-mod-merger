@@ -67,7 +67,7 @@ class IdMapper : Logging {
         val implicitCount = entityDef.getImplicitDefinitionCount()
 
         if (implicitCount > 0) {
-            debug("Processing $implicitCount implicit definitions for $type in $modName")
+            trace("Processing $implicitCount implicit definitions for $type in $modName")
 
             val results = idManager.registerImplicitIds(type, implicitCount, modName)
 

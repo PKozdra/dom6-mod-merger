@@ -4,6 +4,7 @@ import com.dominions.modmerger.constants.GameConstants
 import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.mapping.IdManager
 import com.dominions.modmerger.core.processing.EntityProcessor
+import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.core.writing.ModContentWriter
 import com.dominions.modmerger.core.writing.ModHeaderWriter
 import com.dominions.modmerger.core.writing.ModResourceCopier
@@ -11,6 +12,8 @@ import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.domain.ModGroup
+import com.dominions.modmerger.domain.ModGroupRegistry
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.infrastructure.PreferencesManager
@@ -24,6 +27,7 @@ import javax.swing.SwingUtilities
 class ModMergerController(
     private val modMergerService: ModMerger,
     private val gamePathsManager: GamePathsManager,
+    private val groupRegistry: ModGroupRegistry
 ) : Logging {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var modLoadListener: ((List<ModListItem>) -> Unit)? = null
@@ -40,7 +44,7 @@ class ModMergerController(
     // Add this function to check for existing files
     fun checkExistingFiles(config: ModOutputConfig): Int {
         val writer = ModWriter(
-            contentWriter = ModContentWriter(entityProcessor = EntityProcessor()),
+            contentWriter = ModContentWriter(entityProcessor = EntityProcessor(), spellBlockProcessor = SpellBlockProcessor()),
             resourceCopier = ModResourceCopier(),
             headerWriter = ModHeaderWriter()
         )
@@ -69,15 +73,32 @@ class ModMergerController(
         val modItems = mutableListOf<ModListItem>()
         var totalMods = 0
 
+        val modsByGroup = mutableMapOf<ModGroup?, MutableList<String>>()
+
         paths.forEach { path ->
             try {
                 val mods = findModFiles(path)
                 mods.forEach { modFile ->
-                    modItems.add(ModListItem(modFile))
+                    val group = groupRegistry.findGroupForMod(modFile)
+                    modsByGroup.getOrPut(group) { mutableListOf() }.add(modFile.modName)
+
+                    modItems.add(ModListItem(
+                        modFile = modFile,
+                        group = group,
+                        relatedMods = emptyList() // Filled in later
+                    ))
                     totalMods++
                 }
             } catch (e: Exception) {
                 error("Error loading mods from $path: ${e.message}", e)
+            }
+        }
+
+        // Fill in related mods
+        modItems.forEachIndexed { index, mod ->
+            if (mod.group != null) {
+                val relatedMods = modsByGroup[mod.group]?.filter { it != mod.modFile.modName } ?: emptyList()
+                modItems[index] = mod.copy(relatedMods = relatedMods)
             }
         }
 

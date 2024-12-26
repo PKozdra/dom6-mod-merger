@@ -43,7 +43,7 @@ class ImplicitIdProcessor : Logging {
         // Process based on entity type
         val (newLine, comment) = when (type) {
             EntityType.SPELL -> processSpellLine(line, newId)
-            else -> processRegularEntity(line, newId)
+            else -> processRegularEntity(line, newId, type)
         }
 
         return ProcessedLine(
@@ -63,7 +63,7 @@ class ImplicitIdProcessor : Logging {
         )
     }
 
-    private fun processRegularEntity(line: String, newId: Long): Pair<String, String> {
+    private fun processRegularEntity(line: String, newId: Long, type: EntityType): Pair<String, String> {
         val commandEnd = line.indexOf(' ', line.indexOf('#'))
         val newLine = if (commandEnd != -1) {
             line.substring(0, commandEnd) + " " + newId + line.substring(commandEnd)
@@ -73,7 +73,8 @@ class ImplicitIdProcessor : Logging {
 
         return Pair(
             newLine,
-            "-- MOD MERGER: Assigned new ID $newId"
+            "-- MOD MERGER: Assigned new ID $newId" +
+                    " to implicit $type definition"
         )
     }
 }

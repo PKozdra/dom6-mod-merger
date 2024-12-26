@@ -1,6 +1,7 @@
 package com.dominions.modmerger.ui.model
 
 import com.dominions.modmerger.domain.ModFile
+import com.dominions.modmerger.domain.ModGroup
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -16,7 +17,9 @@ enum class ModSourceType {
  */
 data class ModListItem(
     val modFile: ModFile,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
+    val group: ModGroup? = null,
+    val relatedMods: List<String> = emptyList()
 ) {
     // Determine source type (Steam or Local)
     val sourceType: ModSourceType by lazy {
@@ -70,7 +73,9 @@ data class ModListItem(
     // This is needed for copying with new selection state
     fun copy(isSelected: Boolean = this.isSelected) = ModListItem(
         modFile = this.modFile,
-        isSelected = isSelected
+        isSelected = isSelected,
+        group = this.group,
+        relatedMods = this.relatedMods
     )
 
     companion object {

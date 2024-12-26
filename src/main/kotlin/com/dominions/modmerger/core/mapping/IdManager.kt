@@ -114,7 +114,7 @@ class IdManager private constructor(
         count: Int,
         modName: String
     ): List<IdRegistrationResult> {
-        debug("Registering $count implicit IDs for $type in $modName")
+        trace("Registering $count implicit IDs for $type in $modName")
         val results = mutableListOf<IdRegistrationResult>()
         var lastId: Long? = null
 

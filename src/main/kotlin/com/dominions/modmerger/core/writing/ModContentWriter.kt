@@ -10,19 +10,37 @@ import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 import java.io.Writer
 
+/**
+ * ModContentWriter is responsible for orchestrating how lines are processed:
+ *  - Removing mod info blocks.
+ *  - Filtering lines (e.g., ignoring non-commands unless in multiline quotes).
+ *  - Validating open/close blocks.
+ *  - Deciding whether a line goes to SpellBlockProcessor (if we're in a spell block)
+ *    or to EntityProcessor (normal ID usage references).
+ *
+ * SpellBlockProcessor also has a reference to an EntityProcessor, so it can
+ * delegate lines like #restricted or #descr, while it handles #damage/#effect itself.
+ */
 class ModContentWriter(
     private val entityProcessor: EntityProcessor,
-    private val spellBlockProcessor: SpellBlockProcessor = SpellBlockProcessor(),
+    private val spellBlockProcessor: SpellBlockProcessor
 ) : Logging {
 
     private val warnings = mutableListOf<MergeWarning>()
 
+    /**
+     * We'll store information about the current mod file being processed,
+     * including a list of "processed lines" that we'll eventually write out.
+     */
     private data class ModProcessingContext(
         var inMultilineDescription: Boolean = false,
         var processedLines: MutableList<String> = mutableListOf(),
         val modDefinition: ModDefinition
     )
 
+    /**
+     * Main entry point: processes all mapped definitions (i.e. all mod files).
+     */
     fun processModContent(
         mappedDefinitions: Map<String, MappedModDefinition>,
         modDefinitions: Map<String, ModDefinition>,
@@ -33,6 +51,7 @@ class ModContentWriter(
             debug("Starting to process ${mappedDefinitions.size} mod definitions")
             val totalStartTime = System.currentTimeMillis()
 
+            // Process each mapped mod file
             mappedDefinitions.forEach { (name, mappedDef) ->
                 val originalDef = modDefinitions[name]
                     ?: throw ModContentProcessingException("Cannot find original definition for mod $name")
@@ -40,13 +59,18 @@ class ModContentWriter(
             }
 
             writer.write("\n-- End merged content\n")
-            logProcessingCompletion(totalStartTime)
+            val totalTime = System.currentTimeMillis() - totalStartTime
+            info("Total mod content processing time: $totalTime ms")
+            info("Successfully wrote mod content with ${warnings.size} warnings")
         } catch (e: Exception) {
             handleProcessingError(e)
         }
         return warnings
     }
 
+    /**
+     * Processes a single mod definition (i.e. one mod file).
+     */
     private fun processModDefinition(
         name: String,
         mappedDef: MappedModDefinition,
@@ -56,150 +80,176 @@ class ModContentWriter(
         val modStartTime = System.currentTimeMillis()
         entityProcessor.cleanImplicitIdIterators()
         debug("Processing mod: $name with ${mappedDef.modFile.content.lines().size} lines")
+
         writer.write("\n-- Begin content from mod: $name\n")
         processModFile(mappedDef, originalDef, writer)
-        info("Processed mod '$name' in ${System.currentTimeMillis() - modStartTime} ms")
+
+        val elapsed = System.currentTimeMillis() - modStartTime
+        info("Processed mod '$name' in $elapsed ms")
     }
 
+    /**
+     * Processes the raw lines of a single mod file:
+     *  1) Remove #modinfo blocks (#description, #domversion, etc.).
+     *  2) Filter lines (#commands, comments, multiline quotes, etc.).
+     *  3) Actually parse & transform them (via processLines).
+     *  4) Validate open/close blocks.
+     *  5) Write them out to the final writer.
+     */
     private fun processModFile(
         mappedDef: MappedModDefinition,
         originalDef: ModDefinition,
         writer: Writer
     ) {
-        // First pass - remove mod info blocks
+        // 1) Remove #modinfo-like lines
         val cleanedLines = removeModInfoBlocks(mappedDef.modFile.content.lines())
 
-        // Second pass - normal line filtering
-        val filteredLineIndices = mutableSetOf<Int>()
-        var inMultilineBlock = false
-        var lastLineWasCommand = false
+        // 2) Filter lines (keep #commands, comments, etc.)
+        val secondPassLines = filterAndKeepLines(cleanedLines)
 
-        cleanedLines.forEachIndexed { index, line ->
-            val trimmedLine = line.trimStart()
-
-            when {
-                // 1) Keep blank lines only if they're between command blocks
-                line.isBlank() -> {
-                    if (lastLineWasCommand) {
-                        filteredLineIndices.add(index)
-                    }
-                }
-
-                // 2) Keep lines if we're currently in a multiline block
-                inMultilineBlock -> {
-                    filteredLineIndices.add(index)
-                    // Look for a closing quote in the portion before any comment
-                    val lineWithoutComment = line.split("--")[0]
-                    if (lineWithoutComment.contains("\"")) {
-                        inMultilineBlock = false
-                    }
-                    lastLineWasCommand = true
-                }
-
-                // 3) Comments (--) or commands (#) are kept
-                trimmedLine.startsWith("--") || trimmedLine.startsWith("#") -> {
-                    filteredLineIndices.add(index)
-                    // Potentially start a multiline block if there's an odd number of quotes
-                    if (trimmedLine.startsWith("#") && trimmedLine.contains("\"")) {
-                        val lineWithoutComment = trimmedLine.split("--")[0]
-                        val quoteCount = lineWithoutComment.count { it == '"' }
-                        if (quoteCount % 2 == 1) {
-                            inMultilineBlock = true
-                        }
-                    }
-                    lastLineWasCommand = true
-                }
-
-                // 4) Anything else is ignored
-                else -> {
-                    lastLineWasCommand = false
-                }
-            }
-        }
-
-        val secondPassLines = cleanedLines.filterIndexed { index, _ ->
-            filteredLineIndices.contains(index)
-        }
-
-        // Now proceed with normal line processing
+        // 3) Actually parse & transform
         val context = ModProcessingContext(modDefinition = originalDef)
-        debug("Starting to process mod file: ${mappedDef.modFile.name}")
-        trace("File has ${cleanedLines.size} lines")
-
         processLines(secondPassLines, context, mappedDef)
 
-        writeProcessedLines(context.processedLines, writer, mappedDef.modFile.name)
+        // 4) Validate open/close blocks for #new / #select / #end
+        validateBlocks(context.processedLines, mappedDef.modFile.name)
 
-        debug("Processed ${context.processedLines.size} lines for ${mappedDef.modFile.name}")
+        // 5) Identify if any #end lines can be skipped (empty blocks, etc.)
+        val skippableEnds = identifySkippableEnds(context.processedLines)
+
+        // 6) Write out final
+        context.processedLines.forEachIndexed { index, line ->
+            if (!skippableEnds.contains(index)) {
+                writer.write(line + "\n")
+            }
+        }
     }
 
     /**
-     * First-pass removal of #modinfo blocks: #description, #icon, #version, #domversion, etc.
-     * This uses a "total quotes" approach to ensure we remove entire multiline blocks,
-     * even if they span multiple lines or contain multiple quotes on a single line.
+     * Example logic that removes #description, #icon, #version, etc.
+     * from the mod file entirely. If a line starts #description "abc"
+     * and we haven't closed the quotes, skip them.
      */
     fun removeModInfoBlocks(lines: List<String>): List<String> {
         val result = mutableListOf<String>()
-
         var inModInfoBlock = false
-        var totalQuotesInBlock = 0  // counts quotes since entering the block
+        var totalQuotesInBlock = 0
 
         for (originalLine in lines) {
-            // 1) Normalize fancy quotes
+            // Normalize fancy quotes
+            // val line = originalLine
+            //     .replace('“', '"')
+            //     .replace('”', '"')
             val line = originalLine
-                .replace('“', '"')
-                .replace('”', '"')
-
             val trimmed = line.trimStart()
 
             if (inModInfoBlock) {
-                // We're skipping lines. Count quotes (unless the line is fully commented out).
+                // Count quotes if not fully commented
                 if (!trimmed.startsWith("--")) {
-                    val quotesHere = line.count { it == '"' }
-                    totalQuotesInBlock += quotesHere
-
-                    // If total quotes is back to even => we've closed the block
+                    totalQuotesInBlock += line.count { it == '"' }
                     if (totalQuotesInBlock % 2 == 0) {
                         inModInfoBlock = false
                         totalQuotesInBlock = 0
                     }
                 }
-                // skip this line regardless
+                // skip
                 continue
             }
 
-            // Not currently skipping => check if this is a mod info command
             if (isModInfoLine(trimmed)) {
                 // e.g. #description, #icon, #version, #domversion, #modname
                 val quotesHere = line.count { it == '"' }
-
-                // If odd => we've opened a block
                 if (quotesHere % 2 == 1) {
                     inModInfoBlock = true
                     totalQuotesInBlock = quotesHere
                 }
-                // skip current line
                 continue
             }
 
-            // Otherwise, keep the line
+            // Keep
             result.add(line)
         }
 
         return result
     }
 
-    private fun processLines(lines: List<String>, context: ModProcessingContext, mappedDef: MappedModDefinition) {
-        var index = 0
-        while (index < lines.size) {
+    /**
+     * Additional filter pass: keep #commands, comments, multiline quotes.
+     * Possibly keep blank lines only if last line was a command.
+     */
+    private fun filterAndKeepLines(lines: List<String>): List<String> {
+        val filteredIndices = mutableSetOf<Int>()
+        var inMultilineBlock = false
+        var lastLineWasCommand = false
+
+        lines.forEachIndexed { i, line ->
+            val trimmed = line.trimStart()
+
+            when {
+                // 1) Blank line => keep only if last line was a command
+                line.isBlank() -> {
+                    if (lastLineWasCommand) {
+                        filteredIndices.add(i)
+                        lastLineWasCommand = false
+                    }
+                }
+
+                // 2) If we're in a multiline block => keep, check if closing quote
+                inMultilineBlock -> {
+                    filteredIndices.add(i)
+                    val noComment = line.split("--")[0]
+                    if (noComment.contains("\"")) {
+                        inMultilineBlock = false
+                    }
+                    lastLineWasCommand = true
+                }
+
+                // 3) #command or --comment => keep
+                trimmed.startsWith("--") || trimmed.startsWith("#") -> {
+                    filteredIndices.add(i)
+                    // If there's an odd number of quotes => might start multiline
+                    val noComment = trimmed.split("--")[0]
+                    val quoteCount = noComment.count { it == '"' }
+                    if (quoteCount % 2 == 1) {
+                        inMultilineBlock = true
+                    }
+                    lastLineWasCommand = true
+                }
+
+                // 4) Everything else => skip
+                else -> {
+                    lastLineWasCommand = false
+                }
+            }
+        }
+
+        return lines.filterIndexed { i, _ -> i in filteredIndices }
+    }
+
+    /**
+     * The main "loop" that processes each line:
+     *  - Possibly skip it if it's part of a multiline description, etc.
+     *  - Otherwise send to handleRegularLine, which decides if we're in a spell block or not.
+     */
+    private fun processLines(
+        lines: List<String>,
+        context: ModProcessingContext,
+        mappedDef: MappedModDefinition
+    ) {
+        var i = 0
+        while (i < lines.size) {
             try {
-                index = processNextLine(lines, index, context, mappedDef)
+                i = processNextLine(lines, i, context, mappedDef)
             } catch (e: Exception) {
-                handleLineProcessingError(e, index, lines, mappedDef)
+                handleLineProcessingError(e, i, lines, mappedDef)
             }
         }
     }
 
+    /**
+     * Called for each line in the filtered set. We skip lines if they're in
+     * a multiline #description, or pass them to handleRegularLine otherwise.
+     */
     private fun processNextLine(
         lines: List<String>,
         currentIndex: Int,
@@ -207,90 +257,149 @@ class ModContentWriter(
         mappedDef: MappedModDefinition
     ): Int {
         val line = ModUtils.removeUnreadableCharacters(lines[currentIndex])
-        trace(getLineProcessingMessage(currentIndex, line))
+        trace("Processing line $currentIndex: $line", useDispatcher = false)
 
-        return when {
-            shouldSkipLine(line, currentIndex, context) -> currentIndex + 1
-            isSpellBlockStart(line) -> handleSpellBlock(line, lines, currentIndex, mappedDef, context)
-            else -> handleRegularLine(line, mappedDef, context, currentIndex)
+        // Possibly skip if in multiline #description
+        return if (shouldSkipLine(line, currentIndex, context)) {
+            currentIndex + 1
+        } else {
+            handleRegularLine(line, mappedDef, context)
+            currentIndex + 1
         }
     }
 
-    private fun isSpellBlockStart(line: String): Boolean {
-        val trimmed = line.trim()
-        return trimmed.startsWith("#newspell") ||
-                trimmed.matches(Regex("""#selectspell\s+\d+.*"""))
-    }
-
-    private fun handleSpellBlock(
-        line: String,
-        lines: List<String>,
-        currentIndex: Int,
-        mappedDef: MappedModDefinition,
-        context: ModProcessingContext
-    ): Int {
-        spellBlockProcessor.startNewBlock(line)
-        context.processedLines.add(line)
-        return processSpellBlock(lines, currentIndex + 1, mappedDef, context)
-    }
-
+    /**
+     * This is where we decide: if we're currently in a spell block, pass to SpellBlockProcessor.
+     * If not in a block, check if line starts a spell block (#newspell or #selectspell).
+     * Otherwise, pass to EntityProcessor for normal ID references.
+     */
     private fun handleRegularLine(
         line: String,
         mappedDef: MappedModDefinition,
-        context: ModProcessingContext,
-        currentIndex: Int
-    ): Int {
-        processRegularLine(line, mappedDef, context)
-        return currentIndex + 1
-    }
+        context: ModProcessingContext
+    ) {
+        // Let the SpellBlockProcessor decide if we're in a block
+        if (spellBlockProcessor.isInSpellBlock()) {
+            val (processedLine, processedComment) = spellBlockProcessor.handleSpellLine(
+                line,
+                mappedDef,
+                context.modDefinition,
+                entityProcessor
+            )
+            if (processedComment != null) {
+                context.processedLines.add(processedComment)
+            }
+            if (processedLine.isNotEmpty()) {
+                processedLine.split("\n").forEach { subLine ->
+                    context.processedLines.add(subLine)
+                }
+            }
+        } else {
+            // If we're not in a block, check if this line *starts* one
+            val trimmed = line.trim()
+            if (isSpellBlockStart(trimmed)) {
+                // Start spell block, and also let the line show up in output
+                spellBlockProcessor.startBlock(line)
+                // context.processedLines.add(line)
+            } else {
+                // Normal line => pass to EntityProcessor
+                val processed = entityProcessor.processEntity(
+                    line = line,
+                    mappedDef = mappedDef,
+                    remapCommentWriter = { type, oldId, newId ->
+                        "-- MOD MERGER: Remapped ${type.name} $oldId -> $newId"
+                    },
+                    modDef = context.modDefinition
+                )
+                processed.remapComment?.let { context.processedLines.add(it) }
 
-    // The rest is mostly unchanged
-
-    private data class BlockContext(
-        val startLine: Int,
-        val blockType: String,
-        val actualLine: String,
-        val modFile: String
-    )
-
-    private fun writeProcessedLines(lines: List<String>, writer: Writer, modFileName: String) {
-        // Validate open blocks
-        validateBlocks(lines, modFileName)
-
-        // Identify which #end lines are skippable
-        val skippableEnds = identifySkippableEnds(lines)
-
-        lines.forEachIndexed { index, line ->
-            if (!skippableEnds.contains(index)) {
-                writer.write("$line\n")
+                // If the processed line has multiple sub-lines (multiline #descr?), add them individually
+                if (processed.line.contains("\n")) {
+                    processed.line.split("\n").forEach { multi ->
+                        context.processedLines.add(multi)
+                    }
+                } else {
+                    context.processedLines.add(processed.line)
+                }
             }
         }
     }
 
+    /**
+     * A helper that identifies if the line is #newspell or #selectspell <id>.
+     */
+    private fun isSpellBlockStart(line: String): Boolean {
+        return line.startsWith("#newspell") ||
+                line.matches(Regex("""^#selectspell\s+\d+.*"""))
+    }
+
+    /**
+     * Decides if we skip a line because we're in a multiline #description, etc.
+     */
+    private fun shouldSkipLine(
+        line: String,
+        index: Int,
+        context: ModProcessingContext
+    ): Boolean {
+        val trimmed = line.trim()
+        // Possibly skip the line if it's part of a multiline #description, etc.
+        // Using your existing logic (some code removed for brevity):
+        return when {
+            index == 0 && line.isEmpty() -> true
+            context.inMultilineDescription -> {
+                if (trimmed.contains("\"")) {
+                    // close the multiline
+                    context.inMultilineDescription = false
+                }
+                true
+            }
+            isDescriptionStart(trimmed) -> {
+                context.inMultilineDescription = !trimmed.endsWith("\"")
+                true
+            }
+            isModInfoLine(trimmed) -> true
+            else -> false
+        }
+    }
+
+    private fun isDescriptionStart(line: String): Boolean {
+        // Example from your code
+        return ModPatterns.MOD_DESCRIPTION_START.matches(line) &&
+                !ModPatterns.MOD_DESCRIPTION_LINE.matches(line)
+    }
+
+    private fun isModInfoLine(trimmedLine: String): Boolean {
+        val lower = trimmedLine.lowercase()
+        return lower.startsWith("#description") ||
+                lower.startsWith("#modname")     ||
+                lower.startsWith("#icon")        ||
+                lower.startsWith("#version")     ||
+                lower.startsWith("#domversion")
+    }
+
+    /**
+     * Validates open/close blocks (#new / #select / #end).
+     */
     private fun validateBlocks(lines: List<String>, modFileName: String) {
         val blockStack = mutableListOf<BlockContext>()
 
-        lines.forEachIndexed { index, line ->
-            val trimmedLine = line.trim()
-
+        lines.forEachIndexed { idx, line ->
+            val trimmed = line.trim()
             when {
-                trimmedLine.startsWith("#select") || trimmedLine.startsWith("#new") -> {
-                    val blockType = if (trimmedLine.startsWith("#select")) "select" else "new"
-                    blockStack.add(BlockContext(index + 1, blockType, trimmedLine, modFileName))
+                trimmed.startsWith("#select") || trimmed.startsWith("#new") -> {
+                    val blockType = if (trimmed.startsWith("#select")) "select" else "new"
+                    blockStack.add(BlockContext(idx + 1, blockType, trimmed, modFileName))
                 }
-
-                trimmedLine.startsWith("#end") -> {
+                trimmed.startsWith("#end") -> {
                     if (blockStack.isNotEmpty()) {
                         blockStack.removeAt(blockStack.lastIndex)
                     }
                 }
-
-                (trimmedLine.startsWith("#select") || trimmedLine.startsWith("#new")) &&
-                        blockStack.isNotEmpty() -> {
+                (trimmed.startsWith("#select") || trimmed.startsWith("#new")) && blockStack.isNotEmpty() -> {
                     val lastBlock = blockStack.last()
                     warnings.add(
                         MergeWarning.GeneralWarning(
-                            message = "Found new block '$trimmedLine' at line ${index + 1} while previous '${lastBlock.blockType}' block from line ${lastBlock.startLine} (${lastBlock.modFile}) is still open (missing #end)",
+                            message = "Found new block '$trimmed' at line ${idx + 1} while previous '${lastBlock.blockType}' block from line ${lastBlock.startLine} (${lastBlock.modFile}) is still open (missing #end)",
                             modFile = null
                         )
                     )
@@ -298,6 +407,7 @@ class ModContentWriter(
             }
         }
 
+        // Any unclosed blocks => warnings
         blockStack.forEach { context ->
             warnings.add(
                 MergeWarning.GeneralWarning(
@@ -309,26 +419,33 @@ class ModContentWriter(
         }
     }
 
+    /**
+     * Some lines that only contain #end could be "skippable" if there's another #end right after
+     * with no content in between. For instance, your code that merges blocks might produce duplicates.
+     */
     private fun identifySkippableEnds(lines: List<String>): Set<Int> {
         val skippableEnds = mutableSetOf<Int>()
         var lastEndIndex = -1
         var onlyWhitespaceSinceLastEnd = true
 
         lines.forEachIndexed { index, line ->
-            val trimmedLine = line.trim()
+            val trimmed = line.trim()
             when {
-                trimmedLine == "#end" -> {
+                trimmed == "#end" -> {
                     if (lastEndIndex != -1 && onlyWhitespaceSinceLastEnd) {
+                        // We can skip this #end if we already had one with no content in between
                         skippableEnds.add(index)
                     } else {
                         lastEndIndex = index
                         onlyWhitespaceSinceLastEnd = true
                     }
                 }
-                trimmedLine.isEmpty() || trimmedLine.isBlank() -> {
+                trimmed.isEmpty() -> {
+                    // It's whitespace => might remain skippable
                     onlyWhitespaceSinceLastEnd = onlyWhitespaceSinceLastEnd && lastEndIndex != -1
                 }
                 else -> {
+                    // We found content => next #end won't be skippable
                     lastEndIndex = -1
                     onlyWhitespaceSinceLastEnd = false
                 }
@@ -337,186 +454,29 @@ class ModContentWriter(
         return skippableEnds
     }
 
-    // Helper extension function
-    private fun String.isBlank(): Boolean = all { it.isWhitespace() }
-
-    private fun shouldSkipLine(line: String, index: Int, context: ModProcessingContext): Boolean {
-        val trimmedLine = line.trim()
-        return when {
-            index == 0 && line.isEmpty() -> true
-            context.inMultilineDescription -> {
-                if (line.contains("\"")) context.inMultilineDescription = false
-                true
-            }
-            isDescriptionStart(trimmedLine) -> {
-                context.inMultilineDescription = !line.endsWith("\"")
-                true
-            }
-            isModInfoLine(trimmedLine) -> true
-            else -> false
-        }
-    }
-
-    private fun isDescriptionStart(line: String): Boolean =
-        ModPatterns.MOD_DESCRIPTION_START.matches(line) &&
-                !ModPatterns.MOD_DESCRIPTION_LINE.matches(line)
-
-    private fun isModInfoLine(trimmedLine: String): Boolean {
-        val lower = trimmedLine.lowercase()
-        return lower.startsWith("#description") ||
-                lower.startsWith("#modname")     ||
-                lower.startsWith("#icon")        ||
-                lower.startsWith("#version")     ||
-                lower.startsWith("#domversion")
-    }
-
-    private fun processRegularLine(
-        line: String,
-        mappedDef: MappedModDefinition,
-        context: ModProcessingContext
-    ) {
-        val previousLineWasComment = context.processedLines.lastOrNull()?.startsWith("--") == true
-        val needsCommentPrefix = previousLineWasComment &&
-                !line.trimStart().startsWith("#") &&
-                !line.trimStart().startsWith("--")
-
-        val processedLine = if (needsCommentPrefix) {
-            "-- $line"
-        } else {
-            line
-        }
-
-        val processed = entityProcessor.processEntity(
-            line = line,
-            mappedDef = mappedDef,
-            remapCommentWriter = { type, oldId, newId ->
-                if (oldId == -1L) {
-                    "-- MOD MERGER: Assigned new ID $newId for ${type.name}"
-                } else {
-                    "-- MOD MERGER: Remapped ${type.name} $oldId -> $newId"
-                }
-            },
-            modDef = context.modDefinition
-        )
-
-        processed.remapComment?.let { context.processedLines.add(it) }
-        context.processedLines.add(processed.line)
-    }
-
-    private fun handleDamageMapping(
-        line: String,
-        block: SpellBlockProcessor.SpellBlock,
-        context: ModProcessingContext
-    ) {
-        block.damageMapping?.let { (oldId, newId) ->
-            val comment = createRemapComment(oldId, newId)
-            context.processedLines.add(comment)
-            val newLine = ModUtils.replaceId(line, oldId, newId)
-            context.processedLines.add(newLine)
-        } ?: run {
-            context.processedLines.add(line)
-        }
-    }
-
-    private data class SpellProcessingContext(
-        var currentDamageLine: String? = null,
-        var damageMappingResolved: Boolean = false,
-        var damageLineIndex: Int = -1
+    private data class BlockContext(
+        val startLine: Int,
+        val blockType: String,
+        val actualLine: String,
+        val modFile: String
     )
 
-    private fun processSpellBlock(
-        lines: List<String>,
-        startIndex: Int,
-        mappedDef: MappedModDefinition,
-        context: ModProcessingContext
-    ): Int {
-        var currentIndex = startIndex
-        val spellContext = SpellProcessingContext()
+    // Some helper extension
+    private fun String.isBlank(): Boolean = all { it.isWhitespace() }
 
-        while (currentIndex < lines.size) {
-            val line = lines[currentIndex]
-            val trimmedLine = line.trim()
-
-            when {
-                ModPatterns.END.matches(trimmedLine) -> {
-                    return handleSpellBlockEnd(line, currentIndex, context)
-                }
-                trimmedLine.startsWith("#damage") -> {
-                    spellContext.currentDamageLine = line
-                    spellContext.damageLineIndex = context.processedLines.size
-                    val block = spellBlockProcessor.processSpellLine(line, mappedDef)
-                    if (block.damageMapping != null) {
-                        handleDamageMapping(line, block, context)
-                        spellContext.damageMappingResolved = true
-                    } else {
-                        context.processedLines.add(line)
-                    }
-                }
-                trimmedLine.startsWith("#effect") -> {
-                    val block = spellBlockProcessor.processSpellLine(line, mappedDef)
-                    context.processedLines.add(line)
-
-                    // If we had a pending damage line and now have a mapping
-                    if (!spellContext.damageMappingResolved &&
-                        spellContext.currentDamageLine != null &&
-                        spellContext.damageLineIndex >= 0
-                    ) {
-                        val updatedBlock = spellBlockProcessor.currentBlock
-                        if (updatedBlock?.damageMapping != null) {
-                            context.processedLines.removeAt(spellContext.damageLineIndex)
-                            handleDamageMapping(spellContext.currentDamageLine!!, updatedBlock, context)
-                            spellContext.damageMappingResolved = true
-                        }
-                    }
-                }
-                else -> {
-                    processRegularLine(line, mappedDef, context)
-                }
-            }
-            currentIndex++
-        }
-        return currentIndex
-    }
-
-    private fun handleSpellBlockEnd(
-        line: String,
-        currentIndex: Int,
-        context: ModProcessingContext
-    ): Int {
-        trace("Found spell block end at line $currentIndex")
-        context.processedLines.add(line)
-        spellBlockProcessor.currentBlock = null
-        return currentIndex + 1
-    }
-
-    private fun createRemapComment(oldId: Long, newId: Long): String {
-        val entityType = if (oldId > 0) "Monster" else "Montag"
-        val absOldId = kotlin.math.abs(oldId)
-        val absNewId = kotlin.math.abs(newId)
-        return "-- MOD MERGER: Remapped $entityType $absOldId -> $absNewId"
-    }
-
-    private fun getLineProcessingMessage(index: Int, line: String): String =
-        "Processing line $index: ${if (line.length > 50) line.take(50) + "..." else line}"
-
-    private fun logProcessingCompletion(startTime: Long) {
-        val totalTime = System.currentTimeMillis() - startTime
-        info("Total mod content processing time: $totalTime ms")
-        info("Successfully wrote mod content with ${warnings.size} warnings")
-    }
-
+    /**
+     * On any error in the entire mod processing, we log and throw an exception.
+     */
     private fun handleProcessingError(e: Exception) {
         val errorMsg = "Failed to process mod content: ${e.message}"
         error(errorMsg, e)
-        warnings.add(
-            MergeWarning.GeneralWarning(
-                message = errorMsg,
-                modFile = null
-            )
-        )
+        warnings.add(MergeWarning.GeneralWarning(message = errorMsg, modFile = null))
         throw ModContentProcessingException("Failed to process mod content", e)
     }
 
+    /**
+     * Called if we have an error for a particular line
+     */
     private fun handleLineProcessingError(
         e: Exception,
         index: Int,

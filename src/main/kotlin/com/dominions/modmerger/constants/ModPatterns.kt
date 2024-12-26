@@ -21,17 +21,11 @@ object ModPatterns {
     val USE_NUMBERED_SPELL = Regex(
         """#(?:selectspell|copyspell|nextspell)\s+(\d+)(.*)$"""
     )
+    val SPELL_REFERENCES = Regex("""#(?:copyspell|nextspell|selectspell|onebattlespell)\s+"([^"]+)".*$""")
     val SPELL_BLOCK_START = Regex("""#(?:newspell|selectspell\s+\d+)(.*)$""")
     val SPELL_EFFECT = Regex("""#effect\s+([-]?\d+)(.*)$""")
     val SPELL_DAMAGE = Regex("""#damage\s+([-]?\d+)(.*)$""")
-    val SPELL_COPY_ID = Regex("""#copyspell\s+(\d+)(.*)$""")
     val SPELL_SELECT_ID = Regex("""#selectspell\s+(\d+)(.*)$""")
-
-    // Fixed version with named group
-    val SPELL_COPY_NAME = Regex("""#copyspell\s+"(?<name>[^"]+)"(.*)$""")
-
-    // Similarly, ensure SPELL_SELECT_NAME has the named group
-    val SPELL_SELECT_NAME = Regex("""#selectspell\s+"(?<name>[^"]+)"(.*)$""")
 
     // Weapons
     val NEW_NUMBERED_WEAPON = Regex("""#newweapon\s+(\d+)(.*)$""")
@@ -104,7 +98,8 @@ object ModPatterns {
     val RESTRICTED_ITEM_REFERENCES = Regex("""#(?:restricteditem|userestricteditem)\s+"([^"]+)".*$""")
 
     // Pop types
-    val SELECT_NUMBERED_POPTYPE = Regex("""#poptype\s+(\d+)(.*)$""")
+    val SELECT_NUMBERED_POPTYPE = Regex("""#selectpoptype\s+(\d+)(.*)$""")
+    val USE_NUMBERED_POPTYPE = Regex("""#(?:poptype|selectpoptype|likespop|req_poptype|req_notpoptype|setpoptype)\s+(\d+)(.*)$""")
 
     // Enchantments
     val USE_GLOBAL_ENCHANTMENT =

@@ -9,7 +9,7 @@ application {
 }
 
 group = "com.dominions"
-version = "1.0.0"
+version = "0.0.3"
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -23,6 +23,15 @@ dependencies {
 kotlin {
     jvmToolchain(23)
 }
+
+//tasks.jar {
+//    manifest {
+//        attributes["Main-Class"] = "com.dominions.modmerger.MainKt"
+//    }
+//    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
+//        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    }
+//}
 
 // Common build arguments for both dev and prod
 val commonBuildArgs = listOf(

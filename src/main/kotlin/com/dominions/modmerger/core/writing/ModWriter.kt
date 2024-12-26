@@ -21,7 +21,8 @@ class ModWriter(
     fun writeMergedMod(
         mappedDefinitions: Map<String, MappedModDefinition>,
         modDefinitions: Map<String, ModDefinition>,
-        config: ModOutputConfig
+        config: ModOutputConfig,
+        resourceMappedDefinitions: Map<String, MappedModDefinition>
     ): MergeResult {
         val warnings = mutableListOf<MergeWarning>()
         val targetModDir = File(config.directory, config.modName)
@@ -40,7 +41,7 @@ class ModWriter(
             // Copy resources directly to target
             val startTimeResources = System.currentTimeMillis()
             info("Starting copying resources...")
-            val resourceWarnings = resourceCopier.copyModResources(config, mappedDefinitions)
+            val resourceWarnings = resourceCopier.copyModResources(config, resourceMappedDefinitions)
             val endTimeResources = System.currentTimeMillis()
             info("Resources copied in ${endTimeResources - startTimeResources} ms")
             warnings.addAll(resourceWarnings)

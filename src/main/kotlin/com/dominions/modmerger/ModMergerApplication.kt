@@ -11,6 +11,8 @@ import com.dominions.modmerger.core.writing.ModHeaderWriter
 import com.dominions.modmerger.core.writing.ModResourceCopier
 import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
+import com.dominions.modmerger.domain.ModGroupHandler
+import com.dominions.modmerger.domain.ModGroupRegistry
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
@@ -58,6 +60,7 @@ class ModMergerApplication : Logging {
                 modMerger = components.modMerger,
                 fileSystem = components.fileSystem,
                 gamePathsManager = components.gamePathsManager,
+                groupRegistry = components.groupRegistry
             ).show()
         }
     }
@@ -72,7 +75,8 @@ class ModMergerApplication : Logging {
     private data class ApplicationComponents(
         val modMerger: ModMerger,
         val fileSystem: FileSystem,
-        val gamePathsManager: GamePathsManager
+        val gamePathsManager: GamePathsManager,
+        val groupRegistry: ModGroupRegistry
     )
 
     private fun initialize(): ApplicationComponents {
@@ -86,18 +90,22 @@ class ModMergerApplication : Logging {
         debug("Creating configuration")
         val configManager = ModOutputConfigManager(fileSystem, gamePathsManager)
         val defaultConfig = configManager.createDefaultConfig()
+        val registry = ModGroupRegistry()
+        val groupHandler = ModGroupHandler(registry)
 
         // Create service
         debug("Creating ModMerger service")
         val modMerger = ModMerger(
             config = defaultConfig,
-            fileSystem = fileSystem
+            fileSystem = fileSystem,
+            groupHandler = groupHandler,
         )
 
         return ApplicationComponents(
             modMerger = modMerger,
             fileSystem = fileSystem,
-            gamePathsManager = gamePathsManager
+            gamePathsManager = gamePathsManager,
+            groupRegistry = registry
         )
     }
 }
