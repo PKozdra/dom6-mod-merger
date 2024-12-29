@@ -1,9 +1,11 @@
 package com.dominions.modmerger.core.processing
 
 import com.dominions.modmerger.constants.GameConstants
+import com.dominions.modmerger.constants.ModPatterns
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.gamedata.GameDataProvider
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
@@ -14,7 +16,9 @@ import com.dominions.modmerger.utils.ModUtils
  *   3) Remove extra blank lines at flush time.
  *   4) Pass other lines (#restricted, #descr, etc.) to EntityProcessor for normal references.
  */
-class SpellBlockProcessor : Logging {
+class SpellBlockProcessor(
+    private val gameDataProvider: GameDataProvider
+) : Logging {
 
     /**
      * Summoning / Enchantment / None classification for #effect IDs.
@@ -124,6 +128,28 @@ class SpellBlockProcessor : Logging {
             block.effectType = SpellEffect.fromId(effectId)
             block.bufferedLines.add(line)
             return "" to null // skip immediate output
+        }
+
+        // If #copyspell => lookup and replace effect
+        if (trimmed.startsWith("#copyspell")) {
+            val spellId = ModUtils.extractId(line, ModPatterns.SPELL_COPY_ID)
+            if (spellId != null) {
+                gameDataProvider.getSpellEffect(spellId)?.let { effect ->
+                    block.effectId = effect.recordId
+                    block.effectType = SpellEffect.fromId(effect.effectNumber)
+                    trace("Set effect from copied spell $spellId: effect=${effect.effectNumber}")
+                }
+            } else {
+                ModUtils.extractString(line, ModPatterns.SPELL_COPY_NAME)?.let { name ->
+                    gameDataProvider.getSpellByName(name)?.let { spell ->
+                        gameDataProvider.getSpellEffect(spell.id)?.let { effect ->
+                            block.effectId = effect.recordId
+                            block.effectType = SpellEffect.fromId(effect.effectNumber)
+                            trace("Set effect from copied spell '$name': effect=${effect.effectNumber}")
+                        }
+                    }
+                }
+            }
         }
 
         // Otherwise, store the line. #damage lines are also stored unmodified for now.

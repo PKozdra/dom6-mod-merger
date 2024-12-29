@@ -18,13 +18,15 @@ import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModDefinition
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.domain.ModGroupHandler
+import com.dominions.modmerger.gamedata.GameDataProvider
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.Logging
 
 class ModMerger(
     private var config: ModOutputConfig,
     private val fileSystem: FileSystem,
-    private val groupHandler: ModGroupHandler
+    private val groupHandler: ModGroupHandler,
+    private val gameDataProvider: GameDataProvider
 ) : Logging {
 
     fun updateConfig(newConfig: ModOutputConfig) {
@@ -36,6 +38,11 @@ class ModMerger(
         var mappedDefinitions: Map<String, MappedModDefinition>? = null
 
         try {
+            // Initialize game data first
+            info("Initializing game data provider...")
+            gameDataProvider.initialize()
+            info("Game data provider initialized.")
+
             // Create fresh IdManager for this merge operation
             info("Initializing ID manager for merge operation...")
             val idManager = IdManager.createFromModRanges()
@@ -45,7 +52,7 @@ class ModMerger(
             // Core components
             debug("Initializing core components...")
             val entityProcessor = EntityProcessor()
-            val spellBlockProcessor = SpellBlockProcessor()
+            val spellBlockProcessor = SpellBlockProcessor(gameDataProvider)
             val modParser = ModParser(entityProcessor = entityProcessor)
             val mapper = IdMapper()
             val scanner = ModScanner(modParser)

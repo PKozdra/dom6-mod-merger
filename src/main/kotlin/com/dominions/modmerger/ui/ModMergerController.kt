@@ -14,6 +14,7 @@ import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
 import com.dominions.modmerger.domain.ModGroup
 import com.dominions.modmerger.domain.ModGroupRegistry
+import com.dominions.modmerger.gamedata.GameDataProvider
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.infrastructure.PreferencesManager
@@ -27,7 +28,8 @@ import javax.swing.SwingUtilities
 class ModMergerController(
     private val modMergerService: ModMerger,
     private val gamePathsManager: GamePathsManager,
-    private val groupRegistry: ModGroupRegistry
+    private val groupRegistry: ModGroupRegistry,
+    private val gameDataProvider: GameDataProvider
 ) : Logging {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var modLoadListener: ((List<ModListItem>) -> Unit)? = null
@@ -44,7 +46,7 @@ class ModMergerController(
     // Add this function to check for existing files
     fun checkExistingFiles(config: ModOutputConfig): Int {
         val writer = ModWriter(
-            contentWriter = ModContentWriter(entityProcessor = EntityProcessor(), spellBlockProcessor = SpellBlockProcessor()),
+            contentWriter = ModContentWriter(entityProcessor = EntityProcessor(), spellBlockProcessor = SpellBlockProcessor(gameDataProvider)),
             resourceCopier = ModResourceCopier(),
             headerWriter = ModHeaderWriter()
         )

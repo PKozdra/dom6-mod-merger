@@ -3,6 +3,7 @@ package com.dominions.modmerger.ui
 import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.domain.ModGroupRegistry
+import com.dominions.modmerger.gamedata.GameDataProvider
 import com.dominions.modmerger.infrastructure.ApplicationConfig
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
@@ -21,7 +22,8 @@ class ModMergerGui(
     modMerger: ModMerger,
     fileSystem: FileSystem,
     gamePathsManager: GamePathsManager,
-    groupRegistry: ModGroupRegistry
+    groupRegistry: ModGroupRegistry,
+    gameDataProvider: GameDataProvider
 ) {
     private val preferences = Preferences.userRoot().node("com/dominions/modmerger")
 
@@ -33,7 +35,7 @@ class ModMergerGui(
 
     private val modTable = ModTablePanel()
     private val outputPanel = OutputPanel()
-    private val controller = ModMergerController(modMerger, gamePathsManager, groupRegistry)
+    private val controller = ModMergerController(modMerger, gamePathsManager, groupRegistry, gameDataProvider)
 
     // UI Components
     private val mergeButton = createStyledMergeButton()

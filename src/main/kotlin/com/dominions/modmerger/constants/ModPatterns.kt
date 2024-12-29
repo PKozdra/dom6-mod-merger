@@ -26,6 +26,8 @@ object ModPatterns {
     val SPELL_EFFECT = Regex("""#effect\s+([-]?\d+)(.*)$""")
     val SPELL_DAMAGE = Regex("""#damage\s+([-]?\d+)(.*)$""")
     val SPELL_SELECT_ID = Regex("""#selectspell\s+(\d+)(.*)$""")
+    val SPELL_COPY_ID = Regex("""#copyspell\s+(\d+)(.*)$""")
+    val SPELL_COPY_NAME = Regex("""#copyspell\s+"([^"]+)"(.*)$""")
 
     // Weapons
     val NEW_NUMBERED_WEAPON = Regex("""#newweapon\s+(\d+)(.*)$""")

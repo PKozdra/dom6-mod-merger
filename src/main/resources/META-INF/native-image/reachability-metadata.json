@@ -1019,6 +1019,17 @@
       ]
     },
     {
+      "type": "kotlinx.coroutines.internal.ConcurrentLinkedListNode",
+      "fields": [
+        {
+          "name": "_next$volatile"
+        },
+        {
+          "name": "_prev$volatile"
+        }
+      ]
+    },
+    {
       "type": "kotlinx.coroutines.internal.DispatchedContinuation",
       "fields": [
         {
@@ -1068,6 +1079,14 @@
       ]
     },
     {
+      "type": "kotlinx.coroutines.internal.Segment",
+      "fields": [
+        {
+          "name": "cleanedAndPointers$volatile"
+        }
+      ]
+    },
+    {
       "type": "kotlinx.coroutines.scheduling.CoroutineScheduler",
       "fields": [
         {
@@ -1103,6 +1122,34 @@
         },
         {
           "name": "producerIndex$volatile"
+        }
+      ]
+    },
+    {
+      "type": "kotlinx.coroutines.sync.MutexImpl",
+      "fields": [
+        {
+          "name": "owner$volatile"
+        }
+      ]
+    },
+    {
+      "type": "kotlinx.coroutines.sync.SemaphoreAndMutexImpl",
+      "fields": [
+        {
+          "name": "_availablePermits$volatile"
+        },
+        {
+          "name": "deqIdx$volatile"
+        },
+        {
+          "name": "enqIdx$volatile"
+        },
+        {
+          "name": "head$volatile"
+        },
+        {
+          "name": "tail$volatile"
         }
       ]
     },
@@ -1265,6 +1312,9 @@
       "glob": "META-INF/services/java.lang.System$LoggerFinder"
     },
     {
+      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
+    },
+    {
       "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
     },
     {
@@ -1305,6 +1355,12 @@
     },
     {
       "glob": "com/formdev/flatlaf/resources/Bundle_pl_PL.properties"
+    },
+    {
+      "glob": "gamedata/dom6/effects_spells.csv"
+    },
+    {
+      "glob": "gamedata/dom6/spells.csv"
     },
     {
       "glob": "icons/folder_icon.png"
@@ -2724,6 +2780,11 @@
     },
     {
       "type": "sun.awt.windows.WFramePeer",
+      "fields": [
+        {
+          "name": "keepOnMinimize"
+        }
+      ],
       "methods": [
         {
           "name": "getExtendedState",

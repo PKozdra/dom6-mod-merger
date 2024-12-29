@@ -3,6 +3,7 @@ package com.dominions.modmerger.infrastructure
 import com.dominions.modmerger.domain.ModFile
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 
 class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
 
@@ -57,6 +58,22 @@ class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
     fun getOutputFile(modName: String): File {
         val modDir = createModDirectory(modName)
         return File(modDir, "$modName.$MOD_EXTENSION")
+    }
+
+    /**
+     * Reads the content of a file as text.
+     * @param path Path to the file to read
+     * @return The file content as a string
+     * @throws IOException if reading fails
+     */
+    suspend fun readFileAsText(path: Path): String {
+        debug("Reading file: $path")
+        try {
+            return File(path.toString()).readText()
+        } catch (e: IOException) {
+            error("Failed to read file: $path", e)
+            throw e
+        }
     }
 
     /**

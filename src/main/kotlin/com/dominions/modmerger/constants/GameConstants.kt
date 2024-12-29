@@ -2,8 +2,6 @@
 package com.dominions.modmerger.constants
 
 object GameConstants {
-
-    const val GAME_NAME = "Dominions6"
     const val GAME_ID = "2511500"
     const val MOD_FILE_EXTENSION = "dm"
 
@@ -16,27 +14,5 @@ object GameConstants {
         val ENCHANTMENT_EFFECTS: Set<Long> = setOf(
             81, 10081, 10082, 10084, 10085, 10086
         )
-
-        val KNOWN_SUMMON_SPELL_IDS: Set<Long> = setOf(
-            721, 724, 733, 795, 805, 813, 818, 847, 875, 893, 900, 920, 1091
-        )
-
-        val KNOWN_SUMMON_SPELL_NAMES: Set<String> = setOf(
-            "animate skeleton",
-            "horde of skeletons",
-            "raise skeletons",
-            "reanimation",
-            "pale riders",
-            "revive lictor",
-            "living mercury",
-            "king of elemental earth",
-            "summon fire elemental",
-            "pack of wolves",
-            "contact forest giant",
-            "infernal disease",
-            "hannya pact",
-            "swarm",
-            "creeping doom"
-        ).map { it.lowercase() }.toSet()
     }
 }

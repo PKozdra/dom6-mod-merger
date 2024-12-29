@@ -13,6 +13,7 @@ import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.domain.ModGroupHandler
 import com.dominions.modmerger.domain.ModGroupRegistry
+import com.dominions.modmerger.gamedata.Dom6CsvGameDataProvider
 import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
@@ -60,7 +61,8 @@ class ModMergerApplication : Logging {
                 modMerger = components.modMerger,
                 fileSystem = components.fileSystem,
                 gamePathsManager = components.gamePathsManager,
-                groupRegistry = components.groupRegistry
+                groupRegistry = components.groupRegistry,
+                gameDataProvider = components.gameDataProvider
             ).show()
         }
     }
@@ -76,7 +78,8 @@ class ModMergerApplication : Logging {
         val modMerger: ModMerger,
         val fileSystem: FileSystem,
         val gamePathsManager: GamePathsManager,
-        val groupRegistry: ModGroupRegistry
+        val groupRegistry: ModGroupRegistry,
+        val gameDataProvider: Dom6CsvGameDataProvider
     )
 
     private fun initialize(): ApplicationComponents {
@@ -85,6 +88,9 @@ class ModMergerApplication : Logging {
         // Infrastructure
         val gamePathsManager = GamePathsManager()
         val fileSystem = FileSystem(gamePathsManager)
+
+        // Game data provider
+        val dom6DataProvider = Dom6CsvGameDataProvider()
 
         // Configuration
         debug("Creating configuration")
@@ -99,13 +105,15 @@ class ModMergerApplication : Logging {
             config = defaultConfig,
             fileSystem = fileSystem,
             groupHandler = groupHandler,
+            gameDataProvider = dom6DataProvider
         )
 
         return ApplicationComponents(
             modMerger = modMerger,
             fileSystem = fileSystem,
             gamePathsManager = gamePathsManager,
-            groupRegistry = registry
+            groupRegistry = registry,
+            gameDataProvider = dom6DataProvider
         )
     }
 }
