@@ -33,6 +33,8 @@ class ModWriter(
 
             // Write mod content directly to target
             val outputFile = File(targetModDir, "${config.modName}.dm")
+            info("Writing mod to: ${outputFile.absolutePath}")
+
             val startTimeContent = System.currentTimeMillis()
             writeModContent(outputFile, mappedDefinitions, modDefinitions, config, warnings)
             val endTimeContent = System.currentTimeMillis()
@@ -40,14 +42,13 @@ class ModWriter(
 
             // Copy resources directly to target
             val startTimeResources = System.currentTimeMillis()
-            info("Starting copying resources...")
+            info("Starting copying resources to: $targetModDir")
             val resourceWarnings = resourceCopier.copyModResources(config, resourceMappedDefinitions)
             val endTimeResources = System.currentTimeMillis()
             info("Resources copied in ${endTimeResources - startTimeResources} ms")
             warnings.addAll(resourceWarnings)
 
             return MergeResult.Success(warnings)
-
         } catch (e: Exception) {
             error("Failed to write merged mod: ${e.message}", e)
             return MergeResult.Failure(e.message ?: "Unknown error occurred")

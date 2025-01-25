@@ -51,7 +51,7 @@ class ModMerger(
 
             // Core components
             debug("Initializing core components...")
-            val entityProcessor = EntityProcessor()
+            val entityProcessor = EntityProcessor(gameDataProvider = gameDataProvider)
             val spellBlockProcessor = SpellBlockProcessor(gameDataProvider)
             val modParser = ModParser(entityProcessor = entityProcessor)
             val mapper = IdMapper()
@@ -111,7 +111,7 @@ class ModMerger(
                 resourceMappedDefinitions = resourceMappedDefinitions
             )) {
                 is MergeResult.Success -> {
-                    val outputPath = fileSystem.getOutputFile(config.modName).absolutePath
+                    val outputPath = fileSystem.getOutputFile(config.modName, config.directory).absolutePath
                     info("Merged mod saved to: $outputPath")
                     result
                 }

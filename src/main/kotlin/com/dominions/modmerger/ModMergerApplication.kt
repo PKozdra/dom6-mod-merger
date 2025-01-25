@@ -1,15 +1,8 @@
 package com.dominions.modmerger
 
+import com.dominions.modmerger.console.ConsoleMenu
+import com.dominions.modmerger.console.ConsoleModManager
 import com.dominions.modmerger.core.ModMerger
-import com.dominions.modmerger.core.mapping.IdManager
-import com.dominions.modmerger.core.mapping.IdMapper
-import com.dominions.modmerger.core.parsing.ModParser
-import com.dominions.modmerger.core.processing.EntityProcessor
-import com.dominions.modmerger.core.scanning.ModScanner
-import com.dominions.modmerger.core.writing.ModContentWriter
-import com.dominions.modmerger.core.writing.ModHeaderWriter
-import com.dominions.modmerger.core.writing.ModResourceCopier
-import com.dominions.modmerger.core.writing.ModWriter
 import com.dominions.modmerger.core.writing.config.ModOutputConfigManager
 import com.dominions.modmerger.domain.ModGroupHandler
 import com.dominions.modmerger.domain.ModGroupRegistry
@@ -25,21 +18,67 @@ import kotlin.system.exitProcess
 
 class ModMergerApplication : Logging {
     fun run(args: Array<String>) {
-        val useGui = args.isEmpty() || args.size != 1 || args[0] != "--console"
+        if (args.isEmpty()) {
+            startGuiMode()
+            return
+        }
 
         val components = initialize()
 
-        if (useGui) {
-            info("Starting GUI application", useDispatcher = true)
-            if (!setupGui()) {
-                error("Failed to initialize GUI", useDispatcher = true)
+        when (args[0]) {
+            "--console" -> {
+                info("Starting Console application", useDispatcher = true)
+                startConsoleApplication(components)
+            }
+            "--auto-merge" -> {
+                info("Starting auto-merge mode", useDispatcher = true)
+                startAutoMergeMode(components, args.drop(1).toTypedArray())
+            }
+            "--help" -> {
+                println("""
+                    ModMerger Usage:
+                    No arguments     - Start in GUI mode
+                    --console       - Start in interactive console mode
+                    --auto-merge    - Start in automatic merge mode
+                        Options:
+                        --mods <paths>     List of complete paths to mod files (required)
+                                          Format: ["/path/to/mod1.dm","/path/to/mod2.dm"]
+                        --output <name>    Output filename for merged mod (optional)
+                                          Default: merged_mod.dm
+                        --output-path <dir> Directory to store the merged mod (optional)
+                                          Default: Current directory
+                    --help          - Show this help message
+
+                    Examples:
+                    GUI Mode:
+                    java -jar modmerger.jar
+
+                    Console Mode:
+                    java -jar modmerger.jar --console
+
+                    Auto-merge Mode:
+                    java -jar modmerger.jar --auto-merge \
+                        --mods "[/path/to/mod1.dm,/path/to/mod2.dm]" \
+                        --output merged.dm \
+                        --output-path /path/to/output
+                """.trimIndent())
+                exitProcess(0)
+            }
+            else -> {
+                error("Unknown argument: ${args[0]}")
                 exitProcess(1)
             }
-            startGuiApplication(components)
-        } else {
-            warn("Command line mode is no longer supported", useDispatcher = true)
+        }
+    }
+
+    private fun startGuiMode() {
+        info("Starting GUI application", useDispatcher = true)
+        val components = initialize()
+        if (!setupGui()) {
+            error("Failed to initialize GUI", useDispatcher = true)
             exitProcess(1)
         }
+        startGuiApplication(components)
     }
 
     private fun setupGui(): Boolean {
@@ -67,20 +106,32 @@ class ModMergerApplication : Logging {
         }
     }
 
+    private fun startConsoleApplication(components: ApplicationComponents) {
+        debug("Launching Console interface")
+        val modManager = ConsoleModManager(
+            modMerger = components.modMerger,
+            fileSystem = components.fileSystem,
+            gamePathsManager = components.gamePathsManager
+        )
+
+        ConsoleMenu(modManager).show()
+    }
+
+    private fun startAutoMergeMode(components: ApplicationComponents, args: Array<String>) {
+        debug("Launching auto-merge mode")
+        AutoMergeMode(
+            modMerger = components.modMerger,
+            fileSystem = components.fileSystem,
+            gamePathsManager = components.gamePathsManager
+        ).run(args)
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
             ModMergerApplication().run(args)
         }
     }
-
-    private data class ApplicationComponents(
-        val modMerger: ModMerger,
-        val fileSystem: FileSystem,
-        val gamePathsManager: GamePathsManager,
-        val groupRegistry: ModGroupRegistry,
-        val gameDataProvider: Dom6CsvGameDataProvider
-    )
 
     private fun initialize(): ApplicationComponents {
         debug("Initializing ModMerger application")

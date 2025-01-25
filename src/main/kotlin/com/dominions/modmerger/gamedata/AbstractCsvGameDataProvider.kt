@@ -3,18 +3,23 @@ package com.dominions.modmerger.gamedata
 
 import com.dominions.modmerger.gamedata.csv.CsvData
 import com.dominions.modmerger.gamedata.csv.CsvLoader
+import com.dominions.modmerger.gamedata.model.MonsterData
 import com.dominions.modmerger.gamedata.model.SpellData
 import com.dominions.modmerger.gamedata.model.SpellEffectData
+import com.dominions.modmerger.infrastructure.Logging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 abstract class AbstractCsvGameDataProvider(
-) : GameDataProvider {
+) : GameDataProvider, Logging {
 
+    // Spell Data
     protected val spellsCache = mutableMapOf<Long, SpellData>()
     protected val spellEffectsCache = mutableMapOf<Long, SpellEffectData>()
-    // Using case-insensitive map for name lookups
     protected val spellNameCache = mutableMapOf<String, SpellData>()
+    // Monster Data
+    protected val monsterCache = mutableMapOf<Long, MonsterData>()
+    protected val monsterNameCache = mutableMapOf<String, MonsterData>()
 
     private val initializationMutex = Mutex()
     private var isInitialized = false
@@ -26,14 +31,16 @@ abstract class AbstractCsvGameDataProvider(
     override suspend fun initialize() {
         initializationMutex.withLock {
             if (isInitialized) return
+
             loadEffectsData()
             loadSpellsData()
+            loadMonsterData()
             isInitialized = true
         }
     }
 
     private suspend fun loadEffectsData() {
-        debug("Loading spell effects data from resources")
+        debug("Loading spell effects data from resources...")
         try {
             val csvData = loadCsvResource("effects_spells.csv")
 
@@ -52,7 +59,7 @@ abstract class AbstractCsvGameDataProvider(
                 }
             }
 
-            info("Loaded ${spellEffectsCache.size} spell effects")
+            info("Loaded ${spellEffectsCache.size} spell effects.")
         } catch (e: Exception) {
             error("Failed to load spell effects data", e)
             throw GameDataLoadException("Failed to load spell effects data", e)
@@ -60,7 +67,7 @@ abstract class AbstractCsvGameDataProvider(
     }
 
     private suspend fun loadSpellsData() {
-        debug("Loading spells data from resources")
+        debug("Loading spells data from resources...")
         try {
             val csvData = loadCsvResource("spells.csv")
 
@@ -82,10 +89,38 @@ abstract class AbstractCsvGameDataProvider(
                 }
             }
 
-            info("Loaded ${spellsCache.size} spells")
+            info("Loaded ${spellsCache.size} spells.")
         } catch (e: Exception) {
             error("Failed to load spells data", e)
             throw GameDataLoadException("Failed to load spells data", e)
+        }
+    }
+
+    private suspend fun loadMonsterData() {
+        debug("Loading monster data from resources...")
+        try {
+            val csvData = loadCsvResource("BaseU.csv")
+
+            val idIndex = csvData.getColumnIndex("id")
+            val nameIndex = csvData.getColumnIndex("name")
+
+            csvData.rows.forEach { row ->
+                try {
+                    val monster = MonsterData(
+                        id = row[idIndex].toLong(),
+                        name = row[nameIndex].trim()
+                    )
+                    monsterCache[monster.id] = monster
+                    monsterNameCache[monster.name.lowercase()] = monster
+                } catch (e: Exception) {
+                    warn("Failed to parse monster row: $row")
+                }
+            }
+
+            info("Loaded ${monsterCache.size} monsters.")
+        } catch (e: Exception) {
+            error("Failed to load monster data", e)
+            throw GameDataLoadException("Failed to load monster data", e)
         }
     }
 
@@ -123,6 +158,28 @@ abstract class AbstractCsvGameDataProvider(
     override fun getSpellEffectNumber(spellId: Long): Long? {
         check(isInitialized) { "GameDataProvider not initialized" }
         return getSpellEffect(spellId)?.effectNumber
+    }
+
+    override fun getMonster(id: Long): MonsterData? {
+        check(isInitialized) { "GameDataProvider not initialized" }
+        return monsterCache[id]
+    }
+
+    override fun getMonsters(ids: Set<Long>): Map<Long, MonsterData> {
+        check(isInitialized) { "GameDataProvider not initialized" }
+        return ids.mapNotNull { id ->
+            monsterCache[id]?.let { id to it }
+        }.toMap()
+    }
+
+    override fun getMonsterByName(name: String): MonsterData? {
+        check(isInitialized) { "GameDataProvider not initialized" }
+        return monsterNameCache[name.trim().lowercase()]
+    }
+
+    override fun getVanillaMonsterNames(): Map<Long, String> {
+        check(isInitialized) { "GameDataProvider not initialized" }
+        return monsterCache.mapValues { it.value.name }
     }
 
     protected suspend fun ensureInitialized() {

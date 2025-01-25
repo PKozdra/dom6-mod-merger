@@ -29,14 +29,10 @@ class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
     }
 
     /**
-     * Creates a properly structured mod directory in the specified base directory.
-     * @param modName Name of the mod (must be pre-validated)
-     * @return The created directory File object
-     * @throws IOException if directory creation fails
+     * Creates a properly structured mod directory in the specified directory.
      */
-    fun createModDirectory(modName: String): File {
-        val baseDir = gamePathsManager.getLocalModPath()
-        val modDir = File(baseDir, modName)
+    fun createModDirectory(modName: String, directory: File): File {
+        val modDir = File(directory, modName)
 
         try {
             if (!modDir.exists() && !modDir.mkdirs()) {
@@ -52,13 +48,15 @@ class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
 
     /**
      * Gets the output file path following Dominions 6 mod structure.
-     * @param modName Name of the mod (must be pre-validated)
-     * @return File object representing the properly structured output file
      */
-    fun getOutputFile(modName: String): File {
-        val modDir = createModDirectory(modName)
+    fun getOutputFile(modName: String, directory: File): File {
+        val modDir = createModDirectory(modName, directory)
         return File(modDir, "$modName.$MOD_EXTENSION")
     }
+
+    // For backward compatibility, these methods now use the config directory
+    fun createModDirectory(modName: String) = createModDirectory(modName, gamePathsManager.getLocalModPath())
+    fun getOutputFile(modName: String) = getOutputFile(modName, gamePathsManager.getLocalModPath())
 
     /**
      * Reads the content of a file as text.

@@ -113,7 +113,7 @@ class SpellBlockProcessor(
         val trimmed = line.trim()
 
         // If #end => flush the block
-        if (trimmed.startsWith("#end")) {
+        if (ModPatterns.END.matches(trimmed)) {
             block.bufferedLines.add(line) // store the #end line
             val finalLines = flushBlock(block, mappedDef, modDef, entityProcessor)
             currentBlock = null
@@ -122,7 +122,7 @@ class SpellBlockProcessor(
         }
 
         // If #effect => store effect ID, but no transformation yet
-        if (trimmed.startsWith("#effect")) {
+        if (ModPatterns.SPELL_EFFECT.matches(trimmed)) {
             val effectId = parseNumericArg(line)
             block.effectId = effectId
             block.effectType = SpellEffect.fromId(effectId)
@@ -131,7 +131,7 @@ class SpellBlockProcessor(
         }
 
         // If #copyspell => lookup and replace effect
-        if (trimmed.startsWith("#copyspell")) {
+        if (ModPatterns.SPELL_COPY_ID.matches(trimmed) || ModPatterns.SPELL_COPY_NAME.matches(trimmed)) {
             val spellId = ModUtils.extractId(line, ModPatterns.SPELL_COPY_ID)
             if (spellId != null) {
                 gameDataProvider.getSpellEffect(spellId)?.let { effect ->
@@ -159,10 +159,14 @@ class SpellBlockProcessor(
 
     /**
      * Called at #end to transform the buffered lines.
-     *  - We can replace "#newspell" with "#selectspell <assignedSpellId>" if assignedSpellId != null.
-     *  - We can now map #damage lines if effectType is Summoning or Enchantment.
-     *  - We pass other lines to entityProcessor for normal references.
-     *  - We remove extra blank lines at the end to keep it tidy.
+     *
+     * Processing steps:
+     * 1. Replace "#newspell" with "#selectspell <assignedId>" when mapping to predefined ID
+     * 2. Handle damage commands:
+     *    - Convert "#damagemon <id>" to "#damage <id>" format first
+     *    - Map damage values based on spell effect type (Summoning/Enchantment)
+     * 3. Pass other lines (#restricted, #descr, etc.) to EntityProcessor
+     * 4. Remove consecutive blank lines for cleaner output
      */
     private fun flushBlock(
         block: SpellBlock,
@@ -170,31 +174,39 @@ class SpellBlockProcessor(
         modDef: ModDefinition,
         entityProcessor: EntityProcessor
     ): List<String> {
-
         val outputLines = mutableListOf<String>()
 
         for (rawLine in block.bufferedLines) {
             val trimmed = rawLine.trim()
 
-            // A) If we see "#newspell" and have assignedSpellId => skip it, produce replaced lines
-            if (trimmed.startsWith("#newspell") && block.assignedSpellId != null) {
-                val assigned = block.assignedSpellId
-                outputLines.add("-- MOD MERGER: Converted #newspell to #selectspell with assigned ID $assigned")
-                outputLines.add("#selectspell $assigned")
+            // 1. Handle #newspell replacement if we have an assigned ID
+            if (ModPatterns.NEW_UNNUMBERED_SPELL.matches(trimmed) && block.assignedSpellId != null) {
+                outputLines.add("-- MOD MERGER: Converted #newspell to #selectspell with assigned ID ${block.assignedSpellId}")
+                outputLines.add("#selectspell ${block.assignedSpellId}")
                 continue
             }
 
-            // B) If #damage => map now that we know the effect
-            if (trimmed.startsWith("#damage")) {
-                val (mappedLine, comment) = mapDamageLine(rawLine, block.effectType, mappedDef)
+            // 2. Handle damage commands - both #damage and #damagemon with ID
+            val processLine = when {
+                // Convert #damagemon <id> to #damage format first
+                ModPatterns.SPELL_DAMAGEMON_ID.matches(trimmed) ->
+                    rawLine.replace("#damagemon", "#damage")
+                // Regular #damage line
+                ModPatterns.SPELL_DAMAGE.matches(trimmed) ->
+                    rawLine
+                else -> null
+            }
+
+            // If we have a damage line, map it based on effect type
+            if (processLine != null) {
+                val (mappedLine, comment) = mapDamageLine(processLine, block.effectType, mappedDef)
                 comment?.let { outputLines.add(it) }
                 outputLines.add(mappedLine)
                 continue
             }
 
-            // C) #effect => we can keep as-is or do more if you want
-            //    #end => keep as-is
-            //    or pass the line to entityProcessor
+            // 3. Process all other lines through EntityProcessor
+            //    This includes: #effect, #end, #restricted, #descr, etc.
             val processed = entityProcessor.processEntity(
                 line = rawLine,
                 mappedDef = mappedDef,
@@ -207,7 +219,7 @@ class SpellBlockProcessor(
             outputLines.add(processed.line)
         }
 
-        // After collecting all lines, remove consecutive blank lines
+        // 4. Clean up output by removing consecutive blank lines
         return removeExtraBlanks(outputLines)
     }
 
@@ -276,9 +288,11 @@ class SpellBlockProcessor(
      * Utility: parse the numeric argument from lines like "#damage 2202" or "#effect 17".
      */
     private fun parseNumericArg(line: String): Long? {
-        val tokens = line.split("\\s+".toRegex())
-        if (tokens.size < 2) return null
-        return tokens[1].toLongOrNull()
+        return when {
+            ModPatterns.SPELL_DAMAGE.matches(line) -> ModPatterns.SPELL_DAMAGE.find(line)?.groupValues?.get(1)?.toLongOrNull()
+            ModPatterns.SPELL_EFFECT.matches(line) -> ModPatterns.SPELL_EFFECT.find(line)?.groupValues?.get(1)?.toLongOrNull()
+            else -> null
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ import com.dominions.modmerger.constants.RegexWrapper
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.ModDefinition
+import com.dominions.modmerger.gamedata.GameDataProvider
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.utils.ModUtils
 
@@ -18,7 +19,8 @@ import com.dominions.modmerger.utils.ModUtils
  * are handled elsewhere (e.g. SpellBlockProcessor).
  */
 class EntityProcessor(
-    private val implicitIdProcessor: ImplicitIdProcessor = ImplicitIdProcessor()
+    private val implicitIdProcessor: ImplicitIdProcessor = ImplicitIdProcessor(),
+    private val gameDataProvider: GameDataProvider
 ) : Logging {
 
     data class ProcessedEntity(
@@ -150,7 +152,7 @@ class EntityProcessor(
         line: String,
         mappedDef: MappedModDefinition,
         remapCommentWriter: (EntityType, Long, Long) -> String,
-        modDef: ModDefinition
+        modDef: ModDefinition,
     ): ProcessedEntity {
         val trimmedLine = line.trimStart()
 
@@ -237,7 +239,8 @@ class EntityProcessor(
      *   #monster "Troll"
      *   #weapon "Sword of Ice"
      *
-     * Then replaces them with #monster 123 if it finds a known ID mapping for that name.
+     * Then replaces them with #monster 123 if it finds a known ID mapping for that name
+     * (either in the mod, or in vanilla data)
      */
     private fun processNameReference(
         line: String,
@@ -253,27 +256,51 @@ class EntityProcessor(
         REFERENCE_PATTERNS.forEach { (type, patterns) ->
             for (pattern in patterns) {
                 pattern.toRegex().find(line)?.let {
-                    // Extract the name from quotes
                     val nameMatch = Regex(""""([^"]+)"""").find(line) ?: return@let
-                    val name = nameMatch.groupValues[1] // The text in quotes
+                    val name = nameMatch.groupValues[1]
 
-                    // Check if we have an ID for that name
+                    // First try mod definitions
                     modDef.getDefinition(type).getIdForName(name)?.let { oldId ->
                         val newId = mappedDef.getMapping(type, oldId)
-                        // We'll replace the quoted name with the numeric ID
-                        val prefix = line.substring(0, nameMatch.range.first)
-                        val suffix = line.substring(nameMatch.range.last + 1)
-                        val newLine = prefix + newId + suffix
+                        return createProcessedEntity(line, nameMatch, type, name, newId)
+                    }
 
-                        return ProcessedEntity(
-                            newLine,
-                            "-- MOD MERGER: Replaced ${type.name} name '$name' with ID $newId"
-                        )
+                    // If not found in mods, try vanilla data
+                    val vanillaId = when(type) {
+                        EntityType.MONSTER -> gameDataProvider.getMonsterByName(name)?.id
+                        // EntityType.SPELL -> gameDataProvider.getSpellByName(name)?.id
+                        else -> null
+                    }
+
+                    if (vanillaId != null) {
+                        // For vanilla IDs, we use the same ID (no mapping needed)
+                        return createProcessedEntity(line, nameMatch, type, name, vanillaId, isVanilla = true)
                     }
                 }
             }
         }
         return null
+    }
+
+    private fun createProcessedEntity(
+        line: String,
+        nameMatch: MatchResult,
+        type: EntityType,
+        name: String,
+        newId: Long,
+        isVanilla: Boolean = false
+    ): ProcessedEntity {
+        val prefix = line.substring(0, nameMatch.range.first)
+        val suffix = line.substring(nameMatch.range.last + 1)
+        val newLine = prefix + newId + suffix
+
+        val comment = if (isVanilla) {
+            "-- MOD MERGER: Replaced ${type.name} name '$name' with vanilla ID $newId"
+        } else {
+            "-- MOD MERGER: Replaced ${type.name} name '$name' with ID $newId"
+        }
+
+        return ProcessedEntity(newLine, comment)
     }
 
     /**
@@ -316,11 +343,16 @@ class EntityProcessor(
             for (pattern in patterns) {
                 if (pattern.matches(trimmed)) {
                     val patName = pattern.getPatternName()
-                    val extractedId = ModUtils.extractId(trimmed, pattern.toRegex())
-                    val extractedName = ModUtils.extractName(trimmed, pattern.toRegex())
+                    // For unnumbered patterns, we shouldn't try to extract ID
                     val isUnnum = UNNUMBERED_PATTERNS.keys.any {
                         it.pattern == pattern.toRegex().pattern
                     }
+                    // Only try to extract id if it's not an unnumbered pattern
+                    val extractedId = if (!isUnnum) {
+                        ModUtils.extractId(trimmed, pattern.toRegex())
+                    } else null
+                    val extractedName = ModUtils.extractName(trimmed, pattern.toRegex())
+
                     return EntityMatch(
                         type = type,
                         id = extractedId,
