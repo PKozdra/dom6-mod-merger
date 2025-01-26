@@ -100,4 +100,4 @@ If you encounter any issues or have suggestions for improvements:
 ## Acknowledgments
 
 - [Illwinter Game Design](https://www.illwinter.com/) for Dominions 6
-- [@djmcgill / David McGillicuddy](https://github.com/djmcgill) for original version of Domingler, from which original regexes for mod parsing are used
+- [@djmcgill / David McGillicuddy](https://github.com/djmcgill) for original version of Domingler, from which regexes for mod parsing are used in this application
