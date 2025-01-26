@@ -4,7 +4,6 @@ import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
-import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
 import kotlinx.coroutines.runBlocking
@@ -13,7 +12,6 @@ import kotlin.system.exitProcess
 
 class AutoMergeMode(
     private val modMerger: ModMerger,
-    private val fileSystem: FileSystem,
     private val gamePathsManager: GamePathsManager
 ) : Logging {
     fun run(args: Array<String>) {
@@ -39,12 +37,23 @@ class AutoMergeMode(
         val config = ModOutputConfig(
             modName = parsedArgs.outputName.removeSuffix(".dm"),
             displayName = parsedArgs.outputName.removeSuffix(".dm").replace('_', ' '),
-            directory = parsedArgs.outputPath,  // Use the specified output path
+            directory = parsedArgs.outputPath,
             description = "Automatically merged via ModMerger",
             version = "1.0",
             sourceMods = modFiles.map { it.modName },
             gamePathsManager = gamePathsManager
         )
+
+        // Handle cleaning of target mod directory if requested
+        val targetModDir = File(parsedArgs.outputPath, config.modName)
+        if (parsedArgs.cleanOutput) {
+            cleanTargetDirectory(targetModDir)
+        } else if (targetModDir.exists()) {
+            val fileCount = countFilesInDirectory(targetModDir)
+            if (fileCount > 0) {
+                warn("Directory '${targetModDir.absolutePath}' contains $fileCount files that may be overwritten")
+            }
+        }
 
         // Update the merger's config
         modMerger.updateConfig(config)
@@ -72,10 +81,37 @@ class AutoMergeMode(
         }
     }
 
+    private fun cleanTargetDirectory(directory: File) {
+        if (!directory.exists()) return
+
+        info("Cleaning mod directory: ${directory.absolutePath}")
+        directory.walkTopDown()
+            .filter { it.isFile }
+            .forEach { file ->
+                try {
+                    file.delete()
+                    trace("Deleted file: ${file.absolutePath}")
+                } catch (e: Exception) {
+                    warn("Failed to delete file ${file.absolutePath}: ${e.message}")
+                }
+            }
+    }
+
+    private fun countFilesInDirectory(directory: File): Int {
+        return if (directory.exists()) {
+            directory.walkTopDown()
+                .filter { it.isFile }
+                .count()
+        } else {
+            0
+        }
+    }
+
     private fun parseArgs(args: Array<String>): AutoMergeArgs {
         var modPaths = listOf<String>()
         var outputName = "merged_mod.dm"
         var outputPath = File(System.getProperty("user.dir"))
+        var cleanOutput = false
 
         var i = 0
         while (i < args.size) {
@@ -104,6 +140,10 @@ class AutoMergeMode(
                         i += 2
                     }
                 }
+                "--clean" -> {
+                    cleanOutput = true
+                    i++
+                }
                 else -> i++
             }
         }
@@ -111,7 +151,8 @@ class AutoMergeMode(
         return AutoMergeArgs(
             modPaths = modPaths,
             outputName = outputName,
-            outputPath = outputPath
+            outputPath = outputPath,
+            cleanOutput = cleanOutput
         )
     }
 
@@ -149,7 +190,8 @@ class AutoMergeMode(
     private data class AutoMergeArgs(
         val modPaths: List<String>,
         val outputName: String,
-        val outputPath: File
+        val outputPath: File,
+        val cleanOutput: Boolean
     )
 
     companion object {
@@ -165,12 +207,15 @@ class AutoMergeMode(
                                   Default: merged_mod.dm
                 --output-path <dir> Directory to store the merged mod (optional)
                                   Default: Current directory
+                --clean           Clean output directory before merging (optional)
+                                  Removes all files in the target mod directory
 
                 Example:
                 java -jar modmerger.jar --auto-merge \
                     --mods "[/path/to/mod1.dm,/path/to/mod2.dm]" \
                     --output merged.dm \
-                    --output-path /path/to/output
+                    --output-path /path/to/output \
+                    --clean
 
                 Exit codes:
                 0 - Success

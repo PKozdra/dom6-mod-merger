@@ -121,7 +121,6 @@ class ModMergerApplication : Logging {
         debug("Launching auto-merge mode")
         AutoMergeMode(
             modMerger = components.modMerger,
-            fileSystem = components.fileSystem,
             gamePathsManager = components.gamePathsManager
         ).run(args)
     }
