@@ -58,7 +58,7 @@ class ModContentWriter(
                 processModDefinition(name, mappedDef, originalDef, writer)
             }
 
-            writer.write("\n-- End merged content\n")
+            writer.write("\n-- MOD MERGER: End merged content\n")
             val totalTime = System.currentTimeMillis() - totalStartTime
             info("Total mod content processing time: $totalTime ms")
             info("Successfully wrote mod content with ${warnings.size} warnings")

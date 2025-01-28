@@ -64,17 +64,29 @@ class ImplicitIdProcessor : Logging {
     }
 
     private fun processRegularEntity(line: String, newId: Long, type: EntityType): Pair<String, String> {
-        val commandEnd = line.indexOf(' ', line.indexOf('#'))
-        val newLine = if (commandEnd != -1) {
-            line.substring(0, commandEnd) + " " + newId + line.substring(commandEnd)
+        val trimmedLine = line.trim()
+        // If it starts with #new, convert it to #select
+        val transformedLine = if (trimmedLine.startsWith("#new")) {
+            val command = trimmedLine.split(" ")[0] // get "#newmonster" part
+            val newCommand = "#select" + command.substring(4) // converts "#newmonster" to "#selectmonster"
+            line.replace(command, newCommand)
         } else {
-            "$line $newId"
+            line
         }
+
+        // Now add the ID
+        val commandEnd = transformedLine.indexOf(' ', transformedLine.indexOf('#'))
+        val newLine = if (commandEnd != -1) {
+            transformedLine.substring(0, commandEnd) + " " + newId + transformedLine.substring(commandEnd)
+        } else {
+            "$transformedLine $newId"
+        }
+
+        val typeName = type.name.lowercase()
 
         return Pair(
             newLine,
-            "-- MOD MERGER: Assigned new ID $newId" +
-                    " to implicit $type definition"
+            "-- MOD MERGER: Converted #new$typeName to #select$typeName with assigned ID $newId"
         )
     }
 }

@@ -269,7 +269,7 @@ class ModMergerGui(
 
     private fun handleResetConfigButton() {
         val result = showConfirmDialog(
-            "Are you sure you want to clear all settings?",
+            "Are you sure you want to clear all settings?\nThis will remove all saved mod selections and output settings.",
             "Clear Configuration"
         )
 

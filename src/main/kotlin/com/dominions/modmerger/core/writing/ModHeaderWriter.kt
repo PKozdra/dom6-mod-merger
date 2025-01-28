@@ -45,7 +45,7 @@ class ModHeaderWriter : Logging {
                 }
 
                 appendLine("#version \"${config.version}\"")
-                appendLine("\n-- Begin merged content\n")
+                appendLine("\n-- MOD MERGER: Begin merged content\n")
             }
 
             writer.write(headerContent)
