@@ -259,22 +259,22 @@ class EntityProcessor(
                     val nameMatch = Regex(""""([^"]+)"""").find(line) ?: return@let
                     val name = nameMatch.groupValues[1]
 
-                    // First try mod definitions
-                    modDef.getDefinition(type).getIdForName(name)?.let { oldId ->
-                        val newId = mappedDef.getMapping(type, oldId)
-                        return createProcessedEntity(line, nameMatch, type, name, newId)
-                    }
-
-                    // If not found in mods, try vanilla data
+                    // Try vanilla data
                     val vanillaId = when(type) {
                         EntityType.MONSTER -> gameDataProvider.getMonsterByName(name)?.id
-                        // EntityType.SPELL -> gameDataProvider.getSpellByName(name)?.id
+                        EntityType.SPELL -> gameDataProvider.getSpellByName(name)?.id
                         else -> null
                     }
 
                     if (vanillaId != null) {
                         // For vanilla IDs, we use the same ID (no mapping needed)
                         return createProcessedEntity(line, nameMatch, type, name, vanillaId, isVanilla = true)
+                    }
+
+                    // Try mod definitions
+                    modDef.getDefinition(type).getIdForName(name)?.let { oldId ->
+                        val newId = mappedDef.getMapping(type, oldId)
+                        return createProcessedEntity(line, nameMatch, type, name, newId)
                     }
                 }
             }
