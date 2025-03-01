@@ -24,8 +24,6 @@ open class GamePathsManager : Logging {
             return findWorkshopInCustomPaths()
         }
 
-        return findWorkshopInCustomPaths()
-
         // Check default workshop location in main Steam installation
         val defaultWorkshopPath = File(mainSteamPath, "steamapps/workshop/content/${GameConstants.GAME_ID}")
         if (defaultWorkshopPath.exists()) {
