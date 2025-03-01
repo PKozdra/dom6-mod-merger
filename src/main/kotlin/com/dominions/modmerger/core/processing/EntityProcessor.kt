@@ -369,6 +369,25 @@ class EntityProcessor(
         USAGE_PATTERNS.forEach { (entityType, patterns) ->
             for (pattern in patterns) {
                 ModUtils.extractId(line, pattern.toRegex())?.let { oldId ->
+                    // Special handling for negative IDs in monster commands
+                    if (entityType == EntityType.MONSTER && oldId < 0) {
+                        // Convert to positive ID and treat as a montag
+                        val montagId = -oldId  // Convert to positive number
+                        val newMontagId = mappedDef.getMapping(EntityType.MONTAG, montagId)
+
+                        // Only process if the montag ID was actually remapped
+                        if (montagId != newMontagId) {
+                            // Create negative of the new montag ID
+                            val newNegativeId = -newMontagId
+                            val comment = remapCommentWriter(EntityType.MONTAG, montagId, newMontagId) +
+                                    " (via negative monster reference)"
+                            val replaced = ModUtils.replaceId(line, oldId, newNegativeId)
+                            return ProcessedEntity(replaced, comment)
+                        }
+                        return null
+                    }
+
+                    // Normal processing for other cases
                     val newId = mappedDef.getMapping(entityType, oldId)
                     if (oldId != newId) {
                         val comment = remapCommentWriter(entityType, oldId, newId)
