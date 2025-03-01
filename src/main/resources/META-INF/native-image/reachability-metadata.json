@@ -335,6 +335,15 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatListCellBorder$Selected",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatListUI",
       "methods": [
         {
