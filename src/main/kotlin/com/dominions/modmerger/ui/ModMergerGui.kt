@@ -142,7 +142,10 @@ class ModMergerGui(
     }
 
     private fun showSettings() {
-        SettingsDialog(frame).isVisible = true
+        SettingsDialog(
+            frame,
+            onPathsChanged = { handleRefreshButton() }
+        ).isVisible = true
     }
 
     private fun createStyledMergeButton(): JButton {

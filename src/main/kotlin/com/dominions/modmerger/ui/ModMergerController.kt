@@ -58,17 +58,17 @@ class ModMergerController(
             // Add Steam workshop path if available
             gamePathsManager.findSteamModPath()?.let {
                 add(it)
-                info("Found Steam workshop path: $it")
+                info("Found Steam workshop path: $it", useDispatcher = false)
             }
 
             // Add local mods directory
             add(gamePathsManager.getLocalModPath().also {
-                info("Using local mods path: $it")
+                info("Using local mods path: $it", useDispatcher = false)
             })
         }
 
         if (paths.isEmpty()) {
-            warn("No valid mod paths found. Please specify a custom path.")
+            warn("No valid mod paths found. Please specify a custom path in Settings.")
             return
         }
 

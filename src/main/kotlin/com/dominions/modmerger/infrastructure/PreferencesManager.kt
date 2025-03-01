@@ -16,6 +16,7 @@ object PreferencesManager : Logging {
     private const val CONFIG_MOD_NAME = "config.modName"
     private const val CONFIG_DISPLAY_NAME = "config.displayName"
     private const val CONFIG_DIRECTORY = "config.directory"
+    private const val CUSTOM_STEAM_PATHS = "paths.customSteamPaths"
 
     var fontSize: Int
         get() = preferences.getInt("output.fontSize", DEFAULT_FONT_SIZE)
@@ -109,6 +110,24 @@ object PreferencesManager : Logging {
             preferences.remove("mod.selectedPaths.count")
             debug("Cleared stored selections", useDispatcher = false)
         }
+    }
+
+    fun saveCustomSteamPaths(paths: List<String>) {
+        if (paths.isEmpty()) {
+            preferences.remove(CUSTOM_STEAM_PATHS)
+            return
+        }
+
+        val pathString = paths.joinToString(PATHS_DELIMITER)
+        preferences.put(CUSTOM_STEAM_PATHS, pathString)
+        debug("Saved ${paths.size} custom Steam paths", useDispatcher = false)
+    }
+
+    fun getCustomSteamPaths(): List<String> {
+        val pathString = preferences.get(CUSTOM_STEAM_PATHS, "")
+        if (pathString.isEmpty()) return emptyList()
+
+        return pathString.split(PATHS_DELIMITER).filter { it.isNotEmpty() }
     }
 
     fun clearAll() {
