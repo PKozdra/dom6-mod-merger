@@ -6,7 +6,7 @@ import javax.swing.ImageIcon
 object ApplicationConfig : Logging {
 
     const val APP_NAME = "Dominions 6 Mod Merger"
-    const val APP_VERSION = "0.0.7"
+    const val APP_VERSION = "0.1.0"
     private const val APP_ICON_PATH = "icon.ico"
 
     /**

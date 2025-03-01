@@ -9,7 +9,7 @@ application {
 }
 
 group = "com.dominions"
-version = "0.0.7"
+version = "0.1.0"
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -21,7 +21,7 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(23)
+    jvmToolchain(21)
 }
 
 //tasks.jar {
