@@ -36,6 +36,25 @@ class EntityProcessor(
         val isUnnumbered: Boolean = false
     )
 
+    enum class ProcessingContext {
+        MERCENARY_BLOCK,
+    }
+
+    // Track active contexts
+    private val activeContexts = mutableSetOf<ProcessingContext>()
+
+    // Block starter regexes matched to contexts
+    private val contextStarters = mapOf(
+        ModPatterns.NEWMERC_PATTERN to ProcessingContext.MERCENARY_BLOCK,
+    )
+
+    /**
+     * Check if a specific context is currently active
+     */
+    private fun isInContext(context: ProcessingContext): Boolean {
+        return context in activeContexts
+    }
+
     companion object {
         // Patterns for usage references (#restricted <id>, #monster <id>, #weapon <id>, etc.)
         private val USAGE_PATTERNS = mapOf(
@@ -161,8 +180,35 @@ class EntityProcessor(
             return ProcessedEntity(line, null)
         }
 
+        // Update context tracking
+        updateProcessingContext(line)
+
         // 2) Do normal entity processing
         return processEntityLine(line, mappedDef, remapCommentWriter, modDef)
+    }
+
+    /**
+     * Updates the active contexts based on the current line
+     */
+    private fun updateProcessingContext(line: String) {
+        val trimmedLine = line.trim()
+
+        if (trimmedLine.startsWith("#new")) {
+            activeContexts.clear()
+        }
+
+        // Check for context starters using regex
+        for ((pattern, context) in contextStarters) {
+            if (pattern.matches(trimmedLine)) {
+                activeContexts.add(context)
+                break
+            }
+        }
+
+        // Check for block end - clears all contexts
+        if (ModPatterns.END.matches(trimmedLine)) {
+            activeContexts.clear()
+        }
     }
 
     /**
@@ -250,6 +296,11 @@ class EntityProcessor(
         // For instance, we don't want to convert #newmonster "Troll" => #monster <id> accidentally,
         // so we skip if line starts with #new
         if (line.trimStart().startsWith("#new")) {
+            return null
+        }
+
+        // Skip mercenary blocks
+        if (isInContext(ProcessingContext.MERCENARY_BLOCK) && ModPatterns.MERC_UNIT_PATTERNS.matches(line.trim())) {
             return null
         }
 

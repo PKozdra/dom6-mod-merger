@@ -109,4 +109,12 @@ object ModPatterns {
     val USE_GLOBAL_ENCHANTMENT =
         Regex("""#(?:enchrebate50|enchrebate20|enchrebate10|req_noench|req_ench|req_myench|req_friendlyench|req_hostileench|req_enchdom|nationench|enchrebate25p|enchrebate50p)\s+(\d+)(.*)$""")
     val USE_GLOBAL_ENCHANTMENT_DAMAGE = Regex("""#damage\s+(\d+)(.*)$""")
+
+    // Utility
+
+    // Mercenary pattern
+    val NEWMERC_PATTERN = Regex("""^[ \t]*#newmerc.*$""")
+
+    // Pattern for both #com and #unit commands inside mercenary blocks
+    val MERC_UNIT_PATTERNS = Regex("""^[ \t]*#(com|unit)[ \t]+.*$""")
 }
