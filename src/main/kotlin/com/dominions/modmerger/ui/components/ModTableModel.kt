@@ -88,4 +88,28 @@ class ModTableModel : AbstractTableModel() {
     }
 
     fun getModAt(row: Int): ModListItem = mods[row]
+
+    /**
+     * Returns all mods in the model regardless of selection or filter state
+     */
+    fun getAllMods(): List<ModListItem> {
+        return mods.toList()
+    }
+
+    /**
+     * Updates only the selection states without affecting other data or firing full table change
+     */
+    fun updateSelectionStates(selectedPaths: Set<String>) {
+        val selectedColumnIndex = getColumnIndex(TableColumn.SELECTED)
+
+        for (i in mods.indices) {
+            val path = mods[i].modFile.file?.absolutePath
+            val shouldBeSelected = path in selectedPaths
+
+            if (mods[i].isSelected != shouldBeSelected) {
+                mods[i] = mods[i].copy(isSelected = shouldBeSelected)
+                fireTableCellUpdated(i, selectedColumnIndex)
+            }
+        }
+    }
 }

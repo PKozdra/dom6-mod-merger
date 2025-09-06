@@ -8,7 +8,7 @@ object ModRanges {
     object Vanilla {
         const val WEAPON_END: Long = 873L    // Changed from 999L to match in-game
         const val ARMOR_END: Long = 292L     // Changed from 399L to match in-game
-        const val MONSTER_END: Long = 4063L  // Changed from 5000L to match in-game
+        const val MONSTER_END: Long = 5000L  // Changed from 5000L to match in-game (4063L)
         const val NAMETYPE_END: Long = 169L
         const val SPELL_END: Long = 1463L    // Changed from 1999L to match in-game
         const val ENCHANTMENT_END: Long = 199L

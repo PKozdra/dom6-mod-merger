@@ -5,7 +5,6 @@ import com.dominions.modmerger.core.ModMerger
 import com.dominions.modmerger.core.writing.config.ModOutputConfig
 import com.dominions.modmerger.domain.MergeResult
 import com.dominions.modmerger.domain.ModFile
-import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.Logging
 import com.dominions.modmerger.ui.model.ModListItem
@@ -13,7 +12,6 @@ import java.io.File
 
 class ConsoleModManager(
     private val modMerger: ModMerger,
-    private val fileSystem: FileSystem,
     private val gamePathsManager: GamePathsManager
 ) : Logging {
     private var allMods: List<ModListItem> = emptyList()

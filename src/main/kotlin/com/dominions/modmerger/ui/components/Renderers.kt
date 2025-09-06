@@ -115,7 +115,6 @@ class ModNameRenderer(
     }
 
     private val groupIcon = JLabel().apply {
-        // Load our custom chain icon
         icon = IconLoader.loadIcon(
             resourcePath = "/icons/warhammer_icon.png",
             iconSize = 32,

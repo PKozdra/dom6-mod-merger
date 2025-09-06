@@ -453,5 +453,19 @@ class ModTablePanel : JPanel(), Logging {
         updateStatusLabels()
     }
 
+    /**
+     * Updates only the selection states of mods without changing the visible list
+     */
+    fun updateSelectionStates(selectedPaths: Set<String>) {
+        model.updateSelectionStates(selectedPaths)
+
+        // Update the status count without affecting filters
+        updateStatusLabels()
+    }
+
+    fun getAllMods(): List<ModListItem> {
+        return model.getAllMods()
+    }
+
     fun getSelectedMods(): List<ModListItem> = model.getSelectedMods()
 }

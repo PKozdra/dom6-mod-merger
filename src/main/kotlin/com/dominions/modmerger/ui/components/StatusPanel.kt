@@ -21,7 +21,6 @@ class StatusPanel(
         putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true)
         border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
 
-        // In StatusPanel.kt
         addHyperlinkListener { event ->
             if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                 debug("Hyperlink clicked: '${event.description}'", useDispatcher = false)

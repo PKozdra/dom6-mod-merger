@@ -19,7 +19,7 @@ class ModOutputConfigPanel(
     private var debounceTimer: Timer? = null
     private val DEBOUNCE_DELAY = 500 // 500ms delay
 
-    // UI Components - only keep what we need
+    // UI Components
     private val displayNameField = JTextField(20)
     private val modNameField = JTextField(20)
     private val directoryField = JTextField(30)

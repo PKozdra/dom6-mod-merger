@@ -9,7 +9,7 @@ application {
 }
 
 group = "com.dominions"
-version = "0.1.0"
+version = "0.1.1"
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -18,10 +18,30 @@ dependencies {
     implementation(libs.imageio.tga)
     implementation(libs.slf4j.simple)
     implementation(libs.slf4j.api)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform)
 }
 
 kotlin {
     jvmToolchain(21)
+}
+
+// Test configuration
+tasks.test {
+    useJUnitPlatform()
+
+    // Configure test output
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = false // Set to true if you want to see println/debug output
+    }
+
+    // Use the same JVM toolchain as the main application
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    })
 }
 
 //tasks.jar {

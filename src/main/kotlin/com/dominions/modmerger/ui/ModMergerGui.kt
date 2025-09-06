@@ -9,6 +9,7 @@ import com.dominions.modmerger.infrastructure.FileSystem
 import com.dominions.modmerger.infrastructure.GamePathsManager
 import com.dominions.modmerger.infrastructure.PreferencesManager
 import com.dominions.modmerger.ui.components.ModOutputConfigPanel
+import com.dominions.modmerger.ui.components.ModPresetsPanel
 import com.dominions.modmerger.ui.components.ModTablePanel
 import com.dominions.modmerger.ui.components.output.OutputPanel
 import com.dominions.modmerger.ui.components.settings.SettingsDialog
@@ -35,6 +36,7 @@ class ModMergerGui(
 
     private val modTable = ModTablePanel()
     private val outputPanel = OutputPanel()
+    private val presetsPanel = ModPresetsPanel()
     private val controller = ModMergerController(modMerger, gamePathsManager, groupRegistry, gameDataProvider)
 
     // UI Components
@@ -45,7 +47,6 @@ class ModMergerGui(
         addActionListener { showSettings() }
     }
 
-    // Refresh button removed as requested
     private val resetConfigButton = JButton("Reset Config")
     private var processingTimer: Timer? = null
     private var processingDots = 0
@@ -64,6 +65,7 @@ class ModMergerGui(
     init {
         setupWindow()
         setupComponents()
+        setupPresetPanel()
         setupController()
         loadInitialState()
 
@@ -124,6 +126,28 @@ class ModMergerGui(
             outputConfigPanel.getConfiguration()
         }
 
+        controller.setSelectedModsProvider {
+            modTable.getSelectedMods()
+        }
+
+        controller.setUpdateSelectionStatesCallback { selectedPaths ->
+            modTable.updateSelectionStates(selectedPaths)
+        }
+
+        controller.setAllAvailableModsProvider {
+            modTable.getAllMods()
+        }
+
+        controller.setMissingModsCallback { missingMods ->
+            if (missingMods.isNotEmpty()) {
+                showWarningDialog(
+                    "The following mods from the preset could not be found and were not selected:\n" +
+                            missingMods.joinToString("\n"),
+                    "Missing Mods in Preset"
+                )
+            }
+        }
+
         outputConfigPanel.addValidationListener { isValid ->
             mergeButton.isEnabled = isValid
         }
@@ -131,6 +155,7 @@ class ModMergerGui(
 
     private fun loadInitialState() {
         controller.loadMods()
+        updatePresetsList()
     }
 
     private fun toggleOutputConfig() {
@@ -178,17 +203,36 @@ class ModMergerGui(
         return JPanel(BorderLayout()).apply {
             border = EmptyBorder(10, 10, 5, 10)
 
-            add(JPanel(BorderLayout()).apply {
-                add(mergeButton, BorderLayout.WEST)
-                add(JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
-                    add(settingsButton)
-                    add(JButton("Refresh Mods").apply {
-                        addActionListener { handleRefreshButton() }
-                    })
-                    add(resetConfigButton)
-                    add(outputConfigToggle)
-                }, BorderLayout.EAST)
-            }, BorderLayout.NORTH)
+            // Create a two-row layout
+            val topSection = JPanel(BorderLayout()).apply {
+                // First row - Main action button and settings
+                add(JPanel(BorderLayout()).apply {
+                    // Left side - Merge button (standalone for prominence)
+                    add(JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+                        add(mergeButton)
+                    }, BorderLayout.WEST)
+
+                    // Right side - Settings buttons
+                    add(JPanel(FlowLayout(FlowLayout.RIGHT, 5, 0)).apply {
+                        add(settingsButton)
+                        add(JButton("Refresh Mods").apply {
+                            addActionListener { handleRefreshButton() }
+                        })
+                        add(resetConfigButton)
+                        add(outputConfigToggle)
+                    }, BorderLayout.EAST)
+                }, BorderLayout.NORTH)
+
+                // Second row - Presets panel (dedicated row for better visibility)
+                add(JPanel(BorderLayout()).apply {
+                    border = EmptyBorder(8, 0, 0, 0) // Add some spacing from the top row
+                    add(JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
+                        add(presetsPanel)
+                    }, BorderLayout.EAST)
+                }, BorderLayout.SOUTH)
+            }
+
+            add(topSection, BorderLayout.NORTH)
 
             // Hidden output config panel
             add(JPanel(BorderLayout()).apply {
@@ -272,12 +316,14 @@ class ModMergerGui(
 
     private fun handleResetConfigButton() {
         val result = showConfirmDialog(
-            "Are you sure you want to clear all settings?\nThis will remove all saved mod selections and output settings.",
+            "Are you sure you want to clear all settings?\n" +
+                    "This will remove all saved mod selections, presets, and output settings.",
             "Clear Configuration"
         )
 
         if (result == JOptionPane.YES_OPTION) {
             preferences.clear()
+            updatePresetsList()
             showInfoDialog("Configuration cleared!", "Config")
         }
     }
@@ -309,6 +355,63 @@ class ModMergerGui(
             JOptionPane.QUESTION_MESSAGE
         )
     }
+
+
+    private fun setupPresetPanel() {
+        // Set up a callback for missing mods
+        controller.setMissingModsCallback { missingMods ->
+            if (missingMods.isNotEmpty()) {
+                showWarningDialog(
+                    "The following mods from the preset could not be found and were not selected:\n" +
+                            "${missingMods.joinToString("\n")}",
+                    "Missing Mods in Preset"
+                )
+            }
+        }
+
+        presetsPanel.setOnSavePreset { name, overwrite ->
+            val success = controller.savePreset(name, overwrite)
+            if (success) {
+                updatePresetsList()
+                presetsPanel.selectPreset(name)
+            } else {
+                showWarningDialog(
+                    "Failed to save preset. Make sure you have selected mods.",
+                    "Save Preset Failed"
+                )
+            }
+        }
+
+        presetsPanel.setOnLoadPreset { name ->
+            val success = controller.loadPreset(name)
+            if (!success) {
+                    showWarningDialog(
+                        "Failed to load preset. The preset may be missing or corrupted.",
+                        "Load Preset Failed"
+                    )
+            }
+        }
+
+        presetsPanel.setOnDeletePreset { name ->
+            val success = controller.deletePreset(name)
+            if (success) {
+                updatePresetsList()
+            } else {
+                showWarningDialog(
+                    "Failed to delete preset.",
+                    "Delete Preset Failed"
+                )
+            }
+        }
+
+        updatePresetsList()
+    }
+
+    private fun updatePresetsList() {
+        val presets = controller.getAllPresets()
+        presetsPanel.updatePresets(presets)
+    }
+
 
     fun show() {
         frame.pack()

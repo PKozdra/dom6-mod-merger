@@ -26,6 +26,9 @@
       "type": "com.dominions.modmerger.ui.components.ModOutputConfigPanel"
     },
     {
+      "type": "com.dominions.modmerger.ui.components.ModPresetsPanel"
+    },
+    {
       "type": "com.dominions.modmerger.ui.components.ModTablePanel"
     },
     {
@@ -1366,6 +1369,9 @@
       "glob": "com/formdev/flatlaf/resources/Bundle_pl_PL.properties"
     },
     {
+      "glob": "gamedata/dom6/BaseU.csv"
+    },
+    {
       "glob": "gamedata/dom6/effects_spells.csv"
     },
     {
@@ -1535,6 +1541,9 @@
           "name": "rule"
         }
       ]
+    },
+    {
+      "type": "java.awt.Canvas"
     },
     {
       "type": "java.awt.Color",

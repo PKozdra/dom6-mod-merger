@@ -110,7 +110,6 @@ class ModMergerApplication : Logging {
         debug("Launching Console interface")
         val modManager = ConsoleModManager(
             modMerger = components.modMerger,
-            fileSystem = components.fileSystem,
             gamePathsManager = components.gamePathsManager
         )
 

@@ -7,6 +7,7 @@ twelvemonkeys = "3.12.0"
 graalvm-native = "0.10.3"
 # version for jdk 23 (https://github.com/xzel23/badass-runtime-plugin), replace with original version when it's updated
 beryx = "1.13.1-patch-1"
+junit = "5.11.0"
 
 [libraries]
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
@@ -15,6 +16,10 @@ flatlaf = { group = "com.formdev", name = "flatlaf", version.ref = "flatlaf" }
 imageio-tga = { group = "com.twelvemonkeys.imageio", name = "imageio-tga", version.ref = "twelvemonkeys" }
 slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+
+# Testing
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

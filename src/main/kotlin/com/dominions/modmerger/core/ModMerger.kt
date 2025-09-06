@@ -178,7 +178,8 @@ class ModMerger(
                     .joinToString { (original, new) -> "$original→$new" }
 
                 if (changedMappings.isNotEmpty()) {
-                    debug("Mappings for $type in $name: $changedMappings")
+                    val mappingsNumber = typeMapping.size
+                    debug("$mappingsNumber Mappings for $type in $name: $changedMappings")
                 }
             }
         }
