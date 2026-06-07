@@ -183,7 +183,7 @@ class ModMergerController(
 
     private fun findModFiles(path: File): List<ModFile> {
         return path.walkTopDown()
-            .filter { it.isFile && it.extension == GameConstants.MOD_FILE_EXTENSION }
+            .filter { it.isFile && it.extension.equals(GameConstants.MOD_FILE_EXTENSION, ignoreCase = true) }
             .map { ModFile.fromFile(it) }
             .toList()
     }

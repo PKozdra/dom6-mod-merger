@@ -43,7 +43,7 @@ class ConsoleModManager(
 
         allMods = paths.flatMap { path ->
             path.walkTopDown()
-                .filter { it.isFile && it.extension == GameConstants.MOD_FILE_EXTENSION }
+                .filter { it.isFile && it.extension.equals(GameConstants.MOD_FILE_EXTENSION, ignoreCase = true) }
                 .map { ModFile.fromFile(it) }
                 .map { ModListItem(it) }
                 .toList()

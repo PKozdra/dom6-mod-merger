@@ -125,7 +125,7 @@ class FileSystem(private val gamePathsManager: GamePathsManager) : Logging {
 
         return try {
             directory
-                .listFiles { file -> file.isFile && file.extension == MOD_EXTENSION }
+                .listFiles { file -> file.isFile && file.extension.equals(MOD_EXTENSION, ignoreCase = true) }
                 ?.mapNotNull { file ->
                     try {
                         debug("Found mod file: ${file.name}")
