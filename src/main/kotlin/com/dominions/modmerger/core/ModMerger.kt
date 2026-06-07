@@ -49,6 +49,9 @@ class ModMerger(
             idManager.reset()
             info("ID manager initialized.")
 
+            // Sort mod files alphabetically for deterministic processing
+            val sortedModFiles = modFiles.sortedBy { it.name }
+
             // Core components
             debug("Initializing core components...")
             val entityProcessor = EntityProcessor(gameDataProvider = gameDataProvider)
@@ -73,7 +76,7 @@ class ModMerger(
 
             // Set up groups
             debug("Setting up mod groups...")
-            val processedFiles = groupHandler.processFiles(modFiles)
+            val processedFiles = groupHandler.processFiles(sortedModFiles)
             debug("Mod groups set up.")
 
             // Scan mods
