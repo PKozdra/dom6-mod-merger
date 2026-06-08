@@ -277,12 +277,12 @@ class ModContentWriter(
         }
 
         // Report unclosed blocks with cleaner format
-        blockStack.forEach { block ->
-            warnings.add(MergeWarning.GeneralWarning(
-                message = "Unclosed ${block.type} block at line ${block.line}",
-                modFile = block.fileName
-            ))
-        }
+        //blockStack.forEach { block ->
+        //    warnings.add(MergeWarning.GeneralWarning(
+        //        message = "Unclosed ${block.type} block at line ${block.line}",
+        //        modFile = block.fileName
+        //    ))
+        //}
     }
 
     private fun writeOutput(lines: List<TrackedLine>, writer: Writer) {

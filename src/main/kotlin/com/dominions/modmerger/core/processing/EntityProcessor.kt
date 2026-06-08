@@ -43,6 +43,12 @@ class EntityProcessor(
     // Track active contexts
     private val activeContexts = mutableSetOf<ProcessingContext>()
 
+    // Tracks the entity type of the definition block we're currently inside (e.g. MONSTER while
+    // between #newmonster and #end, ITEM while between #newitem and #end). Used to resolve
+    // context-sensitive commands like #copyspr, which references a monster inside a monster block
+    // but an item inside an item block. Null when not inside any tracked definition block.
+    private var currentBlockType: EntityType? = null
+
     // Block starter regexes matched to contexts
     private val contextStarters = mapOf(
         ModPatterns.NEWMERC_PATTERN to ProcessingContext.MERCENARY_BLOCK,
@@ -160,6 +166,9 @@ class EntityProcessor(
      */
     fun cleanImplicitIdIterators() {
         implicitIdProcessor.cleanIndices()
+        // Reset per-mod block context so a missing/unbalanced #end in one mod can't leak into the next.
+        currentBlockType = null
+        activeContexts.clear()
     }
 
     /**
@@ -208,6 +217,7 @@ class EntityProcessor(
         // Check for block end - clears all contexts
         if (ModPatterns.END.matches(trimmedLine)) {
             activeContexts.clear()
+            currentBlockType = null
         }
     }
 
@@ -231,6 +241,10 @@ class EntityProcessor(
 
         // 2) Detect if it's a new or select entity => handle unnumbered definitions
         detectEntity(line)?.let { match ->
+            // Entering a definition block (#newmonster, #newitem, #selectmonster, ...). Record its
+            // type so context-sensitive commands inside the block (e.g. #copyspr) resolve correctly.
+            currentBlockType = match.type
+
             if (match.isUnnumbered) {
                 // e.g. #newmonster without an ID => assign one
                 val processedLine = implicitIdProcessor.processImplicitDefinition(
@@ -258,10 +272,14 @@ class EntityProcessor(
             }
         }
 
-        // 3) If no definition patterns matched, check usage patterns (#restricted <id>, #armor <id>, etc.)
+        // 3) Context-sensitive sprite copy (#copyspr): resolves against MONSTER or ITEM depending
+        //    on the enclosing definition block, before the blind usage-pattern loop can mis-map it.
+        processCopyspr(line, mappedDef, remapCommentWriter)?.let { return it }
+
+        // 4) If no definition patterns matched, check usage patterns (#restricted <id>, #armor <id>, etc.)
         processUsagePatterns(line, mappedDef, remapCommentWriter)?.let { return it }
 
-        // 4) Lastly, handle special cases
+        // 5) Lastly, handle special cases
         if (line.contains("Keledones")) {
             val newLine = if (line.trim().startsWith("#name")) {
                 line.replace(""""Craft Keledones"""", """"Craft Keledone"""")
@@ -399,6 +417,41 @@ class EntityProcessor(
         }
 
         return null
+    }
+
+    /**
+     * Handles #copyspr, which is context-sensitive: per the modding manual it copies a sprite from
+     * another monster when used inside a monster definition block, and from another item when used
+     * inside an item definition block. We resolve the target entity type from the enclosing block
+     * (defaulting to MONSTER - the most common case and the historical behaviour - when the block
+     * type is unknown) and remap the referenced ID against that type.
+     *
+     * This is deliberately kept out of the generic usage-pattern loop: #copyspr would otherwise
+     * match both the monster and item usage patterns, and the loop would remap it against whichever
+     * type happened to have a mapping for that number. That mis-mapped e.g. a monster's
+     * "#copyspr 898" onto an unrelated remapped ITEM id (898 -> 1507) simply because monster 898
+     * was unmapped (identity) while item 898 had been remapped.
+     */
+    private fun processCopyspr(
+        line: String,
+        mappedDef: MappedModDefinition,
+        remapCommentWriter: (EntityType, Long, Long) -> String
+    ): ProcessedEntity? {
+        val oldId = ModUtils.extractId(line, ModPatterns.USE_COPYSPR) ?: return null
+
+        val type = if (currentBlockType == EntityType.ITEM) EntityType.ITEM else EntityType.MONSTER
+        val newId = mappedDef.getMapping(type, oldId)
+
+        return if (oldId != newId) {
+            ProcessedEntity(
+                ModUtils.replaceId(line, oldId, newId),
+                remapCommentWriter(type, oldId, newId)
+            )
+        } else {
+            // Matched #copyspr but no remap is needed; return as handled so the generic usage loop
+            // (and other fall-through cases) don't get a chance to touch it.
+            ProcessedEntity(line, null)
+        }
     }
 
     /**
