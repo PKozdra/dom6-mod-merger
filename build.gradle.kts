@@ -9,7 +9,6 @@ application {
 }
 
 group = "com.dominions"
-version = "0.1.2"
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -23,8 +22,28 @@ dependencies {
     testRuntimeOnly(libs.junit.platform)
 }
 
+val generateBuildInfo by tasks.registering {
+    val output = layout.buildDirectory.dir("generated/buildinfo/kotlin")
+    val versionValue = project.version.toString()
+    inputs.property("version", versionValue)
+    outputs.dir(output)
+    doLast {
+        val packageDir = output.get().dir("com/dominions/modmerger/generated").asFile
+        packageDir.mkdirs()
+        packageDir.resolve("BuildInfo.kt").writeText(
+            "package com.dominions.modmerger.generated\n\n" +
+                "object BuildInfo {\n    const val VERSION = \"$versionValue\"\n}\n"
+        )
+    }
+}
+
 kotlin {
     jvmToolchain(21)
+    sourceSets["main"].kotlin.srcDir(generateBuildInfo)
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(generateBuildInfo)
 }
 
 // Test configuration
@@ -56,7 +75,7 @@ tasks.test {
 // Common build arguments for both dev and prod
 val commonBuildArgs = listOf(
     "-H:+UnlockExperimentalVMOptions",
-    "-J-Xmx16G",                              // Use up to 16GB RAM for compilation
+    "-J-Xmx${project.findProperty("nativeMaxHeap") ?: "16G"}",
     "-J-XX:ActiveProcessorCount=3",           // Use 3 out of 6 cores
     "-J-XX:MaxRAMPercentage=60",              // Use max 60% of total RAM
     "-Djava.awt.headless=false",

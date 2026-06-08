@@ -1,12 +1,13 @@
 package com.dominions.modmerger.infrastructure
 
+import com.dominions.modmerger.generated.BuildInfo
 import java.awt.Image
 import javax.swing.ImageIcon
 
 object ApplicationConfig : Logging {
 
     const val APP_NAME = "Dominions 6 Mod Merger"
-    const val APP_VERSION = "0.1.2"
+    val APP_VERSION = BuildInfo.VERSION
     private const val APP_ICON_PATH = "icon.ico"
 
     /**

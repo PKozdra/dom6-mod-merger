@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version from tag
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '23'
+          distribution: 'graalvm'
+          native-image-job-reports: 'true'
+          cache: 'gradle'
+
+      - name: Build JAR distribution
+        shell: bash
+        run: |
+          ./gradlew --no-daemon distZip -Pversion="$VERSION"
+          mv "build/distributions/modmerger-${VERSION}.zip" "modmerger-${VERSION}-jar.zip"
+
+      - name: Build native image
+        shell: bash
+        run: ./gradlew --no-daemon nativeCompileProduction -Pversion="$VERSION" -PnativeMaxHeap=12G
+
+      - name: Install UPX
+        run: choco install upx -y
+
+      - name: Compress and package win64
+        shell: bash
+        run: |
+          cd build/native/nativeCompile
+          upx -4 modmerger.exe
+          for f in *.dll; do upx --best "$f" || echo "skip $f"; done
+          mkdir -p "$GITHUB_WORKSPACE/win64"
+          cp *.exe *.dll "$GITHUB_WORKSPACE/win64/"
+          cd "$GITHUB_WORKSPACE"
+          powershell -Command "Compress-Archive -Path win64/* -DestinationPath modmerger-${VERSION}-win64.zip"
+
+      - name: Draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: "Dominions 6 Mod Merger v${{ env.VERSION }}"
+          files: |
+            modmerger-${{ env.VERSION }}-jar.zip
+            modmerger-${{ env.VERSION }}-win64.zip
+
+      - name: Commit version bump
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          git checkout -B master FETCH_HEAD
+          if grep -q "^version=${VERSION}$" gradle.properties; then
+            echo "gradle.properties already at ${VERSION}, skipping commit"
+          else
+            sed -i "s/^version=.*/version=${VERSION}/" gradle.properties
+            git commit -am "Version bump to ${VERSION} [skip ci]"
+            git push origin HEAD:master
+          fi
