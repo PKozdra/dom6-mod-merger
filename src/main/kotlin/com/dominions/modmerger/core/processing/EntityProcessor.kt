@@ -57,6 +57,7 @@ class EntityProcessor(
     /**
      * Check if a specific context is currently active
      */
+    @Suppress("SameParameterValue")
     private fun isInContext(context: ProcessingContext): Boolean {
         return context in activeContexts
     }

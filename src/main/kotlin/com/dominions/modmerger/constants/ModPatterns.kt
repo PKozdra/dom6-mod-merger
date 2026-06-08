@@ -28,6 +28,7 @@ object ModPatterns {
     val SPELL_SELECT_ID = Regex("""#selectspell\s+(\d+)(.*)$""")
     val SPELL_COPY_ID = Regex("""#copyspell\s+(\d+)(.*)$""")
     val SPELL_COPY_NAME = Regex("""#copyspell\s+"([^"]+)"(.*)$""")
+    @Suppress("unused")
     val SPELL_DAMAGEMON_NAME = Regex("""#damagemon\s+"([^"]+)"(.*)$""")
     val SPELL_DAMAGEMON_ID = Regex("""#damagemon\s+(\d+)(.*)$""")
 
@@ -44,6 +45,7 @@ object ModPatterns {
     // Armor
     val NEW_NUMBERED_ARMOR = Regex("""#newarmor\s+(\d+)(.*)$""")
     val NEW_UNNUMBERED_ARMOR = Regex("""#newarmor(.*)$""")
+    @Suppress("unused")
     val NEW_NAMED_ARMOR = Regex("""#newarmor\s+"([^"]+)"(.*)$""")
     val SELECT_NUMBERED_ARMOR = Regex("""#selectarmor\s+(\d+)(.*)$""")
     val USE_NUMBERED_ARMOR = Regex("""#(?:newarmor|armor|copyarmor)\s+(\d+)(.*)$""")
@@ -115,6 +117,7 @@ object ModPatterns {
     // Enchantments
     val USE_GLOBAL_ENCHANTMENT =
         Regex("""#(?:enchrebate50|enchrebate20|enchrebate10|req_noench|req_ench|req_myench|req_friendlyench|req_hostileench|req_enchdom|nationench|enchrebate25p|enchrebate50p)\s+(\d+)(.*)$""")
+    @Suppress("unused")
     val USE_GLOBAL_ENCHANTMENT_DAMAGE = Regex("""#damage\s+(\d+)(.*)$""")
 
     // Utility

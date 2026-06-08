@@ -13,6 +13,7 @@ object ApplicationConfig : Logging {
     /**
      * Gets the application icon, scaling it if dimensions are provided
      */
+    @Suppress("unused")
     fun getApplicationIcon(width: Int? = null, height: Int? = null): ImageIcon? {
         return try {
             val resource = ApplicationConfig::class.java.classLoader.getResource(APP_ICON_PATH)

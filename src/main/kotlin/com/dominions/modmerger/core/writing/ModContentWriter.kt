@@ -298,22 +298,19 @@ class ModContentWriter(
     private fun findSkippableEnds(lines: List<String>): Set<Int> {
         val skippable = mutableSetOf<Int>()
         var lastEndIndex = -1
-        var onlyWhitespaceSince = true
 
         lines.forEachIndexed { index, line ->
             when (line.trim()) {
                 "#end" -> {
-                    if (lastEndIndex != -1 && onlyWhitespaceSince) {
+                    if (lastEndIndex != -1) {
                         skippable.add(index)
                     } else {
                         lastEndIndex = index
-                        onlyWhitespaceSince = true
                     }
                 }
-                "" -> { /* keep onlyWhitespaceSince state */ }
+                "" -> Unit
                 else -> {
                     lastEndIndex = -1
-                    onlyWhitespaceSince = false
                 }
             }
         }
