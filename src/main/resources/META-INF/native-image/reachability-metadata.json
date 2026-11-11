@@ -62,7 +62,25 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.icons.FlatCapsLockIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.icons.FlatCheckBoxIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatCheckBoxMenuItemIcon",
       "methods": [
         {
           "name": "<init>",
@@ -179,7 +197,70 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.icons.FlatInternalFrameCloseIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatInternalFrameIconifyIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatInternalFrameMaximizeIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatInternalFrameRestoreIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatMenuArrowIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.icons.FlatMenuItemArrowIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatOptionPaneErrorIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatOptionPaneInformationIcon",
       "methods": [
         {
           "name": "<init>",
@@ -198,6 +279,87 @@
     },
     {
       "type": "com.formdev.flatlaf.icons.FlatOptionPaneWarningIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatRadioButtonIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatRadioButtonMenuItemIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatRevealIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTabbedPaneCloseIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTreeClosedIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTreeCollapsedIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTreeExpandedIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTreeLeafIcon",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.icons.FlatTreeOpenIcon",
       "methods": [
         {
           "name": "<init>",
@@ -265,7 +427,29 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatCheckBoxMenuItemUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatCheckBoxUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatColorChooserUI",
       "methods": [
         {
           "name": "createUI",
@@ -293,6 +477,28 @@
       "type": "com.formdev.flatlaf.ui.FlatComboBoxUI$FlatComboPopup"
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatDesktopIconUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatDesktopPaneUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatEditorPaneUI",
       "methods": [
         {
@@ -300,6 +506,15 @@
           "parameterTypes": [
             "javax.swing.JComponent"
           ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatEmptyBorder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
         }
       ]
     },
@@ -318,6 +533,37 @@
       "type": "com.formdev.flatlaf.ui.FlatFileChooserUI$FlatShortcutsPanel"
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatFormattedTextFieldUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatInternalFrameUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatInternalFrameUI$FlatInternalFrameBorder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatLabelUI",
       "methods": [
         {
@@ -330,6 +576,15 @@
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatListCellBorder$Default",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatListCellBorder$Focused",
       "methods": [
         {
           "name": "<init>",
@@ -367,6 +622,26 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatMenuBarBorder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatMenuBarUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatMenuItemBorder",
       "methods": [
         {
@@ -377,6 +652,17 @@
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatMenuItemUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatMenuUI",
       "methods": [
         {
           "name": "createUI",
@@ -409,6 +695,17 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatPasswordFieldUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatPopupMenuBorder",
       "methods": [
         {
@@ -418,7 +715,51 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatPopupMenuSeparatorUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatPopupMenuUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatProgressBarUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatRadioButtonMenuItemUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatRadioButtonUI",
       "methods": [
         {
           "name": "createUI",
@@ -436,6 +777,15 @@
           "parameterTypes": [
             "javax.swing.JComponent"
           ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatRootPaneUI$FlatWindowBorder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
         }
       ]
     },
@@ -483,6 +833,39 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatSeparatorUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatSliderUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatSpinnerUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatSplitPaneUI",
       "methods": [
         {
@@ -500,7 +883,27 @@
       "type": "com.formdev.flatlaf.ui.FlatSplitPaneUI$FlatSplitPaneDivider"
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatTabbedPaneUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatTableCellBorder$Default",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatTableCellBorder$Focused",
       "methods": [
         {
           "name": "<init>",
@@ -553,6 +956,17 @@
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatTableUI$FlatBooleanRenderer"
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatTextAreaUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatTextBorder",
@@ -621,6 +1035,17 @@
       ]
     },
     {
+      "type": "com.formdev.flatlaf.ui.FlatToolBarSeparatorUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.formdev.flatlaf.ui.FlatToolBarUI",
       "methods": [
         {
@@ -633,6 +1058,17 @@
     },
     {
       "type": "com.formdev.flatlaf.ui.FlatToolTipUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.formdev.flatlaf.ui.FlatTreeUI",
       "methods": [
         {
           "name": "createUI",
