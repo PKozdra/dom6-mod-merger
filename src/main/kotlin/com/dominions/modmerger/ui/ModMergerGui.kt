@@ -13,6 +13,7 @@ import com.dominions.modmerger.ui.components.ModPresetsPanel
 import com.dominions.modmerger.ui.components.ModTablePanel
 import com.dominions.modmerger.ui.components.output.OutputPanel
 import com.dominions.modmerger.ui.components.settings.SettingsDialog
+import com.dominions.modmerger.ui.model.ModListItem
 import java.awt.*
 import java.util.prefs.Preferences
 import javax.swing.*
@@ -48,7 +49,14 @@ class ModMergerGui(
         addActionListener { showSettings() }
     }
 
+    private val refreshButton = JButton("Refresh Mods").apply {
+        addActionListener { handleRefreshButton() }
+    }
+
     private val resetConfigButton = JButton("Reset Config")
+    private var isScanning = false
+    private var isMerging = false
+    private var isConfigValid = true
     private var processingTimer: Timer? = null
     private var processingDots = 0
 
@@ -149,14 +157,33 @@ class ModMergerGui(
             }
         }
 
+        isConfigValid = outputConfigPanel.getConfiguration() != null
         outputConfigPanel.addValidationListener { isValid ->
-            mergeButton.isEnabled = isValid
+            isConfigValid = isValid
+            updateActionButtons()
         }
     }
 
     private fun loadInitialState() {
-        controller.loadMods()
+        scanMods()
         updatePresetsList()
+    }
+
+    private fun scanMods(onComplete: ((List<ModListItem>) -> Unit)? = null) {
+        isScanning = true
+        modTable.setLoading(true)
+        updateActionButtons()
+        controller.loadMods { mods ->
+            onComplete?.invoke(mods)
+            isScanning = false
+            modTable.setLoading(false)
+            updateActionButtons()
+        }
+    }
+
+    private fun updateActionButtons() {
+        mergeButton.isEnabled = isConfigValid && !isScanning && !isMerging
+        refreshButton.isEnabled = !isScanning
     }
 
     private fun toggleOutputConfig() {
@@ -216,9 +243,7 @@ class ModMergerGui(
                     // Right side - Settings buttons
                     add(JPanel(FlowLayout(FlowLayout.RIGHT, 5, 0)).apply {
                         add(settingsButton)
-                        add(JButton("Refresh Mods").apply {
-                            addActionListener { handleRefreshButton() }
-                        })
+                        add(refreshButton)
                         add(resetConfigButton)
                         add(outputConfigToggle)
                     }, BorderLayout.EAST)
@@ -248,11 +273,13 @@ class ModMergerGui(
     }
 
     private fun handleRefreshButton() {
+        if (isScanning) return
+
         val selectedPaths = modTable.getSelectedMods()
             .mapNotNull { it.modFile.file?.absolutePath }
             .toSet()
 
-        controller.loadMods { newMods ->
+        scanMods { newMods ->
             if (PreferencesManager.isAutoRestoreEnabled) {
                 modTable.updateModsPreservingSelections(newMods, selectedPaths)
             } else {
@@ -304,13 +331,15 @@ class ModMergerGui(
             }
         }
 
-        mergeButton.isEnabled = false
+        isMerging = true
+        updateActionButtons()
         startProcessingAnimation()
         outputPanel.pauseSearchUpdates = true
 
         controller.mergeMods(selectedMods, config) {
             outputPanel.pauseSearchUpdates = false
-            mergeButton.isEnabled = true
+            isMerging = false
+            updateActionButtons()
             stopProcessingAnimation()
         }
     }

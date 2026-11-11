@@ -32,7 +32,15 @@ class ModTablePanel : JPanel(), Logging {
 
     private val contextMenu = ModContextMenu(table) { message -> updateStatusMessage(message) }
 
+    private val contentCards = CardLayout()
+    private val contentPanel = JPanel(contentCards)
+    private var isLoading = false
+
     companion object {
+        private const val TABLE_CARD = "table"
+        private const val LOADING_CARD = "loading"
+        private const val LOADING_TEXT = "Scanning mods…"
+
         private const val ICON_WIDTH = 256
         private const val ICON_HEIGHT = 64
         private const val ROW_PADDING = 4
@@ -56,9 +64,11 @@ class ModTablePanel : JPanel(), Logging {
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
 
         add(createControlPanel(), BorderLayout.NORTH)
-        add(JScrollPane(table).apply {
+        contentPanel.add(JScrollPane(table).apply {
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
-        }, BorderLayout.CENTER)
+        }, TABLE_CARD)
+        contentPanel.add(createLoadingPanel(), LOADING_CARD)
+        add(contentPanel, BorderLayout.CENTER)
 
         statusPanel = StatusPanel { mod ->
             focusOnMod(mod)
@@ -66,6 +76,31 @@ class ModTablePanel : JPanel(), Logging {
         add(statusPanel, BorderLayout.SOUTH)
 
         table.rowSorter = rowSorter
+    }
+
+    private fun createLoadingPanel() = JPanel(GridBagLayout()).apply {
+        add(JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
+            add(JLabel(LOADING_TEXT).apply {
+                font = font.deriveFont(Font.BOLD, 16f)
+                alignmentX = CENTER_ALIGNMENT
+            })
+            add(Box.createVerticalStrut(10))
+            add(JProgressBar().apply {
+                isIndeterminate = true
+                alignmentX = CENTER_ALIGNMENT
+                preferredSize = Dimension(240, 12)
+                maximumSize = Dimension(240, 12)
+            })
+        })
+    }
+
+    fun setLoading(loading: Boolean) {
+        isLoading = loading
+        contentCards.show(contentPanel, if (loading) LOADING_CARD else TABLE_CARD)
+        searchField.isEnabled = !loading
+        updateStatusLabels()
     }
 
     private fun createControlPanel() = JPanel(BorderLayout(5, 5)).apply {
@@ -129,6 +164,7 @@ class ModTablePanel : JPanel(), Logging {
         val visibleMods = table.rowCount
 
         modCountLabel.text = when {
+            isLoading -> LOADING_TEXT
             totalMods == 0 -> "No mods found"
             visibleMods < totalMods -> "Showing $visibleMods of $totalMods mods"
             else -> "Showing all $totalMods mods"

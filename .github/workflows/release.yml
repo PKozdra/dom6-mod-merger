@@ -45,12 +45,11 @@ jobs:
         shell: bash
         run: |
           cd build/native/nativeCompile
-          upx -4 modmerger.exe
           for f in *.dll; do upx --best "$f" || echo "skip $f"; done
           mkdir -p "$GITHUB_WORKSPACE/win64"
           cp *.exe *.dll "$GITHUB_WORKSPACE/win64/"
-          cd "$GITHUB_WORKSPACE"
-          powershell -Command "Compress-Archive -Path win64/* -DestinationPath modmerger-${VERSION}-win64.zip"
+          cd "$GITHUB_WORKSPACE/win64"
+          7z a -tzip -mx=9 -mfb=258 -mpass=15 "$GITHUB_WORKSPACE/modmerger-${VERSION}-win64.zip" ./*
 
       - name: Draft release
         uses: softprops/action-gh-release@v3

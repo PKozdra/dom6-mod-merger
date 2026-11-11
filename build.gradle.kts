@@ -82,7 +82,6 @@ val commonBuildArgs = listOf(
     "--initialize-at-run-time=com.formdev.flatlaf",
     "-H:-CheckToolchain",
     "-H:+AddAllCharsets",
-    "-H:EnableURLProtocols=http,https",
     "-H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image"
 )
 

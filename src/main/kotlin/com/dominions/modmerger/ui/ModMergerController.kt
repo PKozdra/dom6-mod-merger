@@ -25,6 +25,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.IOException
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import javax.swing.SwingUtilities
 
 class ModMergerController(
@@ -66,14 +72,38 @@ class ModMergerController(
     }
 
     fun loadMods(onComplete: ((List<ModListItem>) -> Unit)? = null) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val startNanos = System.nanoTime()
+            val modItems = try {
+                scanMods()
+            } catch (e: Exception) {
+                error("Error scanning mods: ${e.message}", e)
+                emptyList()
+            }
+            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+
+            SwingUtilities.invokeLater {
+                if (PreferencesManager.isAutoRestoreEnabled) {
+                    val savedPaths = PreferencesManager.getSelectedModPaths()
+                    modLoadListener?.invoke(modItems.map { mod ->
+                        mod.copy(isSelected = mod.modFile.file?.absolutePath in savedPaths)
+                    })
+                } else {
+                    modLoadListener?.invoke(modItems)
+                }
+                onComplete?.invoke(modItems)
+                info("Found ${modItems.size} total mods in $elapsedMs ms")
+            }
+        }
+    }
+
+    private fun scanMods(): List<ModListItem> {
         val paths = buildList {
-            // Add Steam workshop path if available
             gamePathsManager.findSteamModPath()?.let {
                 add(it)
                 info("Found Steam workshop path: $it", useDispatcher = false)
             }
 
-            // Add local mods directory
             add(gamePathsManager.getLocalModPath().also {
                 info("Using local mods path: $it", useDispatcher = false)
             })
@@ -81,52 +111,31 @@ class ModMergerController(
 
         if (paths.isEmpty()) {
             warn("No valid mod paths found. Please specify a custom path in Settings.")
-            return
+            return emptyList()
         }
 
         val modItems = mutableListOf<ModListItem>()
-        var totalMods = 0
-
         val modsByGroup = mutableMapOf<ModGroup?, MutableList<String>>()
 
         paths.forEach { path ->
             try {
-                val mods = findModFiles(path)
-                mods.forEach { modFile ->
+                findModFiles(path).forEach { modFile ->
                     val group = groupRegistry.findGroupForMod(modFile)
                     modsByGroup.getOrPut(group) { mutableListOf() }.add(modFile.modName)
-
-                    modItems.add(ModListItem(
-                        modFile = modFile,
-                        group = group,
-                        relatedMods = emptyList() // Filled in later
-                    ))
-                    totalMods++
+                    modItems.add(ModListItem(modFile = modFile, group = group))
                 }
             } catch (e: Exception) {
                 error("Error loading mods from $path: ${e.message}", e)
             }
         }
 
-        // Fill in related mods
-        modItems.forEachIndexed { index, mod ->
-            if (mod.group != null) {
-                val relatedMods = modsByGroup[mod.group]?.filter { it != mod.modFile.modName } ?: emptyList()
-                modItems[index] = mod.copy(relatedMods = relatedMods)
-            }
-        }
-
-        SwingUtilities.invokeLater {
-            if (PreferencesManager.isAutoRestoreEnabled) {
-                val savedPaths = PreferencesManager.getSelectedModPaths()
-                modLoadListener?.invoke(modItems.map { mod ->
-                    mod.copy(isSelected = mod.modFile.file?.absolutePath in savedPaths)
-                })
+        return modItems.map { mod ->
+            if (mod.group == null) {
+                mod
             } else {
-                modLoadListener?.invoke(modItems)
+                val relatedMods = modsByGroup[mod.group]?.filter { it != mod.modFile.modName } ?: emptyList()
+                mod.copy(relatedMods = relatedMods)
             }
-            onComplete?.invoke(modItems)
-            info("Found $totalMods total mods")
         }
     }
 
@@ -181,11 +190,26 @@ class ModMergerController(
         }
     }
 
-    private fun findModFiles(path: File): List<ModFile> {
-        return path.walkTopDown()
-            .filter { it.isFile && it.extension.equals(GameConstants.MOD_FILE_EXTENSION, ignoreCase = true) }
-            .map { ModFile.fromFile(it) }
-            .toList()
+    private fun findModFiles(root: File): List<ModFile> {
+        if (!root.isDirectory) return emptyList()
+
+        val suffix = ".${GameConstants.MOD_FILE_EXTENSION}"
+        val found = mutableListOf<ModFile>()
+        Files.walkFileTree(root.toPath(), object : SimpleFileVisitor<Path>() {
+            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                if (attrs.isRegularFile && file.fileName.toString().endsWith(suffix, ignoreCase = true)) {
+                    try {
+                        found.add(ModFile.fromFile(file.toFile()))
+                    } catch (e: Exception) {
+                        warn("Skipping mod file $file: ${e.message}", useDispatcher = false)
+                    }
+                }
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun visitFileFailed(file: Path, exc: IOException): FileVisitResult = FileVisitResult.CONTINUE
+        })
+        return found
     }
 
 
