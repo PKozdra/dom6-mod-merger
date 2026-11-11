@@ -1378,6 +1378,24 @@
       "glob": "gamedata/dom6/spells.csv"
     },
     {
+      "glob": "gamedata/dom6/weapons.csv"
+    },
+    {
+      "glob": "gamedata/dom6/armors.csv"
+    },
+    {
+      "glob": "gamedata/dom6/BaseI.csv"
+    },
+    {
+      "glob": "gamedata/dom6/MagicSites.csv"
+    },
+    {
+      "glob": "gamedata/dom6/nations.csv"
+    },
+    {
+      "glob": "icons/app_*.png"
+    },
+    {
       "glob": "icons/folder_icon.png"
     },
     {

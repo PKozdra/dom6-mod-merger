@@ -18,7 +18,6 @@ class ModFile private constructor(
 
     companion object {
         private const val HEADER_SIZE = 4096
-        private const val BUFFER_SIZE = 8192
 
         private val METADATA_PREFIXES = mapOf(
             "#modname" to { content: String -> content.substringAfter("\"").removeSuffix("\"") },
@@ -32,7 +31,7 @@ class ModFile private constructor(
             return ModFile(
                 file = file,
                 name = file.nameWithoutExtension,
-                contentProvider = { readFileEfficiently(file) }
+                contentProvider = { file.readText() }
             )
         }
 
@@ -57,21 +56,6 @@ class ModFile private constructor(
             require(file.canRead()) { "File is not readable: ${file.path}" }
             require(file.extension.equals("dm", ignoreCase = true)) {
                 "File must have .dm extension: ${file.path}"
-            }
-        }
-
-        private fun readFileEfficiently(file: File): String {
-            return FileChannel.open(file.toPath(), StandardOpenOption.READ).use { channel ->
-                val buffer = ByteBuffer.allocate(BUFFER_SIZE)
-                val builder = StringBuilder((file.length() + 1024).toInt())
-
-                while (channel.read(buffer) != -1) {
-                    buffer.flip()
-                    builder.append(StandardCharsets.UTF_8.decode(buffer))
-                    buffer.clear()
-                }
-
-                builder.toString()
             }
         }
     }

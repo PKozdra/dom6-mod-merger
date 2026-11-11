@@ -26,7 +26,7 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 24	Area Feeble Mind	-1	1	-1	0	-1	0	24	1	0	0	0	0	33554432	
 25	10 Trolls	-1	1	-1	0	-1	0	25	10	0	0	0	60	518	
 26	40 imps	-1	1	-1	0	-1	0	26	40	0	0	0	0	303	
-27	"Strength, Barkskin and Regeneration"	-1	1	-1	0	-1	0	27	1	0	0	0	0	176	
+27	Strength, Barkskin and Regeneration	-1	1	-1	0	-1	0	27	1	0	0	0	0	176	
 28	Court of Gnomes	-1	1	-1	0	-1	0	28	15	0	0	0	0	561	
 29	Court of Sylphs	-1	1	-1	0	-1	0	29	15	0	0	0	0	562	
 30	Archer Illusions	-1	1	-1	0	-1	0	30	40	0	0	0	0	3233	
@@ -129,7 +129,7 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 127	Vine Fatigue	-1	1	6	1	-1	0	127	1	0	0	0	0	33	
 128	Carrion Poison	-1	1	6	1	-1	0	128	1	0	0	0	129	2008	
 129	Carrion Seed	-1	1	-1	0	-1	0	129	1	0	0	0	0	144115188075855872	
-130	...	-1	1	-1	0	-1	0	130	1	0	0	0	0	0	
+130	Pillar of Truths	-1	1	-1	0	-1	0	130	1	0	0	0	0	144	
 131	...	-1	1	-1	0	-1	0	131	1	0	0	0	0	0	
 132	...	-1	1	-1	0	-1	0	132	1	0	0	0	0	0	
 133	...	-1	1	-1	0	-1	0	133	1	0	0	0	0	0	
@@ -320,7 +320,7 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 318	Contact Scorpion Man	0	8	3	1	0	1	318	1	0	0	12	0	1649	
 319	Inner Furnace	4	5	0	3	-1	0	319	1	0	0	1	0	16384	
 320	Infernal Breeding	6	3	8	2	-1	0	320	1014	0	0	25	0	1	
-321	Summon Bears	0	3	6	1	9	1	321	15	0	0	8	0	3003	
+321	Summon Bears	0	3	6	1	9	1	321	10	0	0	8	0	3003	
 322	Summon Simargl	0	2	1	1	-1	0	322	1	0	0	1	0	1947	
 323	Summon Firebird	0	3	0	1	4	1	323	1	0	0	2	0	1946	
 324	Send Lady Midday	0	5	1	3	5	1	324	1	0	0	5	0	1956	
@@ -479,7 +479,7 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 477	Contact Angel of the Host	0	5	4	3	-1	0	477	1	0	0	7	0	3870	
 478	Contact Harbinger	0	6	4	4	-1	0	478	1	0	0	25	0	464	
 479	Angelic Choir	0	6	4	3	-1	0	479	3	0	0	15	0	1367	
-480	Angelic Host	0	7	4	5	-1	0	480	6	0	0	50	0	3870	
+480	Angelic Host	0	7	4	5	-1	0	480	7	0	0	50	0	3870	
 481	Heavenly Wrath	0	7	4	3	0	1	481	1	0	0	35	0	1369	
 482	Heavenly Choir	0	9	4	7	0	2	482	1	0	0	144	68	1368	
 483	Bind Harlequin	6	1	8	1	-1	0	483	1	0	0	1	0	1000	
@@ -635,7 +635,7 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 633	Burning Hands	2	1	0	1	-1	0	633	1	0	5	0	0	1014	
 634	Fire Darts	2	1	0	1	-1	0	634	1003	1	20	0	0	10	
 635	Flame Bolt	2	1	0	2	-1	0	635	1	2	20	0	0	2011	
-636	Shocking Grasp	2	1	1	1	-1	0	636	1	0	3	0	1	3015	
+636	Shocking Grasp	2	1	1	1	-1	0	636	1	0	5	0	1	3015	
 637	Gust of Winds	2	1	1	1	-1	0	637	1	2	10	0	120	2013	
 638	Slime	2	1	2	1	-1	0	638	1	2	20	0	0	134217728	
 639	Water Strike	2	1	2	1	-1	0	639	1	2	20	0	0	2011	
@@ -881,10 +881,10 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 879	Ice Walls	1	7	2	5	-1	0	879	1	0	0	15	0	129	
 880	Sea of Ice	1	7	2	6	-1	0	880	1	0	0	80	0	28	
 881	Marble Warriors	1	7	3	3	-1	0	881	1	0	0	1	0	65536	
-882	Iron Walls	1	7	3	5	-1	0	882	1	0	0	10	0	113	
+882	Iron Walls	1	7	3	5	-1	0	882	1	0	0	15	0	113	
 883	Doom	1	7	4	4	-1	0	883	1	0	0	1	0	2	
 884	Will of the Fates	1	7	4	5	-1	0	884	1	0	0	2	0	1	
-885	Enchanted Walls	1	7	4	5	-1	0	885	1	0	0	10	0	142	
+885	Enchanted Walls	1	7	4	5	-1	0	885	1	0	0	12	0	142	
 886	Bone Grinding	1	7	5	7	-1	0	886	1	0	0	1	108	3	
 887	Curse of the Frog Prince	1	7	6	2	-1	0	887	1	100	20	0	0	2222	
 888	Creeping Doom	1	7	6	3	-1	0	888	5055	0	0	1	0	-9	
@@ -1463,3 +1463,13 @@ id	name	school	researchlevel	path1	pathlevel1	path2	pathlevel2	effect_record_id	
 1461	Infernal Invisibility	-1	1	-1	0	-1	0	1461	1	0	0	0	0	1073741824	
 1462	Featherweight Army	4	7	1	4	-1	0	1462	1	0	0	2	0	4503599627370496	
 1463	Army of Immaculate Mounts	4	7	6	4	-1	0	1463	1	0	0	2	0	536870912	
+1464	Summon Lauma	0	6	7	2	6	2	1464	1	0	0	35	0	4092	
+1465	Awaken the Dreamwild	4	5	7	4	6	2	1465	1	0	0	18	0	145	
+1466	Herd of Moose	0	3	6	2	-1	0	1466	1013	0	0	5	0	1084	
+1467	Summon Fay Archers	0	4	7	2	6	1	1467	505	0	0	10	0	4116	
+1468	Summon Unseelie Folk	0	3	7	2	2	1	1468	10	0	0	5	0	-26	
+1469	Summon Unseelie Soldiers	0	4	7	2	2	1	1469	505	0	0	12	0	3906	
+1470	Summon Unseelie Archers	0	4	7	2	2	1	1470	505	0	0	10	0	4117	
+1471	Summon Unseelie Knights	0	5	7	3	2	1	1471	3	0	0	15	0	3907	
+1472	Summon Unseelie Prince	0	6	7	4	2	1	1472	1	0	0	30	0	3909	
+1473	Herd of Gnus	0	3	6	2	-1	0	1473	1018	0	0	5	0	4132	

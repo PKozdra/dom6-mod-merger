@@ -77,37 +77,33 @@ val commonBuildArgs = listOf(
     "-H:+UnlockExperimentalVMOptions",
     "-J-Xmx${project.findProperty("nativeMaxHeap") ?: "16G"}",
     "-J-XX:ActiveProcessorCount=3",           // Use 3 out of 6 cores
-    "-J-XX:MaxRAMPercentage=60",              // Use max 60% of total RAM
     "-Djava.awt.headless=false",
     "--initialize-at-build-time=org.slf4j",
     "--initialize-at-run-time=com.formdev.flatlaf",
     "-H:-CheckToolchain",
     "-H:+AddAllCharsets",
-    "-H:+JNI",
     "-H:EnableURLProtocols=http,https",
-    "-H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image",
-    "--enable-preview",
-    "--no-fallback"
+    "-H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image"
 )
 
 // Production-specific build arguments
 val productionBuildArgs = listOf(
     //"-Os",                                    // Size optimization
+    "-march=compatibility",                   // the default needs a CPU with AVX2
     "-R:MaxHeapSize=4G",                      // Memory limit
     "-H:+RemoveUnusedSymbols",                // Remove unused symbols
-    "-H:-PrintAnalysisCallTree",              // Disable analysis tree printing
-    "-H:-ReportExceptionStackTraces",         // Disable exception stack traces
-    "-H:Log=registerResource:5",              // Reduce logging verbosity
     //"--initialize-at-build-time",             // Initialize more at build time
     "-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS",
     "-H:NativeLinkerOption=/ENTRY:mainCRTStartup",
+    // the exe icon, icon.res is icon.ico compiled with "rc icon.rc"
+    "-H:NativeLinkerOption=${file("packaging/icon.res")}",
     //"--pgo=${project.projectDir.resolve("src/main/resources/profiles/default.iprof")}"
 )
 
 // Development-specific build arguments
 val developmentBuildArgs = listOf(
-    "-H:+ReportExceptionStackTraces",
-    "--verbose"
+    "-Ob",                                    // quick build, the exe runs slower
+    "-H:+ReportExceptionStackTraces"
 )
 
 // Improved agent task
@@ -119,8 +115,7 @@ tasks.register<JavaExec>("generateGraalConfig") {
 
     jvmArgs = listOf(
         "-agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image",
-        "-Djava.awt.headless=false",
-        "--enable-preview"
+        "-Djava.awt.headless=false"
     )
 }
 
@@ -151,6 +146,7 @@ tasks.register("nativeRunProduction") {
 }
 
 graalvmNative {
+    // native-image comes from GRAALVM_HOME, or from JAVA_HOME when that is a GraalVM
     toolchainDetection.set(false)
 
     metadataRepository {
@@ -162,10 +158,6 @@ graalvmNative {
         named("main") {
             imageName.set("modmerger")
             mainClass.set("com.dominions.modmerger.MainKt")
-
-            javaLauncher.set(javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(23))
-            })
 
             val isProductionBuild = project.gradle.startParameter.taskNames.any { it.contains("Production") }
 
@@ -180,7 +172,6 @@ graalvmNative {
                 }
             )
 
-            jvmArgs.add("--enable-preview")
             resources.autodetect()
         }
 
@@ -188,10 +179,6 @@ graalvmNative {
         register("instrumented") {
             imageName.set("modmerger")
             mainClass.set("com.dominions.modmerger.MainKt")
-
-            javaLauncher.set(javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(23))
-            })
 
             buildArgs.set(
                 buildList {
@@ -207,7 +194,6 @@ graalvmNative {
                 tasks.named("jar")
             )
 
-            jvmArgs.add("--enable-preview")
             resources.autodetect()
         }
     }

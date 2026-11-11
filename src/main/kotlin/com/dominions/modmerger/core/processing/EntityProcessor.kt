@@ -1,7 +1,6 @@
 package com.dominions.modmerger.core.processing
 
 import com.dominions.modmerger.constants.ModPatterns
-import com.dominions.modmerger.constants.RegexWrapper
 import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.domain.MappedModDefinition
 import com.dominions.modmerger.domain.ModDefinition
@@ -31,8 +30,6 @@ class EntityProcessor(
     data class EntityMatch(
         val type: EntityType,
         val id: Long?,         // extracted from the command
-        val name: String?,     // for referencing by name
-        val patternName: String,
         val isUnnumbered: Boolean = false
     )
 
@@ -78,9 +75,7 @@ class EntityProcessor(
             EntityType.ENCHANTMENT     to listOf(ModPatterns.USE_GLOBAL_ENCHANTMENT),
             EntityType.NAME_TYPE       to listOf(ModPatterns.USE_NAMETYPE),
             EntityType.POPTYPE         to listOf(ModPatterns.USE_NUMBERED_POPTYPE)
-        ).mapValues { (_, patterns) ->
-            patterns.map { RegexWrapper.fromRegex(it) }
-        }
+        )
 
         // Patterns for new/select entity definitions
         private val DEFINITION_PATTERNS = mapOf(
@@ -132,9 +127,7 @@ class EntityProcessor(
             EntityType.POPTYPE to listOf(
                 ModPatterns.SELECT_NUMBERED_POPTYPE
             )
-        ).mapValues { (_, patterns) ->
-            patterns.map { RegexWrapper.fromRegex(it) }
-        }
+        )
 
         // Patterns for unnumbered definitions (#newmonster, #newweapon, #newspell with no ID, etc.)
         private val UNNUMBERED_PATTERNS = mapOf(
@@ -157,9 +150,9 @@ class EntityProcessor(
             EntityType.NATION           to listOf(ModPatterns.NATION_REFERENCES),
             EntityType.SPELL            to listOf(ModPatterns.SPELL_REFERENCES),
             EntityType.RESTRICTED_ITEM  to listOf(ModPatterns.RESTRICTED_ITEM_REFERENCES),
-        ).mapValues { (_, patterns) ->
-            patterns.map { RegexWrapper.fromRegex(it) }
-        }
+        )
+
+        private val QUOTED_NAME = Regex(""""([^"]+)"""")
     }
 
     /**
@@ -325,27 +318,26 @@ class EntityProcessor(
 
         REFERENCE_PATTERNS.forEach { (type, patterns) ->
             for (pattern in patterns) {
-                pattern.toRegex().find(line)?.let {
-                    val nameMatch = Regex(""""([^"]+)"""").find(line) ?: return@let
-                    val name = nameMatch.groupValues[1]
+                if (!pattern.containsMatchIn(line)) continue
+                val nameMatch = QUOTED_NAME.find(line) ?: continue
+                val name = nameMatch.groupValues[1]
 
-                    // Try vanilla data
-                    val vanillaId = when(type) {
-                        EntityType.MONSTER -> gameDataProvider.getMonsterByName(name)?.id
-                        EntityType.SPELL -> gameDataProvider.getSpellByName(name)?.id
-                        else -> null
-                    }
+                // #selectmonster "Troll" opens a monster block too
+                if (line.trimStart().startsWith("#select")) {
+                    currentBlockType = type
+                }
 
-                    if (vanillaId != null) {
-                        // For vanilla IDs, we use the same ID (no mapping needed)
-                        return createProcessedEntity(line, nameMatch, type, name, vanillaId, isVanilla = true)
-                    }
+                val vanillaId = gameDataProvider.findVanillaIdByName(type, name)
+                val modId = modDef.getDefinition(type).getIdForName(name)?.let { mappedDef.getMapping(type, it) }
 
-                    // Try mod definitions
-                    modDef.getDefinition(type).getIdForName(name)?.let { oldId ->
-                        val newId = mappedDef.getMapping(type, oldId)
-                        return createProcessedEntity(line, nameMatch, type, name, newId)
-                    }
+                // the game takes the last spell with a name and the first record of every other type
+                // so a mod spell wins over a vanilla spell, and vanilla wins for the other types
+                val preferMod = type == EntityType.SPELL
+                return when {
+                    preferMod && modId != null -> createProcessedEntity(line, nameMatch, type, name, modId)
+                    vanillaId != null -> createProcessedEntity(line, nameMatch, type, name, vanillaId, isVanilla = true)
+                    modId != null -> createProcessedEntity(line, nameMatch, type, name, modId)
+                    else -> null
                 }
             }
         }
@@ -387,7 +379,7 @@ class EntityProcessor(
 
         USAGE_PATTERNS.forEach { (entityType, patterns) ->
             for (pattern in patterns) {
-                ModUtils.extractId(line, pattern.toRegex())?.let { oldId ->
+                ModUtils.extractId(line, pattern)?.let { oldId ->
                     // Special handling for negative IDs in monster commands
                     if (entityType == EntityType.MONSTER && oldId < 0) {
                         // Convert to positive ID and treat as a montag
@@ -465,23 +457,11 @@ class EntityProcessor(
 
         DEFINITION_PATTERNS.forEach { (type, patterns) ->
             for (pattern in patterns) {
-                if (pattern.matches(trimmed)) {
-                    val patName = pattern.getPatternName()
-                    // For unnumbered patterns, we shouldn't try to extract ID
-                    val isUnnum = UNNUMBERED_PATTERNS.keys.any {
-                        it.pattern == pattern.toRegex().pattern
-                    }
-                    // Only try to extract id if it's not an unnumbered pattern
-                    val extractedId = if (!isUnnum) {
-                        ModUtils.extractId(trimmed, pattern.toRegex())
-                    } else null
-                    val extractedName = ModUtils.extractName(trimmed, pattern.toRegex())
-
+                if (pattern.containsMatchIn(trimmed)) {
+                    val isUnnum = pattern in UNNUMBERED_PATTERNS
                     return EntityMatch(
                         type = type,
-                        id = extractedId,
-                        name = extractedName,
-                        patternName = patName,
+                        id = if (isUnnum) null else ModUtils.extractId(trimmed, pattern),
                         isUnnumbered = isUnnum
                     )
                 }

@@ -5,17 +5,18 @@ import com.dominions.modmerger.domain.EntityType
 import kotlin.math.abs
 
 object ModRanges {
+    // highest vanilla number of each type in Dominions 6.37, from the id column of the CSVs in gamedata/dom6
+    // update these together with the CSVs when a game update adds records
     object Vanilla {
-        const val WEAPON_END: Long = 873L    // Changed from 999L to match in-game
-        const val ARMOR_END: Long = 292L     // Changed from 399L to match in-game
-        const val MONSTER_END: Long = 5000L  // Changed from 5000L to match in-game (4063L)
+        const val WEAPON_END: Long = 885L    // weapons.csv
+        const val ARMOR_END: Long = 296L     // armors.csv
+        const val MONSTER_END: Long = 4999L  // vanilla ends at 4136, #newmonster only takes 5000 and up
         const val NAMETYPE_END: Long = 169L
-        const val SPELL_END: Long = 1463L    // Changed from 1999L to match in-game
+        const val SPELL_END: Long = 1473L    // spells.csv
         const val ENCHANTMENT_END: Long = 199L
-        const val ITEM_END: Long = 528L      // Changed from 699L to match in-game
-        // SITE_END supposed to be 1699L but modder DGAF, change later
-        const val SITE_END: Long = 1499L
-        const val NATION_END: Long = 149L
+        const val ITEM_END: Long = 529L      // BaseI.csv
+        const val SITE_END: Long = 1405L     // MagicSites.csv
+        const val NATION_END: Long = 134L    // nations.csv
         const val POPTYPE_END: Long = 124L
         const val RESTRICTED_ITEM_END: Long = 0L  // No vanilla restricted items
         const val EVENTCODE_END: Long = 0L  // 0 is default/reset code
@@ -28,15 +29,15 @@ object ModRanges {
         const val EVENTCODE_END: Long = -300L
 
         // Weapons
-        const val WEAPON_START: Long = Vanilla.WEAPON_END + 1  // 1000, but actually 874 in-game
+        const val WEAPON_START: Long = Vanilla.WEAPON_END + 1
         const val WEAPON_END: Long = 3999L
 
         // Armor
-        const val ARMOR_START: Long = Vanilla.ARMOR_END + 1L    // 400, but actually 293 in-game
+        const val ARMOR_START: Long = Vanilla.ARMOR_END + 1L
         const val ARMOR_END: Long = 1999L
 
         // Monsters
-        const val MONSTER_START: Long = Vanilla.MONSTER_END + 1L // 5000, but actually 4063 in-game
+        const val MONSTER_START: Long = Vanilla.MONSTER_END + 1L // 5000, the lowest number #newmonster takes
         const val MONSTER_END: Long = 19999
 
         // Name Types
@@ -44,7 +45,7 @@ object ModRanges {
         const val NAMETYPE_END: Long = 399L
 
         // Spells
-        const val SPELL_START: Long = Vanilla.SPELL_END + 1    // 2000
+        const val SPELL_START: Long = Vanilla.SPELL_END + 1
         const val SPELL_END: Long = 7999L
 
         // Enchantments
@@ -52,15 +53,15 @@ object ModRanges {
         const val ENCHANTMENT_END: Long = 9999L
 
         // Items
-        const val ITEM_START: Long = Vanilla.ITEM_END + 1      // 700
+        const val ITEM_START: Long = Vanilla.ITEM_END + 1
         const val ITEM_END: Long = 1999L
 
         // Sites
-        const val SITE_START: Long = Vanilla.SITE_END + 1      // 1700
+        const val SITE_START: Long = Vanilla.SITE_END + 1
         const val SITE_END: Long = 3999L
 
         // Nations
-        const val NATION_START: Long = Vanilla.NATION_END + 1L  // 150
+        const val NATION_START: Long = Vanilla.NATION_END + 1L
         const val NATION_END: Long = 499L
 
         // Population Types

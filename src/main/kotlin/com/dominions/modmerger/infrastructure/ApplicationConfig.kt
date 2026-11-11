@@ -4,32 +4,13 @@ import com.dominions.modmerger.generated.BuildInfo
 import java.awt.Image
 import javax.swing.ImageIcon
 
-object ApplicationConfig : Logging {
+object ApplicationConfig {
 
     const val APP_NAME = "Dominions 6 Mod Merger"
     val APP_VERSION = BuildInfo.VERSION
-    private const val APP_ICON_PATH = "icon.ico"
 
-    /**
-     * Gets the application icon, scaling it if dimensions are provided
-     */
-    @Suppress("unused")
-    fun getApplicationIcon(width: Int? = null, height: Int? = null): ImageIcon? {
-        return try {
-            val resource = ApplicationConfig::class.java.classLoader.getResource(APP_ICON_PATH)
-                ?: throw IllegalStateException("Application icon not found")
-
-            val icon = ImageIcon(resource)
-
-            if (width != null && height != null) {
-                val scaled = icon.image.getScaledInstance(width, height, Image.SCALE_SMOOTH)
-                ImageIcon(scaled)
-            } else {
-                icon
-            }
-        } catch (e: Exception) {
-            error("Failed to load application icon: ${e.message}", useDispatcher = false)
-            null
-        }
-    }
+    // Windows takes 16 and 32 pixels for a window, and the larger ones on a scaled display
+    fun windowIcons(): List<Image> = listOf(16, 24, 32, 48, 64)
+        .mapNotNull { size -> javaClass.classLoader.getResource("icons/app_$size.png") }
+        .map { ImageIcon(it).image }
 }

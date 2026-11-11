@@ -1,6 +1,9 @@
 package com.dominions.modmerger.core.writing
 
 import com.dominions.modmerger.constants.ModPatterns
+import com.dominions.modmerger.core.parsing.TrackedLine
+import com.dominions.modmerger.core.parsing.commandLines
+import com.dominions.modmerger.core.parsing.isModInfoLine
 import com.dominions.modmerger.core.processing.EntityProcessor
 import com.dominions.modmerger.core.processing.SpellBlockProcessor
 import com.dominions.modmerger.domain.MappedModDefinition
@@ -20,15 +23,6 @@ class ModContentWriter(
 ) : Logging {
 
     private val warnings = mutableListOf<MergeWarning>()
-
-    /**
-     * Line with metadata preserved for accurate error reporting.
-     */
-    private data class TrackedLine(
-        val content: String,
-        val originalLineNumber: Int,
-        val fileName: String
-    )
 
     /**
      * Processing context that maintains state during mod file processing.
@@ -76,9 +70,7 @@ class ModContentWriter(
 
         val context = ProcessingContext(modDefinition = originalDef)
 
-        // Process lines with proper multiline quote handling
-        val cleanedLines = removeModInfoBlocks(mappedDef.modFile.content.lines(), mappedDef.modFile.name)
-        val filteredLines = filterAndKeepLines(cleanedLines)
+        val filteredLines = commandLines(mappedDef.modFile.content, mappedDef.modFile.name)
 
         filteredLines.forEach { trackedLine ->
             processLine(trackedLine, context, mappedDef)
@@ -89,101 +81,6 @@ class ModContentWriter(
 
         val elapsed = System.currentTimeMillis() - startTime
         info("Processed '$name' in ${elapsed}ms")
-    }
-
-    /**
-     * Removes mod info blocks with proper multiline quote handling.
-     */
-    private fun removeModInfoBlocks(lines: List<String>, fileName: String): List<TrackedLine> {
-        val result = mutableListOf<TrackedLine>()
-        var inModInfoBlock = false
-        var totalQuotesInBlock = 0
-
-        lines.forEachIndexed { index, originalLine ->
-            val line = originalLine
-            val trimmed = line.trimStart()
-
-            if (inModInfoBlock) {
-                // Count quotes if not fully commented
-                if (!trimmed.startsWith("--")) {
-                    totalQuotesInBlock += line.count { it == '"' }
-                    if (totalQuotesInBlock % 2 == 0) {
-                        inModInfoBlock = false
-                        totalQuotesInBlock = 0
-                    }
-                }
-                // Skip mod info lines
-                return@forEachIndexed
-            }
-
-            if (trimmed.isModInfoLine()) {
-                val quotesHere = line.count { it == '"' }
-                if (quotesHere % 2 == 1) {
-                    inModInfoBlock = true
-                    totalQuotesInBlock = quotesHere
-                }
-                // Skip mod info lines
-                return@forEachIndexed
-            }
-
-            // Keep line with tracking info
-            result.add(TrackedLine(line, index + 1, fileName))
-        }
-
-        return result
-    }
-
-    /**
-     * Filters lines with proper multiline handling.
-     */
-    private fun filterAndKeepLines(lines: List<TrackedLine>): List<TrackedLine> {
-        val result = mutableListOf<TrackedLine>()
-        var inMultilineBlock = false
-        var lastLineWasCommand = false
-
-        lines.forEach { trackedLine ->
-            val line = trackedLine.content
-            val trimmed = line.trimStart()
-
-            when {
-                // 1) Blank line => keep only if last line was a command
-                line.isBlank() -> {
-                    if (lastLineWasCommand) {
-                        result.add(trackedLine)
-                        lastLineWasCommand = false
-                    }
-                }
-
-                // 2) If we're in a multiline block => keep, check if closing quote
-                inMultilineBlock -> {
-                    result.add(trackedLine)
-                    val noComment = line.split("--")[0]
-                    if (noComment.contains("\"")) {
-                        inMultilineBlock = false
-                    }
-                    lastLineWasCommand = true
-                }
-
-                // 3) #command or --comment => keep
-                trimmed.startsWith("--") || trimmed.startsWith("#") -> {
-                    result.add(trackedLine)
-                    // If there's an odd number of quotes => might start multiline
-                    val noComment = trimmed.split("--")[0]
-                    val quoteCount = noComment.count { it == '"' }
-                    if (quoteCount % 2 == 1) {
-                        inMultilineBlock = true
-                    }
-                    lastLineWasCommand = true
-                }
-
-                // 4) Everything else => skip
-                else -> {
-                    lastLineWasCommand = false
-                }
-            }
-        }
-
-        return result
     }
 
     private fun processLine(
@@ -317,16 +214,6 @@ class ModContentWriter(
         return skippable
     }
 
-    // Extension functions for cleaner code
-    private fun String.isModInfoLine(): Boolean {
-        val lower = this.lowercase()
-        return lower.startsWith("#description") ||
-                lower.startsWith("#modname") ||
-                lower.startsWith("#icon") ||
-                lower.startsWith("#version") ||
-                lower.startsWith("#domversion")
-    }
-
     private fun String.shouldSkip(context: ProcessingContext): Boolean {
         val trimmed = trim()
 
@@ -347,7 +234,7 @@ class ModContentWriter(
     }
 
     private fun String.isSpellBlockStart(): Boolean =
-        startsWith("#newspell") || matches(Regex("""^#selectspell\s+\d+.*"""))
+        ModPatterns.SPELL_BLOCK_START.containsMatchIn(this)
 
     private fun String.isBlockStart(): Boolean =
         startsWith("#select") || startsWith("#new")

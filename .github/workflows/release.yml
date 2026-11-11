@@ -22,6 +22,7 @@ jobs:
 
       - uses: graalvm/setup-graalvm@v1
         with:
+          # the same version as in gradle/gradle-daemon-jvm.properties
           java-version: '23'
           distribution: 'graalvm'
           native-image-job-reports: 'true'

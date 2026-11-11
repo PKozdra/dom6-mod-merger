@@ -1,9 +1,6 @@
 // src/main/kotlin/com/dominions/modmerger/domain/ModIdentifier.kt
 package com.dominions.modmerger.domain
 
+// mod event codes are negative, so the value may be negative
 @JvmInline
-value class ModIdentifier(val value: Long) {
-    init {
-        require(value >= 0) { "Identifier must be non-negative" }
-    }
-}
+value class ModIdentifier(val value: Long)

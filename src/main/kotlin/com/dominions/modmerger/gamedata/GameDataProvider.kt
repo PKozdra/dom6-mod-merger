@@ -1,6 +1,7 @@
 // src/main/kotlin/com/dominions/modmerger/gamedata/GameDataProvider.kt
 package com.dominions.modmerger.gamedata
 
+import com.dominions.modmerger.domain.EntityType
 import com.dominions.modmerger.gamedata.model.MonsterData
 import com.dominions.modmerger.gamedata.model.SpellData
 import com.dominions.modmerger.gamedata.model.SpellEffectData
@@ -21,4 +22,7 @@ interface GameDataProvider : Logging {
     fun getMonsters(ids: Set<Long>): Map<Long, MonsterData>
     fun getMonsterByName(name: String): MonsterData?
     fun getVanillaMonsterNames(): Map<Long, String>
+
+    /** Vanilla id for [name], ignoring case. Null when the name is not vanilla or [type] has no name table. */
+    fun findVanillaIdByName(type: EntityType, name: String): Long?
 }

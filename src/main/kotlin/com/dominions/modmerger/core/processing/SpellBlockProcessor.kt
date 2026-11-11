@@ -163,7 +163,6 @@ class SpellBlockProcessor(
      * Processing steps:
      * 1. Replace "#newspell" with "#selectspell <assignedId>" when mapping to predefined ID
      * 2. Handle damage commands:
-     *    - Convert "#damagemon <id>" to "#damage <id>" format first
      *    - Map damage values based on spell effect type (Summoning/Enchantment)
      * 3. Pass other lines (#restricted, #descr, etc.) to EntityProcessor
      * 4. Remove consecutive blank lines for cleaner output
@@ -186,16 +185,9 @@ class SpellBlockProcessor(
                 continue
             }
 
-            // 2. Handle damage commands - both #damage and #damagemon with ID
-            val processLine = when {
-                // Convert #damagemon <id> to #damage format first
-                ModPatterns.SPELL_DAMAGEMON_ID.matches(trimmed) ->
-                    rawLine.replace("#damagemon", "#damage")
-                // Regular #damage line
-                ModPatterns.SPELL_DAMAGE.matches(trimmed) ->
-                    rawLine
-                else -> null
-            }
+            // 2. #damage is a monster, a montag or an enchantment number depending on #effect
+            //    #damagemon is always a monster and goes through EntityProcessor below
+            val processLine = if (ModPatterns.SPELL_DAMAGE.matches(trimmed)) rawLine else null
 
             // If we have a damage line, map it based on effect type
             if (processLine != null) {

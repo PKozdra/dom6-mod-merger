@@ -29,6 +29,7 @@ class ModMergerGui(
     private val preferences = Preferences.userRoot().node("com/dominions/modmerger")
 
     private val frame = JFrame(ApplicationConfig.APP_NAME).apply {
+        iconImages = ApplicationConfig.windowIcons()
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         minimumSize = Dimension(1024, 768)
         setLocationRelativeTo(null)  // Center the window on screen
